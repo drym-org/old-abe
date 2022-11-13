@@ -1,0 +1,2 @@
+john@doe.com, 25%
+jane@doe.com, 75%

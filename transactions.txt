@@ -1,0 +1,2 @@
+john@doe.com,25.0000,payments-example.txt,DUMMY,2022-11-13 03:15:59.511874
+jane@doe.com,75.0000,payments-example.txt,DUMMY,2022-11-13 03:15:59.512055

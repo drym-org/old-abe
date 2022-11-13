@@ -1,0 +1,13 @@
+* Models
+** payment
+** transaction
+** payout
+* Flow
+** payment comes in
+- triggered by: admin creates a file in payments/
+1. reads attribution.txt, payments/
+2. generate transaction objects w current commit hash
+** admin wants to pay out
+- run a script to display debts
+1. read transactions and payouts/
+2. admin makes manual payment, reflects in a file in payouts/
