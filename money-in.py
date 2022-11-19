@@ -2,9 +2,11 @@
 
 import csv
 from decimal import Decimal
-from dataclasses import astuple
 import re
+import os
 from models import Transaction
+
+PAYMENTS_DIR = 'payments'
 
 
 def read_payment(payment_file):
@@ -35,11 +37,12 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
 
 
 def main():
-    payment_file = "payments-example.txt"
+    payment_file = os.path.join(PAYMENTS_DIR, "payments-example.txt")
+    payment_filename = os.path.basename(payment_file)
     commit_hash = "DUMMY"
     amount = read_payment(payment_file)
     attributions = read_attributions()
-    transactions = generate_transactions(amount, attributions, payment_file, commit_hash)
+    transactions = generate_transactions(amount, attributions, payment_filename, commit_hash)
     with open('transactions.txt', 'a') as f:
         writer = csv.writer(f)
         for row in transactions:
