@@ -2,6 +2,7 @@
 
 import csv
 from decimal import Decimal
+from dataclasses import astuple
 import re
 import os
 from models import Transaction
