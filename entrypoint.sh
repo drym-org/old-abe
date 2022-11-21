@@ -16,3 +16,11 @@ echo "Running money-out script..."
 python /money-out.py
 echo "... done."
 
+echo "Running git status..."
+echo $(git status)
+echo "... done."
+
+echo "Committing updated transactions back to repo..."
+# commit transactions.txt back to repo
+echo "... done."
+
