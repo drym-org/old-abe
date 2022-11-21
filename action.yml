@@ -1,6 +1,9 @@
 # action.yml
 name: 'Process a fresh payment.'
 description: 'Process a payment, create transactions to be paid out, and list balances owed to contributors.'
+outputs:
+  balances: # id of output
+    description: 'Outstanding balances summary'
 runs:
   using: 'docker'
   image: 'Dockerfile'
