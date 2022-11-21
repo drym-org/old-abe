@@ -1,4 +1,2 @@
 john@doe.com,25.0000,payment-1.txt,DUMMY,2022-11-21 02:36:20.055792
 jane@doe.com,75.0000,payment-1.txt,DUMMY,2022-11-21 02:36:20.056045
-john@doe.com,50.0000,payment-2.txt,DUMMY,2022-11-21 02:36:20.056551
-jane@doe.com,150.0000,payment-2.txt,DUMMY,2022-11-21 02:36:20.056554
