@@ -5,6 +5,7 @@ FROM python:bullseye
 COPY entrypoint.sh /entrypoint.sh
 COPY money-in.py /money-in.py
 COPY money-out.py /money-out.py
+COPY models.py /models.py
 
 # Code file to execute when the docker container starts up (`entrypoint.sh`)
 ENTRYPOINT ["/entrypoint.sh"]
