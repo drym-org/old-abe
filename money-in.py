@@ -38,7 +38,13 @@ def find_unprocessed_payments():
     """
     recorded_payments = set()
     with open(TRANSACTIONS_FILE) as f:
-        for _email, _amount, payment_file, _commit_hash, _created_at in csv.reader(f):
+        for (
+            _email,
+            _amount,
+            payment_file,
+            _commit_hash,
+            _created_at,
+        ) in csv.reader(f):
             recorded_payments.add(payment_file)
     all_payments = set(os.listdir(PAYMENTS_DIR))
     return all_payments.difference(recorded_payments)
@@ -56,7 +62,9 @@ def process_payment(payment_file):
     commit_hash = "DUMMY"
     amount = read_payment(payment_file)
     attributions = read_attributions()
-    transactions = generate_transactions(amount, attributions, payment_file, commit_hash)
+    transactions = generate_transactions(
+        amount, attributions, payment_file, commit_hash
+    )
     with open(TRANSACTIONS_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in transactions:

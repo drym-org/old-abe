@@ -2,6 +2,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+
 @dataclass
 class Transaction:
     email: str = None
