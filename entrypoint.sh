@@ -1,7 +1,7 @@
 #!/bin/sh -l
 
 echo "Running ls..."
-ls
+echo $(ls)
 echo "... done."
 
 echo "Running money-in script..."
