@@ -23,5 +23,5 @@ git push origin main
 echo "... done."
 
 echo "Running money-out script..."
-python /money-out.py >> $GITHUB_OUTPUT
+echo balances=$(python /money-out.py) >> $GITHUB_OUTPUT
 echo "... done."
