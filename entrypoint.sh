@@ -1,5 +1,9 @@
 #!/bin/sh -l
 
+echo "Running ls..."
+ls
+echo "... done."
+
 echo "Running money-in script..."
 python money-in.py
 echo "... done."
