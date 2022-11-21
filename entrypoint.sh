@@ -4,6 +4,10 @@ echo "Running ls..."
 echo $(ls /)
 echo "... done."
 
+echo "Running ls /github/workspace..."
+echo $(ls /github/workspace)
+echo "... done."
+
 echo "Running money-in script..."
 python /money-in.py
 echo "... done."
