@@ -8,6 +8,7 @@ import os
 from models import Transaction
 
 PAYMENTS_DIR = 'payments'
+TRANSACTIONS_FILE = 'transactions.txt'
 
 
 def read_payment(payment_file):
@@ -36,7 +37,7 @@ def find_unprocessed_payments():
     3. find those which haven't been recorded and return those
     """
     recorded_payments = set()
-    with open('transactions.txt') as f:
+    with open(TRANSACTIONS_FILE) as f:
         for _email, _amount, payment_file, _commit_hash, _created_at in csv.reader(f):
             recorded_payments.add(payment_file)
     all_payments = set(os.listdir(PAYMENTS_DIR))
@@ -56,7 +57,7 @@ def process_payment(payment_file):
     amount = read_payment(payment_file)
     attributions = read_attributions()
     transactions = generate_transactions(amount, attributions, payment_file, commit_hash)
-    with open('transactions.txt', 'a') as f:
+    with open(TRANSACTIONS_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in transactions:
             writer.writerow(astuple(row))

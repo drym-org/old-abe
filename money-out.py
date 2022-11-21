@@ -9,11 +9,12 @@ from collections import defaultdict
 from decimal import Decimal
 
 PAYOUTS_DIR = 'payouts'
+TRANSACTIONS_FILE = 'transactions.txt'
 
 
 def read_transaction_amounts():
     balances = defaultdict(int)
-    with open('transactions.txt') as f:
+    with open(TRANSACTIONS_FILE) as f:
         for row in csv.reader(f):
             t = Transaction(*row)
             t.amount = Decimal(t.amount)
