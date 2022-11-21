@@ -17,6 +17,8 @@ python /money-out.py
 echo "... done."
 
 echo "Committing updated transactions back to repo..."
+git config --global user.email "abe@drym.org"
+git config --global user.name "Old Abe"
 git add transactions.txt
 git commit -m "Updated transactions"
 git fetch
