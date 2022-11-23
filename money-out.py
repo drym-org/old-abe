@@ -56,11 +56,12 @@ def prepare_message(balances):
         balances_table += f"{name} | {balance:.2f}\n"
     return f"""
     The current outstanding balances are:
+
     | Name | Balance |
     | ---- | --- |
     {balances_table}
 
-    **Total = {sum(balances.values()):.2f}
+    **Total** = {sum(balances.values()):.2f}
     """.strip()
 
 
