@@ -54,7 +54,7 @@ def prepare_message(balances):
     balances_table = ""
     for name, balance in balances.items():
         balances_table += f"{name} | {balance:.2f}\n"
-    return f"""
+    message = f"""
     The current outstanding balances are:
 
     | Name | Balance |
@@ -62,7 +62,8 @@ def prepare_message(balances):
     {balances_table}
 
     **Total** = {sum(balances.values()):.2f}
-    """.strip()
+    """
+    return "\n".join(line.strip() for line in message.split('\n')).strip()
 
 
 def main():
