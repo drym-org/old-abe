@@ -50,11 +50,26 @@ def compute_balances(owed, paid):
     return balances
 
 
+def prepare_message(balances):
+    balances_table = ""
+    for name, balance in balances.items():
+        balances_table += f"{name} | {balance:.2f}\n"
+    return f"""
+    The current outstanding balances are:
+    | Name | Balance |
+    | ---- | --- |
+    {balances_table}
+
+    **Total = {sum(balances.values()):.2f}
+    """.strip()
+
+
 def main():
     owed = read_transaction_amounts()
     paid = read_payout_amounts()
     balances = compute_balances(owed, paid)
-    print(balances)
+    message = prepare_message(balances)
+    print(message)
 
 
 if __name__ == "__main__":
