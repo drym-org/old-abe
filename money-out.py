@@ -63,7 +63,7 @@ def prepare_message(balances):
 
     **Total** = {sum(balances.values()):.2f}
     """
-    return "\n".join(line.strip() for line in message.split('\n')).strip()
+    return "\r\n".join(line.strip() for line in message.split('\n')).strip()
 
 
 def main():
