@@ -5,6 +5,7 @@ from decimal import Decimal
 from dataclasses import astuple
 import re
 import os
+import subprocess
 from models import Transaction
 
 ABE_ROOT = 'abe'
@@ -125,8 +126,14 @@ def update_transactions(transactions):
             writer.writerow(astuple(row))
 
 
+def get_git_revision_short_hash() -> str:
+    """ From https://stackoverflow.com/a/21901260
+    """
+    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+
+
 def process_payment(payment_file, valuation, price):
-    commit_hash = "DUMMY"
+    commit_hash = get_git_revision_short_hash()
     email, amount = read_payment(payment_file)
     attributions = read_attributions()
     transactions = generate_transactions(
