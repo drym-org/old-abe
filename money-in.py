@@ -7,11 +7,12 @@ import re
 import os
 from models import Transaction
 
-PAYMENTS_DIR = 'payments'
-TRANSACTIONS_FILE = 'transactions.txt'
-PRICE_FILE = 'price.txt'
-VALUATION_FILE = 'valuation.txt'
-ATTRIBUTIONS_FILE = 'attribution.txt'
+ABE_ROOT = 'abe'
+PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
+TRANSACTIONS_FILE = os.path.join(ABE_ROOT, 'transactions.txt')
+PRICE_FILE = os.path.join(ABE_ROOT, 'price.txt')
+VALUATION_FILE = os.path.join(ABE_ROOT, 'valuation.txt')
+ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attribution.txt')
 
 
 def read_payment(payment_file):

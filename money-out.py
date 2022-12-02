@@ -8,8 +8,9 @@ import re
 from collections import defaultdict
 from decimal import Decimal
 
-PAYOUTS_DIR = 'payouts'
-TRANSACTIONS_FILE = 'transactions.txt'
+ABE_ROOT = 'abe'
+PAYOUTS_DIR = os.path.join(ABE_ROOT, 'payouts')
+TRANSACTIONS_FILE = os.path.join(ABE_ROOT, 'transactions.txt')
 
 
 def read_transaction_amounts():
@@ -24,7 +25,7 @@ def read_transaction_amounts():
 
 
 def read_payout(payout_file):
-    with open(payout_file) as f:
+    with open(os.path.join(PAYOUTS_DIR, payout_file)) as f:
         for row in csv.reader(f):
             name, email, amount = row
             email = email.strip()
@@ -36,7 +37,7 @@ def read_payout_amounts():
     balances = defaultdict(int)
     payout_files = os.listdir(PAYOUTS_DIR)
     for payout_file in payout_files:
-        email, amount = read_payout(os.path.join(PAYOUTS_DIR, payout_file))
+        email, amount = read_payout(payout_file)
         balances[email] += amount
     return balances
 
