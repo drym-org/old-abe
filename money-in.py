@@ -9,19 +9,40 @@ from models import Transaction
 
 PAYMENTS_DIR = 'payments'
 TRANSACTIONS_FILE = 'transactions.txt'
+PRICE_FILE = 'price.txt'
+VALUATION_FILE = 'valuation.txt'
+ATTRIBUTIONS_FILE = 'attribution-example.txt'
 
 
 def read_payment(payment_file):
     with open(os.path.join(PAYMENTS_DIR, payment_file)) as f:
-        for row in csv.reader(f):
+        for row in csv.reader(f, skipinitialspace=True):
             name, email, amount = row
             amount = Decimal(re.sub("[^0-9.]", "", amount))
-            return amount
+            return email, amount
+
+
+def read_price():
+    with open(PRICE_FILE) as f:
+        for row in csv.reader(f):
+            price = row[0]
+            price = Decimal(re.sub("[^0-9.]", "", price))
+            return price
+
+
+# note that commas are used as a decimal separator in some languages
+# (e.g. Spain Spanish), so that would need to be handled at some point
+def read_valuation():
+    with open(VALUATION_FILE) as f:
+        for row in csv.reader(f):
+            valuation = row[0]
+            valuation = Decimal(re.sub("[^0-9.]", "", valuation))
+            return valuation
 
 
 def read_attributions():
     attributions = {}
-    with open("attribution-example.txt") as f:
+    with open(ATTRIBUTIONS_FILE) as f:
         for row in csv.reader(f):
             email, percentage = row
             percentage = Decimal(re.sub("[^0-9.]", "", percentage))
@@ -58,23 +79,73 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
     return transactions
 
 
-def process_payment(payment_file):
-    commit_hash = "DUMMY"
-    amount = read_payment(payment_file)
-    attributions = read_attributions()
-    transactions = generate_transactions(
-        amount, attributions, payment_file, commit_hash
-    )
+def total_amount_paid(for_email):
+    payments = 0
+    payment_files = os.listdir(PAYMENTS_DIR)
+    for payment_file in payment_files:
+        email, amount = read_payment(payment_file)
+        if email == for_email:
+            payments += amount
+    return payments
+
+
+def generate_incoming_attribution(email, current_amount, price, valuation):
+    total_amount = total_amount_paid(email)
+    investment = total_amount - price
+    if investment > 0:
+        max_share = investment / valuation * 100
+        share = current_amount / investment * max_share
+        return email, share
+    else:
+        return None
+
+
+def update_attributions(incoming_attribution, attributions):
+    incoming_email, incoming_share = incoming_attribution
+    target_proportion = (Decimal(100) - incoming_share) / Decimal(100)
+    # renormalize
+    attributions = [(email, share * target_proportion * Decimal(100))
+                    for email, share in attributions.items()]
+    # add incoming share
+    attributions = [(email, share + (incoming_share if email == incoming_email else 0))
+                    for email, share in attributions]
+    attributions = [(email, f'{share:.2f}%')
+                    for email, share in attributions]
+    with open(ATTRIBUTIONS_FILE, 'w') as f:
+        writer = csv.writer(f)
+        for row in attributions:
+            writer.writerow(row)
+
+
+def update_transactions(transactions):
     with open(TRANSACTIONS_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in transactions:
             writer.writerow(astuple(row))
 
 
+def process_payment(payment_file, valuation, price):
+    commit_hash = "DUMMY"
+    email, amount = read_payment(payment_file)
+    attributions = read_attributions()
+    transactions = generate_transactions(
+        amount, attributions, payment_file, commit_hash
+    )
+    update_transactions(transactions)
+    incoming_attribution = generate_incoming_attribution(email,
+                                                         amount,
+                                                         price,
+                                                         valuation)
+    if incoming_attribution:
+        update_attributions(incoming_attribution, attributions)
+
+
 def main():
     unprocessed_payments = find_unprocessed_payments()
+    price = read_price()
+    valuation = read_valuation()
     for payment_file in unprocessed_payments:
-        process_payment(payment_file)
+        process_payment(payment_file, valuation, price)
 
 
 if __name__ == "__main__":
