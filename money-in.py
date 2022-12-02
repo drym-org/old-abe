@@ -11,7 +11,7 @@ PAYMENTS_DIR = 'payments'
 TRANSACTIONS_FILE = 'transactions.txt'
 PRICE_FILE = 'price.txt'
 VALUATION_FILE = 'valuation.txt'
-ATTRIBUTIONS_FILE = 'attribution-example.txt'
+ATTRIBUTIONS_FILE = 'attribution.txt'
 
 
 def read_payment(payment_file):
