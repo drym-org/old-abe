@@ -13,7 +13,7 @@ PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
 TRANSACTIONS_FILE = os.path.join(ABE_ROOT, 'transactions.txt')
 PRICE_FILE = os.path.join(ABE_ROOT, 'price.txt')
 VALUATION_FILE = os.path.join(ABE_ROOT, 'valuation.txt')
-ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attribution.txt')
+ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attributions.txt')
 
 
 def read_payment(payment_file):
