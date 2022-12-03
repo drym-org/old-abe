@@ -15,7 +15,7 @@ echo "... done."
 echo "Committing updated transactions and attributions back to repo..."
 git config --global user.email "abe@drym.org"
 git config --global user.name "Old Abe"
-git add transactions.txt attributions.txt
+git add abe/transactions.txt abe/attributions.txt
 git commit -m "Updated transactions and attributions"
 git fetch
 git rebase origin/main
