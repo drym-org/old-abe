@@ -1,6 +1,6 @@
 # action.yml
-name: 'Process a fresh payment.'
-description: 'Process a payment, create transactions to be paid out, and list balances owed to contributors.'
+name: 'Process a fresh payment or payout.'
+description: 'Process a payment, create transactions to be paid out, and list balances owed to contributors, and update attributions according to fresh investments.'
 outputs:
   balances: # id of output
     description: 'Outstanding balances summary'
