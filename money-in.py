@@ -92,6 +92,7 @@ def total_amount_paid(for_email):
 def generate_incoming_attribution(email, incoming_amount, price, valuation):
     total_payments = total_amount_paid(email)
     previous_total = total_payments - incoming_amount
+    # how much of the incoming amount goes towards investment?
     incoming_investment = total_payments - max(price, previous_total)
     if incoming_investment > 0:
         share = incoming_investment / valuation
