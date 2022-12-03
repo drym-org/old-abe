@@ -65,7 +65,7 @@ Please see [the constitution](https://github.com/drym-org/foundation/blob/main/C
 
 # Supporting this Project
 
-Please make any financial contributions by Venmo to ``@Sid-K``.
+Please make any financial contributions by Venmo to ``@Sid-K`` and mention "Old Abe" in your message.
 
 This project follows Attribution-Based Economics as described in [drym-org/foundation](https://github.com/drym-org/foundation). Any financial contributions will be distributed to contributors and antecedents as agreed-upon in a collective process that anyone may participate in. To see the current distributions, take a look at [abe/attributions.txt](https://github.com/drym-org/old-abe/blob/main/abe/attributions.txt). To see payments made into and out of the project, see the [abe](https://github.com/drym-org/old-abe/blob/main/abe/) folder.
 
