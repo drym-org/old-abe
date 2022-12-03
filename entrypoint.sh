@@ -12,11 +12,11 @@ echo "Running money-in script..."
 python /money-in.py
 echo "... done."
 
-echo "Committing updated transactions back to repo..."
+echo "Committing updated transactions and attributions back to repo..."
 git config --global user.email "abe@drym.org"
 git config --global user.name "Old Abe"
-git add transactions.txt
-git commit -m "Updated transactions"
+git add transactions.txt attributions.txt
+git commit -m "Updated transactions and attributions"
 git fetch
 git rebase origin/main
 git push origin main
