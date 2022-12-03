@@ -26,20 +26,18 @@ def read_payment(payment_file):
 
 def read_price():
     with open(PRICE_FILE) as f:
-        for row in csv.reader(f):
-            price = row[0]
-            price = Decimal(re.sub("[^0-9.]", "", price))
-            return price
+        price = f.readline()
+        price = Decimal(re.sub("[^0-9.]", "", price))
+        return price
 
 
 # note that commas are used as a decimal separator in some languages
 # (e.g. Spain Spanish), so that would need to be handled at some point
 def read_valuation():
     with open(VALUATION_FILE) as f:
-        for row in csv.reader(f):
-            valuation = row[0]
-            valuation = Decimal(re.sub("[^0-9.]", "", valuation))
-            return valuation
+        valuation = f.readline()
+        valuation = Decimal(re.sub("[^0-9.]", "", valuation))
+        return valuation
 
 
 def read_attributions():
@@ -91,12 +89,12 @@ def total_amount_paid(for_email):
     return payments
 
 
-def generate_incoming_attribution(email, current_amount, price, valuation):
-    total_amount = total_amount_paid(email)
-    investment = total_amount - price
-    if investment > 0:
-        max_share = investment / valuation * 100
-        share = current_amount / investment * max_share
+def generate_incoming_attribution(email, incoming_amount, price, valuation):
+    total_payments = total_amount_paid(email)
+    previous_total = total_payments - incoming_amount
+    incoming_investment = total_payments - max(price, previous_total)
+    if incoming_investment > 0:
+        share = incoming_investment / valuation
         return email, share
     else:
         return None
@@ -104,14 +102,14 @@ def generate_incoming_attribution(email, current_amount, price, valuation):
 
 def update_attributions(incoming_attribution, attributions):
     incoming_email, incoming_share = incoming_attribution
-    target_proportion = (Decimal(100) - incoming_share) / Decimal(100)
+    target_proportion = Decimal(1) - incoming_share
     # renormalize
-    attributions = [(email, share * target_proportion * Decimal(100))
+    attributions = [(email, share * target_proportion)
                     for email, share in attributions.items()]
     # add incoming share
     attributions = [(email, share + (incoming_share if email == incoming_email else 0))
                     for email, share in attributions]
-    attributions = [(email, f'{share:.2f}%')
+    attributions = [(email, f'{share*Decimal(100):.2f}%')
                     for email, share in attributions]
     with open(ATTRIBUTIONS_FILE, 'w') as f:
         writer = csv.writer(f)
