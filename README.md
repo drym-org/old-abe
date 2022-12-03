@@ -63,6 +63,14 @@ abe/
 
 Please see [the constitution](https://github.com/drym-org/foundation/blob/main/CONSTITUTION.md) at drym-org/foundation.
 
+# Supporting this Project
+
+Please make any financial contributions by Venmo to ``@Sid-K``.
+
+This project follows Attribution-Based Economics as described in [drym-org/foundation](https://github.com/drym-org/foundation). Any financial contributions will be distributed to contributors and antecedents as agreed-upon in a collective process that anyone may participate in. To see the current distributions, take a look at [abe/attributions.txt](https://github.com/drym-org/old-abe/blob/main/abe/attributions.txt). To see payments made into and out of the project, see the [abe](https://github.com/drym-org/old-abe/blob/main/abe/) folder.
+
+Additionally, some portion of your voluntary payment could be treated as an investment, entitling you to a share in future revenues, including payments made in the future, or attributive revenue from other projects.
+
 # Non-Ownership
 
 This work is not owned by anyone. Please see the [Declaration of Non-Ownership](https://github.com/drym-org/foundation/blob/main/DECLARATION-OF-NON-OWNERSHIP.md).
