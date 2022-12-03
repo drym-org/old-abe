@@ -104,14 +104,15 @@ def generate_incoming_attribution(email, incoming_amount, price, valuation):
 def update_attributions(incoming_attribution, attributions):
     incoming_email, incoming_share = incoming_attribution
     target_proportion = Decimal(1) - incoming_share
-    # renormalize
-    attributions = [(email, share * target_proportion)
-                    for email, share in attributions.items()]
-    # add incoming share
-    attributions = [(email, share + (incoming_share if email == incoming_email else 0))
-                    for email, share in attributions]
+
+    for email in attributions:
+        # renormalize
+        attributions[email] *= target_proportion
+    # add incoming share to existing investor or record new investor
+    attributions[incoming_email] = attributions.get(incoming_email, 0) + incoming_share
+    # format for output as percentages
     attributions = [(email, f'{share*Decimal(100):.2f}%')
-                    for email, share in attributions]
+                    for email, share in attributions.items()]
     with open(ATTRIBUTIONS_FILE, 'w') as f:
         writer = csv.writer(f)
         for row in attributions:
