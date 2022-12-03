@@ -6,7 +6,7 @@
 
 To set up ABE accounting on your own repo:
 
-1. Add an `abe` folder containing the following:
+1. Add an `abe` folder at the top level of your repo, containing the following:
 ```
 abe/
 ..transactions.txt
