@@ -1,0 +1,24 @@
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'abe/payments/**'
+      - 'abe/payouts/**'
+      - '.github/workflows/abe.yml'
+
+jobs:
+  billing_job:
+    runs-on: ubuntu-latest
+    name: Run the ABE billing prototype
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Do billing
+        id: hello-billing
+        uses: drym-org/old-abe@v1
+      - name: Create an issue with the computed outstanding balances
+        run: |
+          gh issue close `gh issue list -l outstanding-balances -s open --json number --jq .[].number`
+          gh issue create -b "${{ steps.hello-billing.outputs.balances }}" -t "Outstanding Balances" -l outstanding-balances
