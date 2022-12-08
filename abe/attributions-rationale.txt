@@ -1,0 +1,1 @@
+Ariana, Jair and Sid paired on the initial prototype, and we agreed to an even three-way split, with a token extra percentage point to Sid to make the numbers add up to a hundred in a finite decimal representation.
