@@ -10,14 +10,15 @@ from models import Transaction
 
 ABE_ROOT = 'abe'
 PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
+NONATTRIBUTABLE_PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments', 'nonattributable')
 TRANSACTIONS_FILE = os.path.join(ABE_ROOT, 'transactions.txt')
 PRICE_FILE = os.path.join(ABE_ROOT, 'price.txt')
 VALUATION_FILE = os.path.join(ABE_ROOT, 'valuation.txt')
 ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attributions.txt')
 
 
-def read_payment(payment_file):
-    with open(os.path.join(PAYMENTS_DIR, payment_file)) as f:
+def read_payment(payment_file, payments_dir):
+    with open(os.path.join(payments_dir, payment_file)) as f:
         for row in csv.reader(f, skipinitialspace=True):
             name, email, amount = row
             amount = Decimal(re.sub("[^0-9.]", "", amount))
@@ -51,7 +52,12 @@ def read_attributions():
     return attributions
 
 
-def find_unprocessed_payments():
+def get_payment_files(payments_dir):
+    return {f for f in os.listdir(payments_dir)
+            if not os.path.isdir(os.path.join(payments_dir, f))}
+
+
+def find_unprocessed_payments(payments_dir):
     """
     1. Read the transactions file to find out which payments are already recorded as transactions
     2. Read the payments folder to get all payments
@@ -67,7 +73,9 @@ def find_unprocessed_payments():
             _created_at,
         ) in csv.reader(f):
             recorded_payments.add(payment_file)
-    all_payments = set(os.listdir(PAYMENTS_DIR))
+    all_payments = get_payment_files(payments_dir)
+    print("all payments")
+    print(all_payments)
     return all_payments.difference(recorded_payments)
 
 
@@ -79,18 +87,18 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
     return transactions
 
 
-def total_amount_paid(for_email):
+def total_amount_paid(for_email, payments_dir):
     payments = 0
-    payment_files = os.listdir(PAYMENTS_DIR)
+    payment_files = get_payment_files(payments_dir)
     for payment_file in payment_files:
-        email, amount = read_payment(payment_file)
+        email, amount = read_payment(payment_file, payments_dir)
         if email == for_email:
             payments += amount
     return payments
 
 
 def generate_incoming_attribution(email, incoming_amount, price, valuation):
-    total_payments = total_amount_paid(email)
+    total_payments = total_amount_paid(email, PAYMENTS_DIR)
     previous_total = total_payments - incoming_amount
     # how much of the incoming amount goes towards investment?
     incoming_investment = total_payments - max(price, previous_total)
@@ -132,28 +140,35 @@ def get_git_revision_short_hash() -> str:
     return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
 
 
-def process_payment(payment_file, valuation, price):
+def process_payment(payment_file, valuation, price, attributable=True):
+    payments_dir = PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
     commit_hash = get_git_revision_short_hash()
-    email, amount = read_payment(payment_file)
+    email, amount = read_payment(payment_file, payments_dir)
     attributions = read_attributions()
     transactions = generate_transactions(
         amount, attributions, payment_file, commit_hash
     )
     update_transactions(transactions)
-    incoming_attribution = generate_incoming_attribution(email,
-                                                         amount,
-                                                         price,
-                                                         valuation)
-    if incoming_attribution:
-        update_attributions(incoming_attribution, attributions)
+    if attributable:
+        incoming_attribution = generate_incoming_attribution(email,
+                                                             amount,
+                                                             price,
+                                                             valuation)
+        if incoming_attribution:
+            update_attributions(incoming_attribution, attributions)
 
 
 def main():
-    unprocessed_payments = find_unprocessed_payments()
+    unprocessed_payments = find_unprocessed_payments(PAYMENTS_DIR)
     price = read_price()
     valuation = read_valuation()
+    print(unprocessed_payments)
     for payment_file in unprocessed_payments:
-        process_payment(payment_file, valuation, price)
+        print(payment_file)
+        process_payment(payment_file, valuation, price, attributable=True)
+    unprocessed_unattributable_payments = find_unprocessed_payments(NONATTRIBUTABLE_PAYMENTS_DIR)
+    for payment_file in unprocessed_unattributable_payments:
+        process_payment(payment_file, valuation, price, attributable=False)
 
 
 if __name__ == "__main__":
