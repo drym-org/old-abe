@@ -37,5 +37,5 @@ docs/_build
 *.sw?
 
 # dances
-*-dance*
+dance
 
