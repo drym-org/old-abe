@@ -114,7 +114,7 @@ def update_attributions(incoming_attribution, attributions):
     target_proportion = Decimal(1) - incoming_share
 
     for email in attributions:
-        # renormalize
+        # renormalize to reflect dilution
         attributions[email] *= target_proportion
     # add incoming share to existing investor or record new investor
     attributions[incoming_email] = attributions.get(incoming_email, 0) + incoming_share
@@ -134,6 +134,14 @@ def update_transactions(transactions):
             writer.writerow(astuple(row))
 
 
+def update_valuation(valuation, amount):
+    new_valuation = valuation + amount
+    with open(VALUATION_FILE, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow((new_valuation,))
+    return new_valuation
+
+
 def get_git_revision_short_hash() -> str:
     """ From https://stackoverflow.com/a/21901260
     """
@@ -149,6 +157,7 @@ def process_payment(payment_file, valuation, price, attributable=True):
         amount, attributions, payment_file, commit_hash
     )
     update_transactions(transactions)
+    valuation = update_valuation(valuation, amount)
     if attributable:
         incoming_attribution = generate_incoming_attribution(email,
                                                              amount,
