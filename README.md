@@ -65,11 +65,18 @@ Please see [the constitution](https://github.com/drym-org/foundation/blob/main/C
 
 # Supporting this Project
 
-Please make any financial contributions by Venmo to ``@Sid-K`` and mention "Old Abe" in your message.
+Please make any financial contributions in one of the following ways:
 
-This project follows Attribution-Based Economics as described in [drym-org/foundation](https://github.com/drym-org/foundation). Any financial contributions will be distributed to contributors and antecedents as agreed-upon in a collective process that anyone may participate in. To see the current distributions, take a look at [abe/attributions.txt](https://github.com/drym-org/old-abe/blob/main/abe/attributions.txt). To see payments made into and out of the project, see the [abe](https://github.com/drym-org/old-abe/blob/main/abe/) folder.
+- by Venmo to ``@Sid-K``
+- by Paypal to skasivaj at gmail dot com
+
+Please mention "Old Abe" in your message.
+
+This project follows Attribution-Based Economics as described in [drym-org/foundation](https://github.com/drym-org/foundation). Any financial contributions will be distributed to contributors and antecedents as agreed-upon in a collective process that anyone may participate in. To see the current distributions, take a look at [abe/attributions.txt](https://github.com/drym-org/old-abe/blob/main/abe/attributions.txt). To see payments made into and out of the project, see the [abe](https://github.com/drym-org/old-abe/blob/main/abe/) folder. If your payment is not reflected there within 3 days, or if you would prefer to, you are welcome to submit an issue or pull request to report the payment yourself -- all payments into and out of the repository are to be publicly reported (but may be anonymized if desired).
 
 Additionally, if your voluntary payments exceed the agreed-upon "market price" of the project (see [price.txt](https://github.com/drym-org/old-abe/blob/main/abe/price.txt)), that additional amount will be treated as an investment, entitling you to a share in future revenues, including payments made to the project in the future or attributive revenue from other projects.
+
+NOTE: This project will distribute payments according to the ABE guidelines specified in the constitution. In particular, it may take up to 30 days to distribute the initial payments if DIA has not already been conducted for this project. After that, payments will be distributed to contributors (including investors) biweekly.
 
 # Non-Ownership
 
