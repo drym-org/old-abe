@@ -1,5 +1,9 @@
 #!/bin/sh -l
 
+# ensure that any errors encountered cause immediate
+# termination with a non-zero exit code
+set -e
+
 echo "Running ls..."
 echo $(ls /)
 echo "... done."
