@@ -18,7 +18,7 @@ jobs:
         run: mkdir -p /home/runner/work/_temp/_github_home && printf "[safe]\n\tdirectory = /github/workspace" > /home/runner/work/_temp/_github_home/.gitconfig
       - uses: actions/checkout@v3
       - name: Do billing
-        id: helloBilling
+        id: doBilling
         uses: drym-org/old-abe@scratch
       - name: Find balances issue
         id: findIssue
@@ -29,4 +29,4 @@ jobs:
           gh issue close "${{steps.findIssue.outputs.issueId}}"
       - name: Create an issue with the computed outstanding balances
         run: |
-          gh issue create -b "${{ steps.helloBilling.outputs.balances }}" -t "Outstanding Balances" -l outstanding-balances
+          gh issue create -b "${{ steps.doBilling.outputs.balances }}" -t "Outstanding Balances" -l outstanding-balances
