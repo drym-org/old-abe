@@ -175,7 +175,10 @@ def main():
     for payment_file in unprocessed_payments:
         print(payment_file)
         process_payment(payment_file, valuation, price, attributable=True)
-    unprocessed_nonattributable_payments = find_unprocessed_payments(NONATTRIBUTABLE_PAYMENTS_DIR)
+    try:
+        unprocessed_nonattributable_payments = find_unprocessed_payments(NONATTRIBUTABLE_PAYMENTS_DIR)
+    except FileNotFoundError:
+        unprocessed_nonattributable_payments = []
     for payment_file in unprocessed_nonattributable_payments:
         process_payment(payment_file, valuation, price, attributable=False)
 
