@@ -10,7 +10,9 @@ from models import Transaction
 
 ABE_ROOT = 'abe'
 PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
-NONATTRIBUTABLE_PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments', 'nonattributable')
+NONATTRIBUTABLE_PAYMENTS_DIR = os.path.join(
+    ABE_ROOT, 'payments', 'nonattributable'
+)
 TRANSACTIONS_FILE = os.path.join(ABE_ROOT, 'transactions.txt')
 PRICE_FILE = os.path.join(ABE_ROOT, 'price.txt')
 VALUATION_FILE = os.path.join(ABE_ROOT, 'valuation.txt')
@@ -53,8 +55,11 @@ def read_attributions():
 
 
 def get_payment_files(payments_dir):
-    return {f for f in os.listdir(payments_dir)
-            if not os.path.isdir(os.path.join(payments_dir, f))}
+    return {
+        f
+        for f in os.listdir(payments_dir)
+        if not os.path.isdir(os.path.join(payments_dir, f))
+    }
 
 
 def find_unprocessed_payments(payments_dir):
@@ -117,10 +122,14 @@ def update_attributions(incoming_attribution, attributions):
         # renormalize to reflect dilution
         attributions[email] *= target_proportion
     # add incoming share to existing investor or record new investor
-    attributions[incoming_email] = attributions.get(incoming_email, 0) + incoming_share
+    attributions[incoming_email] = (
+        attributions.get(incoming_email, 0) + incoming_share
+    )
     # format for output as percentages
-    attributions = [(email, f'{share*Decimal(100):.2f}%')
-                    for email, share in attributions.items()]
+    attributions = [
+        (email, f'{share*Decimal(100):.2f}%')
+        for email, share in attributions.items()
+    ]
     with open(ATTRIBUTIONS_FILE, 'w') as f:
         writer = csv.writer(f)
         for row in attributions:
@@ -143,13 +152,18 @@ def update_valuation(valuation, amount):
 
 
 def get_git_revision_short_hash() -> str:
-    """ From https://stackoverflow.com/a/21901260
-    """
-    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+    """From https://stackoverflow.com/a/21901260"""
+    return (
+        subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])
+        .decode('ascii')
+        .strip()
+    )
 
 
 def process_payment(payment_file, valuation, price, attributable=True):
-    payments_dir = PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
+    payments_dir = (
+        PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
+    )
     commit_hash = get_git_revision_short_hash()
     email, amount = read_payment(payment_file, payments_dir)
     attributions = read_attributions()
@@ -159,10 +173,9 @@ def process_payment(payment_file, valuation, price, attributable=True):
     update_transactions(transactions)
     valuation = update_valuation(valuation, amount)
     if attributable:
-        incoming_attribution = generate_incoming_attribution(email,
-                                                             amount,
-                                                             price,
-                                                             valuation)
+        incoming_attribution = generate_incoming_attribution(
+            email, amount, price, valuation
+        )
         if incoming_attribution:
             update_attributions(incoming_attribution, attributions)
 
@@ -176,7 +189,9 @@ def main():
         print(payment_file)
         process_payment(payment_file, valuation, price, attributable=True)
     try:
-        unprocessed_nonattributable_payments = find_unprocessed_payments(NONATTRIBUTABLE_PAYMENTS_DIR)
+        unprocessed_nonattributable_payments = find_unprocessed_payments(
+            NONATTRIBUTABLE_PAYMENTS_DIR
+        )
     except FileNotFoundError:
         unprocessed_nonattributable_payments = []
     for payment_file in unprocessed_nonattributable_payments:
