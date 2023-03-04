@@ -16,6 +16,8 @@ echo "Running money-in script..."
 python /money-in.py
 echo "... done."
 
+# Note that running this locally would cause your global
+# git config to be modified
 echo "Committing updated transactions and attributions back to repo..."
 git config --global user.email "abe@drym.org"
 git config --global user.name "Old Abe"
