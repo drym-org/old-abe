@@ -22,7 +22,7 @@ setup(
     description='Accountant for all of your ABE needs.',
     author='Old Abe',
     author_email='abe@drym.org',
-    url='https://github.com/drym-org/oldabe',
+    url='https://github.com/drym-org/old-abe',
     include_package_data=True,
     packages=['oldabe'],
     test_suite='tests',
