@@ -130,6 +130,7 @@ def update_attributions(incoming_attribution, attributions):
         (email, f'{share * Decimal(100):f}%')
         for email, share in attributions.items()
     ]
+    assert sum(attributions.values()) == Decimal(1)
     with open(ATTRIBUTIONS_FILE, 'w') as f:
         writer = csv.writer(f)
         for row in attributions:
