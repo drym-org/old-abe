@@ -6,7 +6,7 @@ import csv
 import os
 import re
 from collections import defaultdict
-from decimal import Decimal
+from decimal import Decimal, getcontext
 
 ABE_ROOT = 'abe'
 PAYOUTS_DIR = os.path.join(ABE_ROOT, 'payouts')
@@ -68,6 +68,13 @@ def prepare_message(balances):
 
 
 def main():
+
+    # set decimal precision at 10, to ensure
+    # that it is the same everywhere
+    # and large enough to be represent a sufficiently
+    # large number of contributors
+    getcontext().prec = 10
+
     owed = read_transaction_amounts()
     paid = read_payout_amounts()
     balances = compute_balances(owed, paid)

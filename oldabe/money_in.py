@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import csv
-from decimal import Decimal
+from decimal import Decimal, getcontext
 from dataclasses import astuple
 import re
 import os
@@ -127,7 +127,7 @@ def update_attributions(incoming_attribution, attributions):
     )
     # format for output as percentages
     attributions = [
-        (email, f'{share*Decimal(100):.2f}%')
+        (email, f'{share * Decimal(100):f}%')
         for email, share in attributions.items()
     ]
     with open(ATTRIBUTIONS_FILE, 'w') as f:
@@ -181,6 +181,9 @@ def process_payment(payment_file, valuation, price, attributable=True):
 
 
 def main():
+
+    getcontext().prec = 10
+
     unprocessed_payments = find_unprocessed_payments(PAYMENTS_DIR)
     price = read_price()
     valuation = read_valuation()
