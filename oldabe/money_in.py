@@ -114,10 +114,24 @@ def generate_incoming_attribution(email, incoming_amount, price, valuation):
         return None
 
 
-def update_attributions(incoming_attribution, attributions):
+ROUNDING_TOLERANCE = Decimal("0.000001")
+
+
+def get_rounding_difference(attributions):
+    """ Due to finite precision, the Decimal module will round up or down
+    on the last decimal place. This could result in the aggregate value not quite
+    totaling to 1. This corrects that total by either adding or subtracting the
+    difference from the incoming attribution.
+    """
+    total = sum(attributions.values())
+    difference = total - Decimal(1)
+    assert abs(difference) <= ROUNDING_TOLERANCE
+    return difference
+
+
+def renormalize(attributions, incoming_attribution):
     incoming_email, incoming_share = incoming_attribution
     target_proportion = Decimal(1) - incoming_share
-
     for email in attributions:
         # renormalize to reflect dilution
         attributions[email] *= target_proportion
@@ -125,16 +139,30 @@ def update_attributions(incoming_attribution, attributions):
     attributions[incoming_email] = (
         attributions.get(incoming_email, 0) + incoming_share
     )
+
+
+def write_attributions(attributions):
     # format for output as percentages
     attributions = [
         (email, f'{share * Decimal(100):f}%')
         for email, share in attributions.items()
     ]
-    assert sum(attributions.values()) == Decimal(1)
     with open(ATTRIBUTIONS_FILE, 'w') as f:
         writer = csv.writer(f)
         for row in attributions:
             writer.writerow(row)
+
+
+def correct_rounding_error(attributions, incoming_attribution):
+    incoming_email, _ = incoming_attribution
+    difference = get_rounding_difference(attributions)
+    attributions[incoming_email] -= difference
+
+
+def update_attributions(incoming_attribution, attributions):
+    renormalize(attributions)
+    correct_rounding_error(attributions, incoming_attribution)
+    write_attributions(attributions)
 
 
 def update_transactions(transactions):
