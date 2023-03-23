@@ -6,6 +6,11 @@ from oldabe.money_in import (
 )
 import pytest
 from unittest.mock import patch
+from .fixtures import (
+    normalized_attributions,
+    excess_attributions,
+    shortfall_attributions,
+)  # noqa
 
 
 class TestGetRoundingDifference:
@@ -62,87 +67,85 @@ class TestRenormalize:
 class TestCorrectRoundingError:
     @patch('oldabe.money_in.get_rounding_difference')
     def test_no_rounding_error_incoming_is_unchanged(
-        self, mock_rounding_difference
+        self, mock_rounding_difference, normalized_attributions
     ):
+        attributions = normalized_attributions
         mock_rounding_difference.return_value = Decimal("0")
         incoming_email = 'a@b.com'
-        incoming_attribution = {incoming_email: Decimal("0.2")}
-        prior_attributions = {'b@c.com': Decimal("0.8")}
-        attributions = prior_attributions.copy()
-        attributions.update(incoming_attribution)
+        incoming_share = attributions[incoming_email]
+        other_attributions = attributions.copy()
+        other_attributions.pop(incoming_email)
         correct_rounding_error(attributions, incoming_email)
-        assert (
-            attributions[incoming_email]
-            == incoming_attribution[incoming_email]
-        )
+        assert attributions[incoming_email] == incoming_share
 
     @patch('oldabe.money_in.get_rounding_difference')
     def test_no_rounding_error_existing_are_unchanged(
-        self, mock_rounding_difference
+        self, mock_rounding_difference, normalized_attributions
     ):
+        attributions = normalized_attributions
         mock_rounding_difference.return_value = Decimal("0")
         incoming_email = 'a@b.com'
-        incoming_attribution = {incoming_email: Decimal("0.2")}
-        prior_attributions = {'b@c.com': Decimal("0.8")}
-        attributions = prior_attributions.copy()
-        attributions.update(incoming_attribution)
+        other_attributions = attributions.copy()
+        other_attributions.pop(incoming_email)
         correct_rounding_error(attributions, incoming_email)
         attributions.pop(incoming_email)
-        assert attributions == prior_attributions
+        assert attributions == other_attributions
 
     @patch('oldabe.money_in.get_rounding_difference')
     def test_incoming_attribution_is_adjusted_for_excess(
-        self, mock_rounding_difference
+        self, mock_rounding_difference, excess_attributions
     ):
-        mock_rounding_difference.return_value = Decimal("0.1")
+        attributions = excess_attributions
+        test_diff = Decimal("0.1")
+        mock_rounding_difference.return_value = test_diff
         incoming_email = 'a@b.com'
-        incoming_attribution = {incoming_email: Decimal("0.2")}
-        prior_attributions = {'b@c.com': Decimal("0.8")}
-        attributions = prior_attributions.copy()
-        attributions.update(incoming_attribution)
+        incoming_share = attributions[incoming_email]
+        other_attributions = attributions.copy()
+        other_attributions.pop(incoming_email)
         correct_rounding_error(attributions, incoming_email)
-        assert attributions[incoming_email] == Decimal("0.1")
+        assert attributions[incoming_email] == incoming_share - test_diff
 
     @patch('oldabe.money_in.get_rounding_difference')
     def test_existing_attributions_are_unchanged_for_excess(
-        self, mock_rounding_difference
+        self, mock_rounding_difference, excess_attributions
     ):
-        mock_rounding_difference.return_value = Decimal("0.1")
+        attributions = excess_attributions
+        test_diff = Decimal("0.1")
+        mock_rounding_difference.return_value = test_diff
         incoming_email = 'a@b.com'
-        incoming_attribution = {incoming_email: Decimal("0.2")}
-        prior_attributions = {'b@c.com': Decimal("0.9")}
-        attributions = prior_attributions.copy()
-        attributions.update(incoming_attribution)
+        other_attributions = attributions.copy()
+        other_attributions.pop(incoming_email)
         correct_rounding_error(attributions, incoming_email)
         attributions.pop(incoming_email)
-        assert attributions == prior_attributions
+        assert attributions == other_attributions
 
     @patch('oldabe.money_in.get_rounding_difference')
     def test_incoming_attribution_is_adjusted_for_shortfall(
-        self, mock_rounding_difference
+        self, mock_rounding_difference, shortfall_attributions
     ):
-        mock_rounding_difference.return_value = Decimal("-0.1")
+        attributions = shortfall_attributions
+        test_diff = Decimal("-0.1")
+        mock_rounding_difference.return_value = test_diff
         incoming_email = 'a@b.com'
-        incoming_attribution = {incoming_email: Decimal("0.2")}
-        prior_attributions = {'b@c.com': Decimal("0.7")}
-        attributions = prior_attributions.copy()
-        attributions.update(incoming_attribution)
+        incoming_share = attributions[incoming_email]
+        other_attributions = attributions.copy()
+        other_attributions.pop(incoming_email)
         correct_rounding_error(attributions, incoming_email)
-        assert attributions[incoming_email] == Decimal("0.3")
+        assert attributions[incoming_email] == incoming_share - test_diff
 
     @patch('oldabe.money_in.get_rounding_difference')
     def test_existing_attributions_are_unchanged_for_shortfall(
-        self, mock_rounding_difference
+        self, mock_rounding_difference, shortfall_attributions
     ):
-        mock_rounding_difference.return_value = Decimal("-0.1")
+        attributions = shortfall_attributions
+        test_diff = Decimal("-0.1")
+        mock_rounding_difference.return_value = test_diff
         incoming_email = 'a@b.com'
-        incoming_attribution = {incoming_email: Decimal("0.2")}
-        prior_attributions = {'b@c.com': Decimal("0.7")}
-        attributions = prior_attributions.copy()
-        attributions.update(incoming_attribution)
+        other_attributions = attributions.copy()
+        other_attributions.pop(incoming_email)
         correct_rounding_error(attributions, incoming_email)
         attributions.pop(incoming_email)
-        assert attributions == prior_attributions
+        assert attributions == other_attributions
 
 
 # jair
