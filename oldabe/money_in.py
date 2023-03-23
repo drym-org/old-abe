@@ -118,7 +118,7 @@ ROUNDING_TOLERANCE = Decimal("0.000001")
 
 
 def get_rounding_difference(attributions):
-    """ Due to finite precision, the Decimal module will round up or down
+    """Due to finite precision, the Decimal module will round up or down
     on the last decimal place. This could result in the aggregate value not quite
     totaling to 1. This corrects that total by either adding or subtracting the
     difference from the incoming attribution.
@@ -210,7 +210,6 @@ def process_payment(payment_file, valuation, price, attributable=True):
 
 
 def main():
-
     getcontext().prec = 10
 
     unprocessed_payments = find_unprocessed_payments(PAYMENTS_DIR)

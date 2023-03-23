@@ -68,7 +68,6 @@ def prepare_message(balances):
 
 
 def main():
-
     # set decimal precision at 10, to ensure
     # that it is the same everywhere
     # and large enough to be represent a sufficiently
