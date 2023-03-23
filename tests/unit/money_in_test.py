@@ -14,28 +14,28 @@ class TestGetRoundingDifference:
         assert difference == Decimal(0)
 
     def test_attributions_exceed_below_tolerance(self):
-        small_difference = ROUNDING_TOLERANCE / Decimal("2")
-        attributions = {'a@b.com': Decimal("0.2"), 'b@c.com': Decimal("0.8"), 'c@d.com': small_difference}
+        test_diff = ROUNDING_TOLERANCE / Decimal("2")
+        attributions = {'a@b.com': Decimal("0.2"), 'b@c.com': Decimal("0.8"), 'c@d.com': test_diff}
         difference = get_rounding_difference(attributions)
-        assert difference == small_difference
+        assert difference == test_diff
 
     def test_attributions_exceed_above_tolerance(self):
-        big_difference = ROUNDING_TOLERANCE * Decimal("2")
-        attributions = {'a@b.com': Decimal("0.2"), 'b@c.com': Decimal("0.8"), 'c@d.com': big_difference}
+        test_diff = ROUNDING_TOLERANCE * Decimal("2")
+        attributions = {'a@b.com': Decimal("0.2"), 'b@c.com': Decimal("0.8"), 'c@d.com': test_diff}
         with pytest.raises(AssertionError):
             _ = get_rounding_difference(attributions)
 
     def test_attributions_exceed_by_tolerance(self):
-        normal_difference = ROUNDING_TOLERANCE
-        attributions = {'a@b.com': Decimal("0.2"), 'b@c.com': Decimal("0.8"), 'c@d.com': normal_difference}
+        test_diff = ROUNDING_TOLERANCE
+        attributions = {'a@b.com': Decimal("0.2"), 'b@c.com': Decimal("0.8"), 'c@d.com': test_diff}
         difference = get_rounding_difference(attributions)
-        assert difference == normal_difference
+        assert difference == test_diff
 
     def test_attributions_below_one(self):
-        small_difference = ROUNDING_TOLERANCE / Decimal("2")
-        attributions = {'a@b.com': Decimal("0.2"), 'b@c.com': Decimal("0.8") - small_difference}
+        test_diff = ROUNDING_TOLERANCE / Decimal("2")
+        attributions = {'a@b.com': Decimal("0.2"), 'b@c.com': Decimal("0.8") - test_diff}
         difference = get_rounding_difference(attributions)
-        assert difference == -small_difference
+        assert difference == -test_diff
 
 
 # ariana
