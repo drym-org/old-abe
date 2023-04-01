@@ -102,11 +102,14 @@ def total_amount_paid(for_email, payments_dir):
     return payments
 
 
-def generate_incoming_attribution(email, incoming_amount, price, valuation):
+def calculate_incoming_investment(email, incoming_amount, price):
     total_payments = total_amount_paid(email, PAYMENTS_DIR)
     previous_total = total_payments - incoming_amount
     # how much of the incoming amount goes towards investment?
-    incoming_investment = total_payments - max(price, previous_total)
+    return total_payments - max(price, previous_total)
+
+
+def calculate_incoming_attribution(email, incoming_investment, valuation):
     if incoming_investment > 0:
         share = incoming_investment / valuation
         return email, share
@@ -208,15 +211,17 @@ def process_payment(payment_file, valuation, price, attributable=True):
         amount, attributions, payment_file, commit_hash
     )
     update_transactions(transactions)
-    # BUG: this should only inflate the valuation by
-    # the investment amount, not the entire amount
-    valuation = update_valuation(valuation, amount)
     if attributable:
-        # dilute attributions
-        incoming_attribution = generate_incoming_attribution(
-            email, amount, price, valuation
+        incoming_investment = calculate_incoming_investment(
+            email, amount, price
+        )
+        # inflate valuation by the amount of the fresh investment
+        valuation = update_valuation(valuation, incoming_investment)
+        incoming_attribution = calculate_incoming_attribution(
+            email, incoming_investment, valuation
         )
         if incoming_attribution:
+            # dilute attributions
             update_attributions(incoming_attribution, attributions)
 
 
