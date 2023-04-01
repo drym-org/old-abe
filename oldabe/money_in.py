@@ -142,6 +142,8 @@ def renormalize(attributions, incoming_attribution):
 
 
 def write_attributions(attributions):
+    # don't write attributions if they aren't normalized
+    assert sum(attributions.values()) == Decimal("1")
     # format for output as percentages
     attributions = [
         (email, f'{share * Decimal("100")}%')
