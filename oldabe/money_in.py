@@ -241,6 +241,9 @@ share) in relation to the valuation.
 
 
 def main():
+    # Set the decimal precision explicitly so that we can
+    # be sure that it is the same regardless of where
+    # it is run, to avoid any possible accounting errors
     getcontext().prec = 10
 
     # Find all payments that have not already been processed, that
