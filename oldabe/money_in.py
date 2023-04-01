@@ -49,8 +49,8 @@ def read_attributions():
         for row in csv.reader(f):
             email, percentage = row
             percentage = Decimal(re.sub("[^0-9.]", "", percentage))
-            attributions[email] = percentage / Decimal(100)
-    assert sum(attributions.values()) == Decimal(1)
+            attributions[email] = percentage / Decimal("100")
+    assert sum(attributions.values()) == Decimal("1")
     return attributions
 
 
@@ -124,14 +124,14 @@ def get_rounding_difference(attributions):
     difference from the incoming attribution.
     """
     total = sum(attributions.values())
-    difference = total - Decimal(1)
+    difference = total - Decimal("1")
     assert abs(difference) <= ROUNDING_TOLERANCE
     return difference
 
 
 def renormalize(attributions, incoming_attribution):
     incoming_email, incoming_share = incoming_attribution
-    target_proportion = Decimal(1) - incoming_share
+    target_proportion = Decimal("1") - incoming_share
     for email in attributions:
         # renormalize to reflect dilution
         attributions[email] *= target_proportion
@@ -144,7 +144,7 @@ def renormalize(attributions, incoming_attribution):
 def write_attributions(attributions):
     # format for output as percentages
     attributions = [
-        (email, f'{share * Decimal(100):f}%')
+        (email, f'{share * Decimal("100")}%')
         for email, share in attributions.items()
     ]
     with open(ATTRIBUTIONS_FILE, 'w') as f:
