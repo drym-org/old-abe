@@ -145,7 +145,7 @@ def write_attributions(attributions):
     # don't write attributions if they aren't normalized
     assert sum(attributions.values()) == Decimal("1")
     # format for output as percentages
-    # TODO: this step causes the result to lose precision
+    # BUG: this step causes the result to lose precision
     # and not total to 100 exactly, since some trailing
     # decimal positions are lost after multiplying by 100.
     attributions = [
@@ -167,7 +167,6 @@ def correct_rounding_error(attributions, incoming_attribution):
 def update_attributions(incoming_attribution, attributions):
     renormalize(attributions, incoming_attribution)
     correct_rounding_error(attributions, incoming_attribution)
-    # BUG: attributions that are written don't total to 100%
     write_attributions(attributions)
 
 
