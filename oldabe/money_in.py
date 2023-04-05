@@ -19,11 +19,37 @@ VALUATION_FILE = os.path.join(ABE_ROOT, 'valuation.txt')
 ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attributions.txt')
 
 
+def parse_percentage(value):
+    value = re.sub("[^0-9.]", "", value)
+    value = "00" + value
+    if "." not in value:
+        value = value + ".0"
+    value = re.sub(r"(?P<pre>\d{2})\.(?P<post>\d+)",
+                   r".\g<pre>\g<post>",
+                   value)
+    value = Decimal(value)
+    return value
+
+
+def serialize_proportion(value):
+    value = str(value)
+    if "." in value:
+        value = value + "0"
+    else:
+        value = value + ".0"
+    value = re.sub(r"(?P<pre>\d)\.(?P<post>\d{2})(?P<rest>\d*)",
+                  r"\g<pre>\g<post>.\g<rest>0", # note trailing zero
+                  value)
+    value = re.sub(r"^0+(\d*)", r"\1", value)
+    value = re.sub(r"^\.", r"0.", value)
+    return value
+
+
 def read_payment(payment_file, payments_dir):
     with open(os.path.join(payments_dir, payment_file)) as f:
         for row in csv.reader(f, skipinitialspace=True):
             name, email, amount = row
-            amount = Decimal(re.sub("[^0-9.]", "", amount))
+            amount = parse_percentage(amount)
             return email, amount
 
 
@@ -152,7 +178,7 @@ def write_attributions(attributions):
     # and not total to 100 exactly, since some trailing
     # decimal positions are lost after multiplying by 100.
     attributions = [
-        (email, f'{share * Decimal("100")}%')
+        (email, serialize_proportion(share))
         for email, share in attributions.items()
     ]
     with open(ATTRIBUTIONS_FILE, 'w') as f:
