@@ -19,11 +19,37 @@ VALUATION_FILE = os.path.join(ABE_ROOT, 'valuation.txt')
 ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attributions.txt')
 
 
+def parse_percentage(value):
+    value = re.sub("[^0-9.]", "", value)
+    value = "00" + value
+    if "." not in value:
+        value = value + ".0"
+    value = re.sub(r"(?P<pre>\d{2})\.(?P<post>\d+)",
+                   r".\g<pre>\g<post>",
+                   value)
+    value = Decimal(value)
+    return value
+
+
+def serialize_proportion(value):
+    value = str(value)
+    if "." in value:
+        value = value + "0"
+    else:
+        value = value + ".0"
+    value = re.sub(r"(?P<pre>\d)\.(?P<post>\d{2})(?P<rest>\d*)",
+                  r"\g<pre>\g<post>.\g<rest>0", # note trailing zero
+                  value)
+    value = re.sub(r"^0+(\d*)", r"\1", value)
+    value = re.sub(r"^\.", r"0.", value)
+    return value
+
+
 def read_payment(payment_file, payments_dir):
     with open(os.path.join(payments_dir, payment_file)) as f:
         for row in csv.reader(f, skipinitialspace=True):
             name, email, amount = row
-            amount = Decimal(re.sub("[^0-9.]", "", amount))
+            amount = parse_percentage(amount)
             return email, amount
 
 
@@ -49,8 +75,8 @@ def read_attributions():
         for row in csv.reader(f):
             email, percentage = row
             percentage = Decimal(re.sub("[^0-9.]", "", percentage))
-            attributions[email] = percentage / Decimal(100)
-    assert sum(attributions.values()) == Decimal(1)
+            attributions[email] = percentage / Decimal("100")
+    assert sum(attributions.values()) == Decimal("1")
     return attributions
 
 
@@ -102,11 +128,14 @@ def total_amount_paid(for_email, payments_dir):
     return payments
 
 
-def generate_incoming_attribution(email, incoming_amount, price, valuation):
+def calculate_incoming_investment(email, incoming_amount, price):
     total_payments = total_amount_paid(email, PAYMENTS_DIR)
     previous_total = total_payments - incoming_amount
     # how much of the incoming amount goes towards investment?
-    incoming_investment = total_payments - max(price, previous_total)
+    return total_payments - max(price, previous_total)
+
+
+def calculate_incoming_attribution(email, incoming_investment, valuation):
     if incoming_investment > 0:
         share = incoming_investment / valuation
         return email, share
@@ -124,14 +153,14 @@ def get_rounding_difference(attributions):
     difference from the incoming attribution.
     """
     total = sum(attributions.values())
-    difference = total - Decimal(1)
+    difference = total - Decimal("1")
     assert abs(difference) <= ROUNDING_TOLERANCE
     return difference
 
 
 def renormalize(attributions, incoming_attribution):
     incoming_email, incoming_share = incoming_attribution
-    target_proportion = Decimal(1) - incoming_share
+    target_proportion = Decimal("1") - incoming_share
     for email in attributions:
         # renormalize to reflect dilution
         attributions[email] *= target_proportion
@@ -142,9 +171,14 @@ def renormalize(attributions, incoming_attribution):
 
 
 def write_attributions(attributions):
+    # don't write attributions if they aren't normalized
+    assert sum(attributions.values()) == Decimal("1")
     # format for output as percentages
+    # BUG: this step causes the result to lose precision
+    # and not total to 100 exactly, since some trailing
+    # decimal positions are lost after multiplying by 100.
     attributions = [
-        (email, f'{share * Decimal(100):f}%')
+        (email, serialize_proportion(share))
         for email, share in attributions.items()
     ]
     with open(ATTRIBUTIONS_FILE, 'w') as f:
@@ -160,7 +194,7 @@ def correct_rounding_error(attributions, incoming_attribution):
 
 
 def update_attributions(incoming_attribution, attributions):
-    renormalize(attributions)
+    renormalize(attributions, incoming_attribution)
     correct_rounding_error(attributions, incoming_attribution)
     write_attributions(attributions)
 
@@ -195,23 +229,60 @@ def process_payment(payment_file, valuation, price, attributable=True):
     )
     commit_hash = get_git_revision_short_hash()
     email, amount = read_payment(payment_file, payments_dir)
+
+    # figure out how much each person in the attributions file is owed from
+    # this payment, generating a transaction for each stakeholder.
     attributions = read_attributions()
     transactions = generate_transactions(
         amount, attributions, payment_file, commit_hash
     )
     update_transactions(transactions)
-    valuation = update_valuation(valuation, amount)
     if attributable:
-        incoming_attribution = generate_incoming_attribution(
-            email, amount, price, valuation
+        incoming_investment = calculate_incoming_investment(
+            email, amount, price
+        )
+        # inflate valuation by the amount of the fresh investment
+        valuation = update_valuation(valuation, incoming_investment)
+        incoming_attribution = calculate_incoming_attribution(
+            email, incoming_investment, valuation
         )
         if incoming_attribution:
+            # dilute attributions
             update_attributions(incoming_attribution, attributions)
 
 
+"""
+This module handles incoming payments.
+
+First it finds all payments that have not already been processed, that is,
+which do not appear in the transactions file.
+
+For each of these payments, it consults the current attributions for the
+project, and does three things.
+
+First, it figures out how much each person in the attributions file is owed
+from this fresh payment, generating a transaction for each stakeholder.
+
+Second, it determines how much of the incoming payment can be considered an
+"investment" by comparing the project price with the total amount paid by this
+payer up to this point -- the excess, if any, is investment.
+
+Third, it increases the current valuation by the investment amount determined,
+and, at the same time, "dilutes" the attributions by making the payer an
+attributive stakeholder with a share proportionate to their incoming investment
+amount (or if the payer is already a stakeholder, increases their existing
+share) in relation to the valuation.
+"""
+
+
 def main():
+    # Set the decimal precision explicitly so that we can
+    # be sure that it is the same regardless of where
+    # it is run, to avoid any possible accounting errors
     getcontext().prec = 10
 
+    # Find all payments that have not already been processed, that
+    # is, which do not appear in the transactions file.
     unprocessed_payments = find_unprocessed_payments(PAYMENTS_DIR)
     price = read_price()
     valuation = read_valuation()
