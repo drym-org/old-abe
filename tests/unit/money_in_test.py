@@ -66,10 +66,16 @@ class TestCalculateIncomingAttribution:
         assert calculate_incoming_attribution('a@b.co', 0, 10000) == None
 
     def test_normal_incoming_investment(self):
-        assert calculate_incoming_attribution('a@b.co', 50, 10000) == ('a@b.co', 0.005)
+        assert calculate_incoming_attribution('a@b.co', 50, 10000) == (
+            'a@b.co',
+            0.005,
+        )
 
     def test_large_incoming_investment(self):
-        assert calculate_incoming_attribution('a@b.co', 5000, 10000) == ('a@b.co', 0.5)
+        assert calculate_incoming_attribution('a@b.co', 5000, 10000) == (
+            'a@b.co',
+            0.5,
+        )
 
 
 class TestGetRoundingDifference:
