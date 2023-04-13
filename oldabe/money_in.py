@@ -187,15 +187,14 @@ def write_attributions(attributions):
             writer.writerow(row)
 
 
-def correct_rounding_error(attributions, incoming_attribution):
-    incoming_email, _ = incoming_attribution
+def correct_rounding_error(attributions, incoming_email):
     difference = get_rounding_difference(attributions)
     attributions[incoming_email] -= difference
 
 
 def update_attributions(incoming_attribution, attributions):
     renormalize(attributions, incoming_attribution)
-    correct_rounding_error(attributions, incoming_attribution)
+    correct_rounding_error(attributions, incoming_attribution[0])
     write_attributions(attributions)
 
 

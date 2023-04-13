@@ -1,9 +1,16 @@
 from decimal import Decimal
 from oldabe.money_in import (
+    correct_rounding_error,
     get_rounding_difference,
     ROUNDING_TOLERANCE,
 )
 import pytest
+from unittest.mock import patch
+from .fixtures import (
+    normalized_attributions,
+    excess_attributions,
+    shortfall_attributions,
+)  # noqa
 
 
 class TestGetRoundingDifference:
@@ -57,9 +64,61 @@ class TestRenormalize:
     pass
 
 
-# sid
 class TestCorrectRoundingError:
-    pass
+    @pytest.mark.parametrize(
+        "attributions, test_diff",
+        [
+            ("normalized_attributions", Decimal("0")),
+            ("excess_attributions", Decimal("0")),
+            ("shortfall_attributions", Decimal("0")),
+            ("normalized_attributions", Decimal("0.1")),
+            ("excess_attributions", Decimal("0.1")),
+            ("shortfall_attributions", Decimal("0.1")),
+            ("normalized_attributions", Decimal("-0.1")),
+            ("excess_attributions", Decimal("-0.1")),
+            ("shortfall_attributions", Decimal("-0.1")),
+        ],
+    )
+    @patch('oldabe.money_in.get_rounding_difference')
+    def test_incoming_is_adjusted_by_rounding_error(
+        self, mock_rounding_difference, attributions, test_diff, request
+    ):
+        # Re: request, see: https://stackoverflow.com/q/42014484
+        attributions = request.getfixturevalue(attributions)
+        mock_rounding_difference.return_value = test_diff
+        incoming_email = 'a@b.com'
+        incoming_share = attributions[incoming_email]
+        other_attributions = attributions.copy()
+        other_attributions.pop(incoming_email)
+        correct_rounding_error(attributions, incoming_email)
+        assert attributions[incoming_email] == incoming_share - test_diff
+
+    @pytest.mark.parametrize(
+        "attributions, test_diff",
+        [
+            ("normalized_attributions", Decimal("0")),
+            ("excess_attributions", Decimal("0")),
+            ("shortfall_attributions", Decimal("0")),
+            ("normalized_attributions", Decimal("0.1")),
+            ("excess_attributions", Decimal("0.1")),
+            ("shortfall_attributions", Decimal("0.1")),
+            ("normalized_attributions", Decimal("-0.1")),
+            ("excess_attributions", Decimal("-0.1")),
+            ("shortfall_attributions", Decimal("-0.1")),
+        ],
+    )
+    @patch('oldabe.money_in.get_rounding_difference')
+    def test_existing_attributions_are_unchanged(
+        self, mock_rounding_difference, attributions, test_diff, request
+    ):
+        attributions = request.getfixturevalue(attributions)
+        mock_rounding_difference.return_value = test_diff
+        incoming_email = 'a@b.com'
+        other_attributions = attributions.copy()
+        other_attributions.pop(incoming_email)
+        correct_rounding_error(attributions, incoming_email)
+        attributions.pop(incoming_email)
+        assert attributions == other_attributions
 
 
 # jair
