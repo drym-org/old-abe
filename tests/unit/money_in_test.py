@@ -3,6 +3,7 @@ from oldabe.money_in import (
     correct_rounding_error,
     get_rounding_difference,
     ROUNDING_TOLERANCE,
+    renormalize,
 )
 import pytest
 from unittest.mock import patch
@@ -61,8 +62,74 @@ class TestGetRoundingDifference:
 
 # ariana
 class TestRenormalize:
-    pass
+    def test_new_investor_5_percent(self, normalized_attributions):
+        attributions = normalized_attributions
+        renormalized_attributions = {
+            'a@b.com': Decimal('0.19'),
+            'b@c.com': Decimal('0.76'),
+            'c@d.com': Decimal('0.05'),
+        }
 
+        incoming_attribution = ['c@d.com', Decimal('0.05')]
+        renormalize(attributions, incoming_attribution)
+        assert attributions == renormalized_attributions
+
+    def test_new_investor_50_percent(self, normalized_attributions):
+        attributions = normalized_attributions
+        renormalized_attributions = {
+            'a@b.com': Decimal('0.1'),
+            'b@c.com': Decimal('0.4'),
+            'c@d.com': Decimal('0.5'),
+        }
+
+        incoming_attribution = ['c@d.com', Decimal('0.5')]
+        renormalize(attributions, incoming_attribution)
+        assert attributions == renormalized_attributions
+
+    def test_new_investor_70_percent(self, normalized_attributions):
+        attributions = normalized_attributions
+        renormalized_attributions = {
+            'a@b.com': Decimal('0.06'),
+            'b@c.com': Decimal('0.24'),
+            'c@d.com': Decimal('0.7'),
+        }
+
+        incoming_attribution = ['c@d.com', Decimal('0.7')]
+        renormalize(attributions, incoming_attribution)
+        assert attributions == renormalized_attributions
+
+    def test_existing_investor_5_percent(self, normalized_attributions):
+        attributions = normalized_attributions
+        renormalized_attributions = {
+            'a@b.com': Decimal('0.19'),
+            'b@c.com': Decimal('0.81'),
+        }
+
+        incoming_attribution = ['b@c.com', Decimal('0.05')]
+        renormalize(attributions, incoming_attribution)
+        assert attributions == renormalized_attributions
+
+    def test_existing_investor_50_percent(self, normalized_attributions):
+        attributions = normalized_attributions
+        renormalized_attributions = {
+            'a@b.com': Decimal('0.1'),
+            'b@c.com': Decimal('0.9'),
+        }
+
+        incoming_attribution = ['b@c.com', Decimal('0.5')]
+        renormalize(attributions, incoming_attribution)
+        assert attributions == renormalized_attributions
+
+    def test_existing_investor_70_percent(self, normalized_attributions):
+        attributions = normalized_attributions
+        renormalized_attributions = {
+            'a@b.com': Decimal('0.06'),
+            'b@c.com': Decimal('0.94'),
+        }
+
+        incoming_attribution = ['b@c.com', Decimal('0.7')]
+        renormalize(attributions, incoming_attribution)
+        assert attributions == renormalized_attributions
 
 class TestCorrectRoundingError:
     @pytest.mark.parametrize(
