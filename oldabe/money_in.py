@@ -135,7 +135,8 @@ def calculate_incoming_investment(email, incoming_amount, price):
     total_payments = total_amount_paid(email, PAYMENTS_DIR)
     previous_total = total_payments - incoming_amount
     # how much of the incoming amount goes towards investment?
-    return total_payments - max(price, previous_total)
+    incoming_investment = total_payments - max(price, previous_total)
+    return max(0, incoming_investment)
 
 
 def calculate_incoming_attribution(email, incoming_investment, valuation):
