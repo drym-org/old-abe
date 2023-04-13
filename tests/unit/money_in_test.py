@@ -3,6 +3,7 @@ from oldabe.money_in import (
     calculate_incoming_investment,
     parse_percentage,
     serialize_proportion,
+    calculate_incoming_attribution,
     correct_rounding_error,
     get_rounding_difference,
     ROUNDING_TOLERANCE,
@@ -55,6 +56,20 @@ class TestSerializeProportion:
 
     def test_decimal_places_at_precision_context(self):
         assert serialize_proportion(Decimal('0.1234567891')) == '12.3456789100'
+
+
+class TestCalculateIncomingAttribution:
+    def test_incoming_investment_less_than_zero(self):
+        assert calculate_incoming_attribution('a@b.co', -50, 10000) == None
+
+    def test_incoming_investment_is_zero(self):
+        assert calculate_incoming_attribution('a@b.co', 0, 10000) == None
+
+    def test_normal_incoming_investment(self):
+        assert calculate_incoming_attribution('a@b.co', 50, 10000) == ('a@b.co', 0.005)
+
+    def test_large_incoming_investment(self):
+        assert calculate_incoming_attribution('a@b.co', 5000, 10000) == ('a@b.co', 0.5)
 
 
 class TestGetRoundingDifference:

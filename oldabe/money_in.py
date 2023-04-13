@@ -149,7 +149,12 @@ def calculate_incoming_investment(email, incoming_amount, price):
 
 
 def calculate_incoming_attribution(email, incoming_investment, valuation):
+    '''
+    If there is an incoming investment, find out what proportion it
+    represents of the overall valuation of the project.
+    '''
     if incoming_investment > 0:
+        # TODO - do we need to wrap anything in a Decimal here?
         share = incoming_investment / valuation
         return email, share
     else:
