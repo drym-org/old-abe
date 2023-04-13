@@ -1,6 +1,7 @@
 from decimal import Decimal
 from oldabe.money_in import (
     calculate_incoming_investment,
+    parse_percentage,
     correct_rounding_error,
     get_rounding_difference,
     ROUNDING_TOLERANCE,
@@ -14,6 +15,31 @@ from .fixtures import (
     excess_attributions,
     shortfall_attributions,
 )  # noqa
+
+
+
+class TestParsePercentage:
+    def test_an_integer(self):
+        assert parse_percentage('75') == Decimal('0.75')
+
+    def test_non_integer_greater_than_1(self):
+        assert parse_percentage('75.334455') == Decimal('0.75334455')
+
+    def test_non_integer_less_than_1(self):
+        assert parse_percentage('0.334455') == Decimal('0.00334455')
+
+    def test_decimal_places_at_precision_context(self):
+        assert parse_percentage('5.1234567891') == Decimal('0.051234567891')
+
+    def test_very_small_number(self):
+        assert parse_percentage('0.000001') == Decimal('0.00000001')
+
+    def test_0(self):
+        assert parse_percentage('0') == Decimal('0')
+
+    def test_100(self):
+        assert parse_percentage('100') == Decimal('1')
+
 
 
 class TestGetRoundingDifference:

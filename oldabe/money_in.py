@@ -20,6 +20,11 @@ ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attributions.txt')
 
 
 def parse_percentage(value):
+    '''
+    Translates values expressed in percentage format (75.234%) into
+    their decimal equivalents (0.75234). This effectively divides
+    the value by 100 without losing precision.
+    '''
     value = re.sub("[^0-9.]", "", value)
     value = "00" + value
     if "." not in value:
@@ -32,6 +37,11 @@ def parse_percentage(value):
 
 
 def serialize_proportion(value):
+    '''
+    Translates values expressed in decimal format (0.75234) into
+    their percentage equivalents (75.234%). This effectively multiplies
+    the value by 100 without losing precision.
+    '''
     value = str(value)
     if "." in value:
         value = value + "0"
@@ -51,7 +61,6 @@ def read_payment(payment_file, payments_dir):
     with open(os.path.join(payments_dir, payment_file)) as f:
         for row in csv.reader(f, skipinitialspace=True):
             name, email, amount = row
-            amount = parse_percentage(amount)
             return email, amount
 
 
@@ -77,7 +86,7 @@ def read_attributions():
         for row in csv.reader(f):
             email, percentage = row
             percentage = Decimal(re.sub("[^0-9.]", "", percentage))
-            attributions[email] = percentage / Decimal("100")
+            attributions[email] = parse_percentage(percentage)
     assert sum(attributions.values()) == Decimal("1")
     return attributions
 
