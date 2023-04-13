@@ -1,3 +1,6 @@
+[![build](https://github.com/drym-org/old-abe/actions/workflows/test.yml/badge.svg)](https://github.com/drym-org/old-abe/actions/workflows/test.yml)
+[![Coverage Status](https://coveralls.io/repos/github/drym-org/old-abe/badge.svg?branch=main)](https://coveralls.io/github/drym-org/old-abe?branch=main)
+
 ![abe-silhouette](https://user-images.githubusercontent.com/401668/205166513-1cf81032-812f-46b3-9612-a6dc8c79f589.png)
 
 "Old Abe" – accountant for all of your ABE needs.
