@@ -1,0 +1,65 @@
+name: build
+
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+    test:
+        strategy:
+            matrix:
+                py:
+                    - "3.6"
+                    - "3.9"
+                    - "pypy3.9"
+                os:
+                    - "macos-latest"
+                architecture:
+                    - x64
+        name: "Python: ${{ matrix.py }}-${{ matrix.architecture }} on ${{ matrix.os }}"
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@v3
+            - name: Setup python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: ${{ matrix.py }}
+                  architecture: ${{ matrix.architecture }}
+            - name: Install dependencies
+              run: make build-for-test
+            - name: Run tests
+              run: make test-matrix
+    coverage:
+        runs-on: macos-latest
+        name: Report coverage
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_SERVICE_NAME: github
+        steps:
+            - uses: actions/checkout@v3
+            - name: Setup python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: 3.8
+                  architecture: x64
+            - name: Install dependencies
+              run: make build-for-test
+            - name: Report coverage
+              run: make cover-coveralls
+    lint:
+        runs-on: macos-latest
+        name: Lint the package
+        steps:
+            - uses: actions/checkout@v3
+            - name: Setup python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: 3.8
+                  architecture: x64
+            - name: Install dependencies
+              run: make build
+            - name: Lint
+              run: make lint
