@@ -24,9 +24,9 @@ def parse_percentage(value):
     value = "00" + value
     if "." not in value:
         value = value + ".0"
-    value = re.sub(r"(?P<pre>\d{2})\.(?P<post>\d+)",
-                   r".\g<pre>\g<post>",
-                   value)
+    value = re.sub(
+        r"(?P<pre>\d{2})\.(?P<post>\d+)", r".\g<pre>\g<post>", value
+    )
     value = Decimal(value)
     return value
 
@@ -37,9 +37,11 @@ def serialize_proportion(value):
         value = value + "0"
     else:
         value = value + ".0"
-    value = re.sub(r"(?P<pre>\d)\.(?P<post>\d{2})(?P<rest>\d*)",
-                  r"\g<pre>\g<post>.\g<rest>0", # note trailing zero
-                  value)
+    value = re.sub(
+        r"(?P<pre>\d)\.(?P<post>\d{2})(?P<rest>\d*)",
+        r"\g<pre>\g<post>.\g<rest>0",  # note trailing zero
+        value,
+    )
     value = re.sub(r"^0+(\d*)", r"\1", value)
     value = re.sub(r"^\.", r"0.", value)
     return value
@@ -90,7 +92,8 @@ def get_payment_files(payments_dir):
 
 def find_unprocessed_payments(payments_dir):
     """
-    1. Read the transactions file to find out which payments are already recorded as transactions
+    1. Read the transactions file to find out which payments are already
+       recorded as transactions
     2. Read the payments folder to get all payments
     3. find those which haven't been recorded and return those
     """
@@ -148,9 +151,9 @@ ROUNDING_TOLERANCE = Decimal("0.000001")
 
 def get_rounding_difference(attributions):
     """Due to finite precision, the Decimal module will round up or down
-    on the last decimal place. This could result in the aggregate value not quite
-    totaling to 1. This corrects that total by either adding or subtracting the
-    difference from the incoming attribution.
+    on the last decimal place. This could result in the aggregate value not
+    quite totaling to 1. This corrects that total by either adding or
+    subtracting the difference from the incoming attribution.
     """
     total = sum(attributions.values())
     difference = total - Decimal("1")

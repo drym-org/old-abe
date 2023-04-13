@@ -131,6 +131,7 @@ class TestRenormalize:
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
+
 class TestCorrectRoundingError:
     @pytest.mark.parametrize(
         "attributions, test_diff",
