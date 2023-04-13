@@ -192,7 +192,7 @@ class TestCorrectRoundingError:
 
 class TestUpdateValuation:
     @patch('oldabe.money_in.open')
-    def test_base(self, mock_open):
+    def test_valuation_inflates_by_fresh_value(self, mock_open):
         amount = 100
         valuation = 1000
         new_valuation = update_valuation(valuation, amount)
