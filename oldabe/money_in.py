@@ -21,7 +21,7 @@ ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attributions.txt')
 
 def parse_percentage(value):
     '''
-    Translates values expressed in percentage format (75.234%) into
+    Translates values expressed in percentage format (75.234) into
     their decimal equivalents (0.75234). This effectively divides
     the value by 100 without losing precision.
     '''
@@ -39,7 +39,7 @@ def parse_percentage(value):
 def serialize_proportion(value):
     '''
     Translates values expressed in decimal format (0.75234) into
-    their percentage equivalents (75.234%). This effectively multiplies
+    their percentage equivalents (75.234). This effectively multiplies
     the value by 100 without losing precision.
     '''
     value = str(value)

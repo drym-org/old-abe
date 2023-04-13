@@ -2,6 +2,7 @@ from decimal import Decimal
 from oldabe.money_in import (
     calculate_incoming_investment,
     parse_percentage,
+    serialize_proportion,
     correct_rounding_error,
     get_rounding_difference,
     ROUNDING_TOLERANCE,
@@ -15,7 +16,6 @@ from .fixtures import (
     excess_attributions,
     shortfall_attributions,
 )  # noqa
-
 
 
 class TestParsePercentage:
@@ -40,6 +40,21 @@ class TestParsePercentage:
     def test_100(self):
         assert parse_percentage('100') == Decimal('1')
 
+
+class TestSerializeProportion:
+    def test_0(self):
+        assert serialize_proportion(Decimal('0')) == '0.0'
+
+    # todo - I think we decided we're ok with these trailing zeros?
+    def test_almost_1(self):
+        assert serialize_proportion(Decimal('0.9523452')) == '95.2345200'
+
+    # todo - test not passing, decimal is getting translated to '2E-7.0'
+    def test_very_small_number(self):
+        assert serialize_proportion(Decimal('0.0000002')) == '0.00002'
+
+    def test_decimal_places_at_precision_context(self):
+        assert serialize_proportion(Decimal('0.1234567891')) == '12.3456789100'
 
 
 class TestGetRoundingDifference:
