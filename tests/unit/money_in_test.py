@@ -4,6 +4,7 @@ from oldabe.money_in import (
     get_rounding_difference,
     ROUNDING_TOLERANCE,
     renormalize,
+    update_valuation,
 )
 import pytest
 from unittest.mock import patch
@@ -187,6 +188,15 @@ class TestCorrectRoundingError:
         correct_rounding_error(attributions, incoming_email)
         attributions.pop(incoming_email)
         assert attributions == other_attributions
+
+
+class TestUpdateValuation:
+    @patch('oldabe.money_in.open')
+    def test_base(self, mock_open):
+        amount = 100
+        valuation = 1000
+        new_valuation = update_valuation(valuation, amount)
+        assert new_valuation == amount + valuation
 
 
 # jair
