@@ -8,7 +8,9 @@ UNIT_TESTS_PATH = tests/unit
 help:
 	@echo "clean - remove all build, test, coverage and Python artifacts"
 	@echo "build - install package and dependencies for local development"
-	@echo "docs - generate Sphinx HTML documentation, including API docs"
+	@echo "install-docs - Install dependencies for building the documentation"
+	@echo "build-docs - Build self-contained docs that could be hosted somewhere"
+	@echo "docs - view docs in a browser"
 	@echo "clean - clean all build and test artifacts"
 	@echo "clean-build - remove build artifacts"
 	@echo "clean-pyc - remove Python file artifacts"
@@ -41,13 +43,14 @@ build:
 build-for-test:
 	pip install -e .[test]
 
-docs: build
-	rm -f docs/$(PACKAGE-NAME).rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ $(PACKAGE-NAME)
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
-	open docs/_build/html/index.html
+install-docs:
+	raco pkg install --deps search-auto --link $(PWD)/docs
+
+build-docs:
+	scribble --html --dest ./docs/output/ ./docs/oldabe.scrbl
+
+docs: build-docs
+	open docs/output/oldabe.html
 
 clean: clean-build clean-pyc clean-test
 
