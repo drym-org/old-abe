@@ -32,10 +32,16 @@ coverage_html_report/
 # Sphinx
 docs/_build
 
+# Scribble docs output
+*.html
+*.css
+*.js
+
 # vim noise
 *~
 *.sw?
 
+MathJax
 # dances
 dance
 
