@@ -36,12 +36,15 @@ docs/_build
 *.html
 *.css
 *.js
+MathJax
 
 # vim noise
 *~
 *.sw?
 
-MathJax
+# Emacs project/grep config
+.projectile
+
 # dances
 dance
 
