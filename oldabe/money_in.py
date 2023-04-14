@@ -253,30 +253,6 @@ def process_payment(payment_file, valuation, price, attributable=True):
             update_attributions(incoming_attribution, attributions)
 
 
-"""
-This module handles incoming payments.
-
-First it finds all payments that have not already been processed, that is,
-which do not appear in the transactions file.
-
-For each of these payments, it consults the current attributions for the
-project, and does three things.
-
-First, it figures out how much each person in the attributions file is owed
-from this fresh payment, generating a transaction for each stakeholder.
-
-Second, it determines how much of the incoming payment can be considered an
-"investment" by comparing the project price with the total amount paid by this
-payer up to this point -- the excess, if any, is investment.
-
-Third, it increases the current valuation by the investment amount determined,
-and, at the same time, "dilutes" the attributions by making the payer an
-attributive stakeholder with a share proportionate to their incoming investment
-amount (or if the payer is already a stakeholder, increases their existing
-share) in relation to the valuation.
-"""
-
-
 def main():
     # Set the decimal precision explicitly so that we can
     # be sure that it is the same regardless of where
