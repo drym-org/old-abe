@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@title{Old Abe: Accountant for All of your ABE Needs}
+@title{Old Abe: The Accountant for All of your ABE Needs}
 
 @table-of-contents[]
 
@@ -10,7 +10,7 @@ Attribution-Based Economics is a new model of economics designed to recognize an
 
 Although ABE is a new model, it does not start from scratch. Rather, it builds on the existing millennia-old body of work in economics and finance, translating existing, time-tested concepts and intuitions into the new paradigm in a manner that preserves their essence while also shedding the incidental details of their implementation in a capitalist economic system. This results in economic and financial patterns of great simplicity in ABE when compared with capitalism.
 
-Nevertheless, the composition of simple atoms can lead to great complexity of the whole, and that is precisely the case with ABE as well. Economic systems are incredibly rich, dynamic, and complex. Implementing the ABE financial model for every project would take a lot of effort and care, and would be hard to get right even though the financial components are simpler than their traditional analogues.
+Nevertheless, the composition of simple atoms can lead to great complexity of the whole, and that is precisely the case with ABE as well. Economic systems are incredibly rich, dynamic, and complex. Implementing the ABE financial model for every project would take a lot of effort and care, and would be hard to get right even though the financial components are simpler than their traditional analogues. You could hire a team of accountants to do it, but which open source project can afford such luxury?
 
 That's where Old Abe comes in.
 
