@@ -1,7 +1,5 @@
 #lang scribble/manual
 
-@require[scribble/manual]
-
 @title{Old Abe: Accountant for All of your ABE Needs}
 
 @table-of-contents[]
