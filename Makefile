@@ -47,10 +47,10 @@ install-docs:
 	raco pkg install --deps search-auto --link $(PWD)/docs
 
 build-docs:
-	scribble --html --dest ./docs/output/ ./docs/oldabe.scrbl
+	scribble --html --dest ./docs/output/ --dest-name index.html ./docs/oldabe.scrbl
 
 docs: build-docs
-	open docs/output/oldabe.html
+	open docs/output/index.html
 
 clean: clean-build clean-pyc clean-test
 
