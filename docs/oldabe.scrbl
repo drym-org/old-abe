@@ -1,17 +1,6 @@
 #lang scribble/manual
 
-@require[scribble/manual
-         scribble-math
-         latex-utils/scribble/theorem
-         latex-utils/scribble/utils
-         scriblib/footnote
-         scriblib/autobib]
-
-@define-footnote[my-note make-my-note]
-
-@(use-mathjax)
-
-@(define-cite ~cite citet generate-bibliography #:style number-style)
+@require[scribble/manual]
 
 @title{Old Abe: Accountant for All of your ABE Needs}
 
