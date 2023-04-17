@@ -1,9 +1,11 @@
 from decimal import Decimal
 from oldabe.money_in import (
+    calculate_incoming_investment,
     correct_rounding_error,
     get_rounding_difference,
     ROUNDING_TOLERANCE,
     renormalize,
+    update_valuation,
 )
 import pytest
 from unittest.mock import patch
@@ -187,6 +189,42 @@ class TestCorrectRoundingError:
         correct_rounding_error(attributions, incoming_email)
         attributions.pop(incoming_email)
         assert attributions == other_attributions
+
+
+class TestUpdateValuation:
+    @patch('oldabe.money_in.open')
+    def test_valuation_inflates_by_fresh_value(self, mock_open):
+        amount = 100
+        valuation = 1000
+        new_valuation = update_valuation(valuation, amount)
+        assert new_valuation == amount + valuation
+
+
+class TestCalculateIncomingInvestment:
+    @pytest.mark.parametrize(
+        "prior_contribution, incoming_amount, price, expected_investment",
+        [
+            (Decimal("0"), Decimal("0"), Decimal("100"), Decimal("0")),
+            (Decimal("0"), Decimal("20"), Decimal("100"), Decimal("0")),
+            (Decimal("0"), Decimal("100"), Decimal("100"), Decimal("0")),
+            (Decimal("0"), Decimal("120"), Decimal("100"), Decimal("20")),
+            (Decimal("20"), Decimal("0"), Decimal("100"), Decimal("0")),
+            (Decimal("20"), Decimal("20"), Decimal("100"), Decimal("0")),
+            (Decimal("20"), Decimal("80"), Decimal("100"), Decimal("0")),
+            (Decimal("20"), Decimal("100"), Decimal("100"), Decimal("20")),
+            (Decimal("100"), Decimal("0"), Decimal("100"), Decimal("0")),
+            (Decimal("100"), Decimal("20"), Decimal("100"), Decimal("20")),
+            (Decimal("120"), Decimal("0"), Decimal("100"), Decimal("0")),
+            (Decimal("120"), Decimal("20"), Decimal("100"), Decimal("20")),
+        ],
+    )
+    @patch('oldabe.money_in.total_amount_paid')
+    def test_matrix(self, mock_amount_paid, prior_contribution, incoming_amount, price, expected_investment):
+        email = 'dummy@abe.org'
+        # this is the total amount paid _including_ the incoming amount
+        mock_amount_paid.return_value = prior_contribution + incoming_amount
+        result = calculate_incoming_investment(email, incoming_amount, price)
+        assert result == expected_investment
 
 
 # jair
