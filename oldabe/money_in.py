@@ -42,7 +42,8 @@ def serialize_proportion(value):
     their percentage equivalents (75.234). This effectively multiplies
     the value by 100 without losing precision.
     '''
-    value = str(value)
+    # otherwise, decimal gets translated '2E-7.0'
+    value = format(value, "f")
     if "." in value:
         value = value + "0"
     else:
