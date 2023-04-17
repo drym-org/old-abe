@@ -62,7 +62,8 @@ def read_payment(payment_file, payments_dir):
     with open(os.path.join(payments_dir, payment_file)) as f:
         for row in csv.reader(f, skipinitialspace=True):
             name, email, amount = row
-            return email, amount
+            amount = re.sub("[^0-9.]", "", amount)
+            return email, Decimal(amount)
 
 
 def read_price():
@@ -86,7 +87,6 @@ def read_attributions():
     with open(ATTRIBUTIONS_FILE) as f:
         for row in csv.reader(f):
             email, percentage = row
-            percentage = Decimal(re.sub("[^0-9.]", "", percentage))
             attributions[email] = parse_percentage(percentage)
     assert sum(attributions.values()) == Decimal("1")
     return attributions
