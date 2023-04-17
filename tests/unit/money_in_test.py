@@ -1,6 +1,9 @@
 from decimal import Decimal
 from oldabe.money_in import (
     calculate_incoming_investment,
+    parse_percentage,
+    serialize_proportion,
+    calculate_incoming_attribution,
     correct_rounding_error,
     get_rounding_difference,
     ROUNDING_TOLERANCE,
@@ -14,6 +17,64 @@ from .fixtures import (
     excess_attributions,
     shortfall_attributions,
 )  # noqa
+
+
+class TestParsePercentage:
+    def test_an_integer(self):
+        assert parse_percentage('75') == Decimal('0.75')
+
+    def test_non_integer_greater_than_1(self):
+        assert parse_percentage('75.334455') == Decimal('0.75334455')
+
+    def test_non_integer_less_than_1(self):
+        assert parse_percentage('0.334455') == Decimal('0.00334455')
+
+    def test_decimal_places_at_precision_context(self):
+        assert parse_percentage('5.1234567891') == Decimal('0.051234567891')
+
+    def test_very_small_number(self):
+        assert parse_percentage('0.000001') == Decimal('0.00000001')
+
+    def test_0(self):
+        assert parse_percentage('0') == Decimal('0')
+
+    def test_100(self):
+        assert parse_percentage('100') == Decimal('1')
+
+
+class TestSerializeProportion:
+    def test_0(self):
+        assert serialize_proportion(Decimal('0')) == '0.0'
+
+    # todo - I think we decided we're ok with these trailing zeros?
+    def test_almost_1(self):
+        assert serialize_proportion(Decimal('0.9523452')) == '95.2345200'
+
+    def test_very_small_number(self):
+        assert serialize_proportion(Decimal('0.0000002')) == '0.0000200'
+
+    def test_decimal_places_at_precision_context(self):
+        assert serialize_proportion(Decimal('0.1234567891')) == '12.3456789100'
+
+
+class TestCalculateIncomingAttribution:
+    def test_incoming_investment_less_than_zero(self):
+        assert calculate_incoming_attribution('a@b.co', -50, 10000) == None
+
+    def test_incoming_investment_is_zero(self):
+        assert calculate_incoming_attribution('a@b.co', 0, 10000) == None
+
+    def test_normal_incoming_investment(self):
+        assert calculate_incoming_attribution('a@b.co', 50, 10000) == (
+            'a@b.co',
+            0.005,
+        )
+
+    def test_large_incoming_investment(self):
+        assert calculate_incoming_attribution('a@b.co', 5000, 10000) == (
+            'a@b.co',
+            0.5,
+        )
 
 
 class TestGetRoundingDifference:

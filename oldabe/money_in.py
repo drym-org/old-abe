@@ -20,6 +20,11 @@ ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attributions.txt')
 
 
 def parse_percentage(value):
+    '''
+    Translates values expressed in percentage format (75.234) into
+    their decimal equivalents (0.75234). This effectively divides
+    the value by 100 without losing precision.
+    '''
     value = re.sub("[^0-9.]", "", value)
     value = "00" + value
     if "." not in value:
@@ -32,7 +37,13 @@ def parse_percentage(value):
 
 
 def serialize_proportion(value):
-    value = str(value)
+    '''
+    Translates values expressed in decimal format (0.75234) into
+    their percentage equivalents (75.234). This effectively multiplies
+    the value by 100 without losing precision.
+    '''
+    # otherwise, decimal gets translated '2E-7.0'
+    value = format(value, "f")
     if "." in value:
         value = value + "0"
     else:
@@ -51,8 +62,8 @@ def read_payment(payment_file, payments_dir):
     with open(os.path.join(payments_dir, payment_file)) as f:
         for row in csv.reader(f, skipinitialspace=True):
             name, email, amount = row
-            amount = parse_percentage(amount)
-            return email, amount
+            amount = re.sub("[^0-9.]", "", amount)
+            return email, Decimal(amount)
 
 
 def read_price():
@@ -76,8 +87,7 @@ def read_attributions():
     with open(ATTRIBUTIONS_FILE) as f:
         for row in csv.reader(f):
             email, percentage = row
-            percentage = Decimal(re.sub("[^0-9.]", "", percentage))
-            attributions[email] = percentage / Decimal("100")
+            attributions[email] = parse_percentage(percentage)
     assert sum(attributions.values()) == Decimal("1")
     return attributions
 
@@ -140,7 +150,12 @@ def calculate_incoming_investment(email, incoming_amount, price):
 
 
 def calculate_incoming_attribution(email, incoming_investment, valuation):
+    '''
+    If there is an incoming investment, find out what proportion it
+    represents of the overall valuation of the project.
+    '''
     if incoming_investment > 0:
+        # TODO - do we need to wrap anything in a Decimal here?
         share = incoming_investment / valuation
         return email, share
     else:
