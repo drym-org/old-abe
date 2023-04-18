@@ -55,6 +55,8 @@ def compute_balances(owed: dict, paid: dict):
 
 
 def prepare_message(balances: dict):
+    if not balances:
+        return "There are no outstanding balances."
     balances_table = ""
     for name, balance in balances.items():
         balances_table += f"{name} | {balance:.2f}\n"
