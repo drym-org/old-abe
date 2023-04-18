@@ -42,11 +42,14 @@ def read_payout_amounts():
     return balances
 
 
-def compute_balances(owed, paid):
+def compute_balances(owed: dict, paid: dict):
+    """
+    Compute the balance owed to each contributor.
+    """
     balances = defaultdict(int)
     for email in owed.keys():
         balance = owed[email] - paid[email]
-        if balance > Decimal(0):
+        if balance > Decimal("0"):
             balances[email] = balance
     return balances
 
