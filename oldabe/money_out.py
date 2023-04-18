@@ -54,7 +54,7 @@ def compute_balances(owed: dict, paid: dict):
     return balances
 
 
-def prepare_message(balances):
+def prepare_message(balances: dict):
     balances_table = ""
     for name, balance in balances.items():
         balances_table += f"{name} | {balance:.2f}\n"
