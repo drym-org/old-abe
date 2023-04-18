@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from models import Transaction
+from .models import Transaction
 from datetime import datetime
 import csv
 import os
