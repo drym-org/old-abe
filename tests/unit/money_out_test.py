@@ -1,5 +1,6 @@
 from oldabe.money_out import (
     compute_balances,
+    prepare_message,
 )
 from collections import defaultdict
 import pytest
@@ -38,3 +39,23 @@ class TestComputeBalances:
     def test_matrix(self, owed, paid, expected_balances):
         result = compute_balances(owed, paid)
         assert result == expected_balances
+
+
+class TestPrepareMessage:
+    @pytest.mark.parametrize(
+        "balances",
+        [
+            {'abc@abe.com': 20, 'pqr@abe.com': 50},
+            {'abc@abe.com': 20},
+            {'abc@abe.com': 20, 'pqr@abe.com': 50, 'zab@abe.com': 10},
+        ],
+    )
+    def test_matrix(self, balances):
+        result = prepare_message(balances)
+        for k in balances.keys():
+            assert k in result
+
+    def test_no_balances(self):
+        balances = {}
+        result = prepare_message(balances)
+        assert result == "There are no outstanding balances."
