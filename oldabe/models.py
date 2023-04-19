@@ -10,3 +10,15 @@ class Transaction:
     payment_file: str = None
     commit_hash: str = None
     created_at: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class Debt:
+    email: str = None
+    amount: Decimal = None
+    # amount_paid is a running tally of how much of this debt has been paid
+    # in future will link to Transaction objects instead
+    amount_paid: Decimal = None
+    payment_file: str = None
+    commit_hash: str = None
+    created_at: datetime = field(default_factory=datetime.utcnow)
