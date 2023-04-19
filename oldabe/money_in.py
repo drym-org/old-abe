@@ -59,7 +59,9 @@ def serialize_proportion(value):
 
 
 def read_payment(payment_file, attributable=True):
-    payments_dir = PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
+    payments_dir = (
+        PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
+    )
     with open(os.path.join(payments_dir, payment_file)) as f:
         for row in csv.reader(f, skipinitialspace=True):
             name, email, amount = row
@@ -94,7 +96,9 @@ def read_attributions():
 
 
 def get_payment_files(attributable=True):
-    payments_dir = PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
+    payments_dir = (
+        PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
+    )
     return {
         f
         for f in os.listdir(payments_dir)
