@@ -5,6 +5,7 @@ from oldabe.money_in import (
     serialize_proportion,
     calculate_incoming_attribution,
     correct_rounding_error,
+    generate_transactions,
     get_rounding_difference,
     ROUNDING_TOLERANCE,
     renormalize,
@@ -16,6 +17,8 @@ from .fixtures import (
     normalized_attributions,
     excess_attributions,
     shortfall_attributions,
+    empty_attributions,
+    single_contributor_attributions,
 )  # noqa
 
 
@@ -55,6 +58,73 @@ class TestSerializeProportion:
 
     def test_decimal_places_at_precision_context(self):
         assert serialize_proportion(Decimal('0.1234567891')) == '12.3456789100'
+
+
+class TestGenerateTransactions:
+    def test_zero_amount(self, normalized_attributions):
+        with pytest.raises(AssertionError):
+            generate_transactions(
+                0, normalized_attributions, 'payment-1.txt', 'abc123'
+            )
+
+    def test_empty_attributions(self, empty_attributions):
+        with pytest.raises(AssertionError):
+            generate_transactions(
+                100, empty_attributions, 'payment-1.txt', 'abc123'
+            )
+
+    def test_single_contributor_attributions(
+        self, single_contributor_attributions
+    ):
+        amount = 100
+        payment_file = 'payment-1.txt'
+        commit_hash = 'abc123'
+        result = generate_transactions(
+            amount, single_contributor_attributions, payment_file, commit_hash
+        )
+        t = result[0]
+        assert t.amount == amount
+
+    def test_as_many_transactions_as_attributions(
+        self, normalized_attributions
+    ):
+        amount = 100
+        payment_file = 'payment-1.txt'
+        commit_hash = 'abc123'
+        result = generate_transactions(
+            amount, normalized_attributions, payment_file, commit_hash
+        )
+        assert len(result) == len(normalized_attributions)
+
+    def test_transactions_reflect_attributions(self, normalized_attributions):
+        amount = 100
+        payment_file = 'payment-1.txt'
+        commit_hash = 'abc123'
+        result = generate_transactions(
+            amount, normalized_attributions, payment_file, commit_hash
+        )
+        for t in result:
+            assert t.amount == normalized_attributions[t.email] * amount
+
+    def test_transaction_refers_to_payment(self, normalized_attributions):
+        amount = 100
+        payment_file = 'payment-1.txt'
+        commit_hash = 'abc123'
+        result = generate_transactions(
+            amount, normalized_attributions, payment_file, commit_hash
+        )
+        t = result[0]
+        assert t.payment_file == payment_file
+
+    def test_transaction_refers_to_commit(self, normalized_attributions):
+        amount = 100
+        payment_file = 'payment-1.txt'
+        commit_hash = 'abc123'
+        result = generate_transactions(
+            amount, normalized_attributions, payment_file, commit_hash
+        )
+        t = result[0]
+        assert t.commit_hash == commit_hash
 
 
 class TestCalculateIncomingAttribution:
@@ -280,7 +350,14 @@ class TestCalculateIncomingInvestment:
         ],
     )
     @patch('oldabe.money_in.total_amount_paid')
-    def test_matrix(self, mock_amount_paid, prior_contribution, incoming_amount, price, expected_investment):
+    def test_matrix(
+        self,
+        mock_amount_paid,
+        prior_contribution,
+        incoming_amount,
+        price,
+        expected_investment,
+    ):
         email = 'dummy@abe.org'
         # this is the total amount paid _including_ the incoming amount
         mock_amount_paid.return_value = prior_contribution + incoming_amount

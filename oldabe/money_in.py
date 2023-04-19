@@ -6,7 +6,7 @@ from dataclasses import astuple
 import re
 import os
 import subprocess
-from .models import Transaction
+from .models import Payment, Transaction
 
 ABE_ROOT = 'abe'
 PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
@@ -58,12 +58,15 @@ def serialize_proportion(value):
     return value
 
 
-def read_payment(payment_file, payments_dir):
+def read_payment(payment_file, attributable=True):
+    payments_dir = (
+        PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
+    )
     with open(os.path.join(payments_dir, payment_file)) as f:
         for row in csv.reader(f, skipinitialspace=True):
             name, email, amount = row
             amount = re.sub("[^0-9.]", "", amount)
-            return email, Decimal(amount)
+            return Payment(email, Decimal(amount), attributable, payment_file)
 
 
 def read_price():
@@ -92,7 +95,10 @@ def read_attributions():
     return attributions
 
 
-def get_payment_files(payments_dir):
+def get_payment_files(attributable=True):
+    payments_dir = (
+        PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
+    )
     return {
         f
         for f in os.listdir(payments_dir)
@@ -100,7 +106,7 @@ def get_payment_files(payments_dir):
     }
 
 
-def find_unprocessed_payments(payments_dir):
+def find_unprocessed_payments(attributable=True):
     """
     1. Read the transactions file to find out which payments are already
        recorded as transactions
@@ -117,13 +123,19 @@ def find_unprocessed_payments(payments_dir):
             _created_at,
         ) in csv.reader(f):
             recorded_payments.add(payment_file)
-    all_payments = get_payment_files(payments_dir)
+    all_payments = get_payment_files(attributable)
     print("all payments")
     print(all_payments)
     return all_payments.difference(recorded_payments)
 
 
 def generate_transactions(amount, attributions, payment_file, commit_hash):
+    """
+    Generate transactions reflecting the amount owed to each contributor from
+    a fresh payment amount -- one transaction per attributable contributor.
+    """
+    assert amount > 0
+    assert attributions
     transactions = []
     for email, percentage in attributions.items():
         t = Transaction(email, amount * percentage, payment_file, commit_hash)
@@ -131,18 +143,18 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
     return transactions
 
 
-def total_amount_paid(for_email, payments_dir):
+def total_amount_paid(for_email, attributable=True):
     payments = 0
-    payment_files = get_payment_files(payments_dir)
+    payment_files = get_payment_files(attributable)
     for payment_file in payment_files:
-        email, amount = read_payment(payment_file, payments_dir)
-        if email == for_email:
-            payments += amount
+        payment = read_payment(payment_file, attributable)
+        if payment.email == for_email:
+            payments += payment.amount
     return payments
 
 
 def calculate_incoming_investment(email, incoming_amount, price):
-    total_payments = total_amount_paid(email, PAYMENTS_DIR)
+    total_payments = total_amount_paid(email, attributable=True)
     previous_total = total_payments - incoming_amount
     # how much of the incoming amount goes towards investment?
     incoming_investment = total_payments - max(price, previous_total)
@@ -241,21 +253,38 @@ def get_git_revision_short_hash() -> str:
     )
 
 
-def process_payment(payment_file, valuation, price, attributable=True):
-    payments_dir = (
-        PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
-    )
+def process_payment(payment, valuation, price):
+    """
+    Process a (new) payment.
+
+    First, we record owed amounts to existing contributors from the payment.
+    To do that, we consult the attribution file and determine how much is owed
+    to each contributor based on the current percentages, generating a
+    fresh entry in the transactions file for each contributor.
+
+    Then, if the payment is "attributable" (the default), we determine
+    if some portion of it counts as an investment in the project. If it does,
+    then the valuation is inflated by the investment amount, and the payer is
+    attributed a share commensurate with their investment, diluting the
+    attributions.
+
+    If the payment is not attributable, then the entire amount is treated
+    as compensation and no component of it counts towards investment. This
+    is typically the case for attributive revenue, that is, revenue from
+    downstream projects that recognize the present project in their
+    attributions.
+    """
+    email, amount = payment.email, payment.amount
     commit_hash = get_git_revision_short_hash()
-    email, amount = read_payment(payment_file, payments_dir)
 
     # figure out how much each person in the attributions file is owed from
     # this payment, generating a transaction for each stakeholder.
     attributions = read_attributions()
     transactions = generate_transactions(
-        amount, attributions, payment_file, commit_hash
+        amount, attributions, payment.file, commit_hash
     )
     update_transactions(transactions)
-    if attributable:
+    if payment.attributable:
         incoming_investment = calculate_incoming_investment(
             email, amount, price
         )
@@ -277,16 +306,19 @@ def main():
 
     # Find all payments that have not already been processed, that
     # is, which do not appear in the transactions file.
-    unprocessed_payments = find_unprocessed_payments(PAYMENTS_DIR)
+    unprocessed_payments = find_unprocessed_payments(attributable=True)
     price = read_price()
     valuation = read_valuation()
     print(unprocessed_payments)
     for payment_file in unprocessed_payments:
         print(payment_file)
-        process_payment(payment_file, valuation, price, attributable=True)
+
+        payment = read_payment(payment_file, attributable=True)
+
+        process_payment(payment, valuation, price, attributable=True)
     try:
         unprocessed_nonattributable_payments = find_unprocessed_payments(
-            NONATTRIBUTABLE_PAYMENTS_DIR
+            attributable=False
         )
     except FileNotFoundError:
         unprocessed_nonattributable_payments = []
