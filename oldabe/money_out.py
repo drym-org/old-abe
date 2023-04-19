@@ -51,6 +51,10 @@ def compute_balances(owed, paid):
     return balances
 
 
+def compute debts():
+    pass
+
+
 def prepare_message(balances):
     balances_table = ""
     for name, balance in balances.items():
@@ -68,9 +72,9 @@ def prepare_message(balances):
 
 
 def main():
-    # set decimal precision at 10, to ensure
+    # set decimal precision at 10 to ensure
     # that it is the same everywhere
-    # and large enough to be represent a sufficiently
+    # and large enough to represent a sufficiently
     # large number of contributors
     getcontext().prec = 10
 
