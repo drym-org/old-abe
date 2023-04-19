@@ -6,7 +6,7 @@ from dataclasses import astuple
 import re
 import os
 import subprocess
-from .models import Transaction
+from .models import Payment, Transaction
 
 ABE_ROOT = 'abe'
 PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
