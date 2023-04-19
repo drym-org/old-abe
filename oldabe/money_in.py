@@ -126,6 +126,12 @@ def find_unprocessed_payments(attributable=True):
 
 
 def generate_transactions(amount, attributions, payment_file, commit_hash):
+    """
+    Generate transactions reflecting the amount owed to each contributor from
+    a fresh payment amount -- one transaction per attributable contributor.
+    """
+    assert amount > 0
+    assert attributions
     transactions = []
     for email, percentage in attributions.items():
         t = Transaction(email, amount * percentage, payment_file, commit_hash)
