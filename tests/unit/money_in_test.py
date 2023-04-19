@@ -11,6 +11,7 @@ from oldabe.money_in import (
     renormalize,
     update_valuation,
 )
+from oldabe.models import Payment
 import pytest
 from unittest.mock import patch
 from .fixtures import (
@@ -359,9 +360,10 @@ class TestCalculateIncomingInvestment:
         expected_investment,
     ):
         email = 'dummy@abe.org'
+        payment = Payment(email, incoming_amount)
         # this is the total amount paid _including_ the incoming amount
         mock_amount_paid.return_value = prior_contribution + incoming_amount
-        result = calculate_incoming_investment(email, incoming_amount, price)
+        result = calculate_incoming_investment(payment, price)
         assert result == expected_investment
 
 

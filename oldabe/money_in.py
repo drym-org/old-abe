@@ -106,7 +106,7 @@ def get_payment_files(attributable=True):
     }
 
 
-def find_unprocessed_payments(attributable=True):
+def find_unprocessed_payment_files(attributable=True):
     """
     1. Read the transactions file to find out which payments are already
        recorded as transactions
@@ -153,9 +153,9 @@ def total_amount_paid(for_email, attributable=True):
     return payments
 
 
-def calculate_incoming_investment(email, incoming_amount, price):
-    total_payments = total_amount_paid(email, attributable=True)
-    previous_total = total_payments - incoming_amount
+def calculate_incoming_investment(payment, price):
+    total_payments = total_amount_paid(payment.email, attributable=True)
+    previous_total = total_payments - payment.amount
     # how much of the incoming amount goes towards investment?
     incoming_investment = total_payments - max(price, previous_total)
     return max(0, incoming_investment)
@@ -253,7 +253,7 @@ def get_git_revision_short_hash() -> str:
     )
 
 
-def process_payment(payment, valuation, price):
+def process_payment(payment, attributions):
     """
     Process a (new) payment.
 
@@ -262,40 +262,56 @@ def process_payment(payment, valuation, price):
     to each contributor based on the current percentages, generating a
     fresh entry in the transactions file for each contributor.
 
-    Then, if the payment is "attributable" (the default), we determine
-    if some portion of it counts as an investment in the project. If it does,
-    then the valuation is inflated by the investment amount, and the payer is
-    attributed a share commensurate with their investment, diluting the
-    attributions.
-
     If the payment is not attributable, then the entire amount is treated
     as compensation and no component of it counts towards investment. This
     is typically the case for attributive revenue, that is, revenue from
     downstream projects that recognize the present project in their
     attributions.
     """
-    email, amount = payment.email, payment.amount
     commit_hash = get_git_revision_short_hash()
 
     # figure out how much each person in the attributions file is owed from
     # this payment, generating a transaction for each stakeholder.
-    attributions = read_attributions()
     transactions = generate_transactions(
-        amount, attributions, payment.file, commit_hash
+        payment.amount, attributions, payment.file, commit_hash
     )
     update_transactions(transactions)
-    if payment.attributable:
-        incoming_investment = calculate_incoming_investment(
-            email, amount, price
-        )
-        # inflate valuation by the amount of the fresh investment
-        valuation = update_valuation(valuation, incoming_investment)
-        incoming_attribution = calculate_incoming_attribution(
-            email, incoming_investment, valuation
-        )
-        if incoming_attribution:
-            # dilute attributions
-            update_attributions(incoming_attribution, attributions)
+
+
+def handle_investment(payment, attributions, price, valuation):
+    """
+    For "attributable" payments (the default), we determine
+    if some portion of it counts as an investment in the project. If it does,
+    then the valuation is inflated by the investment amount, and the payer is
+    attributed a share commensurate with their investment, diluting the
+    attributions.
+    """
+    incoming_investment = calculate_incoming_investment(
+        payment, price
+    )
+    # inflate valuation by the amount of the fresh investment
+    valuation = update_valuation(valuation, incoming_investment)
+    incoming_attribution = calculate_incoming_attribution(
+        payment.email, incoming_investment, valuation
+    )
+    if incoming_attribution:
+        # dilute attributions
+        update_attributions(incoming_attribution, attributions)
+
+
+def process_new_payments(price, valuation, attributable=True):
+    attributions = read_attributions()
+    try:
+        unprocessed_payments = find_unprocessed_payment_files(attributable)
+    except FileNotFoundError:
+        unprocessed_payments = []
+    print(unprocessed_payments)
+    for payment_file in unprocessed_payments:
+        print(payment_file)
+        payment = read_payment(payment_file, attributable)
+        process_payment(payment, attributions)
+        if payment.attributable:
+            handle_investment(payment, attributions, price, valuation)
 
 
 def main():
@@ -304,26 +320,13 @@ def main():
     # it is run, to avoid any possible accounting errors
     getcontext().prec = 10
 
-    # Find all payments that have not already been processed, that
-    # is, which do not appear in the transactions file.
-    unprocessed_payments = find_unprocessed_payments(attributable=True)
     price = read_price()
     valuation = read_valuation()
-    print(unprocessed_payments)
-    for payment_file in unprocessed_payments:
-        print(payment_file)
 
-        payment = read_payment(payment_file, attributable=True)
-
-        process_payment(payment, valuation, price, attributable=True)
-    try:
-        unprocessed_nonattributable_payments = find_unprocessed_payments(
-            attributable=False
-        )
-    except FileNotFoundError:
-        unprocessed_nonattributable_payments = []
-    for payment_file in unprocessed_nonattributable_payments:
-        process_payment(payment_file, valuation, price, attributable=False)
+    # Find all payments that have not already been processed, that
+    # is, which do not appear in the transactions file.
+    process_new_payments(price, valuation, attributable=True)
+    process_new_payments(price, valuation, attributable=False)
 
 
 if __name__ == "__main__":
