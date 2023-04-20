@@ -227,9 +227,6 @@ def write_attributions(attributions):
     # don't write attributions if they aren't normalized
     assert sum(attributions.values()) == Decimal("1")
     # format for output as percentages
-    # BUG: this step causes the result to lose precision
-    # and not total to 100 exactly, since some trailing
-    # decimal positions are lost after multiplying by 100.
     attributions = [
         (email, serialize_proportion(share))
         for email, share in attributions.items()
