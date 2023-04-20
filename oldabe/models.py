@@ -30,3 +30,9 @@ class Payment:
     amount: Decimal = 0
     attributable: bool = True
     file: str = None
+
+
+@dataclass
+class Attribution:
+    email: str = None
+    share: Decimal = 0

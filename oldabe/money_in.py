@@ -6,7 +6,7 @@ from dataclasses import astuple
 import re
 import os
 import subprocess
-from .models import Payment, Transaction
+from .models import Attribution, Payment, Transaction
 
 ABE_ROOT = 'abe'
 PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
@@ -176,7 +176,7 @@ def calculate_incoming_attribution(email,
     """
     if incoming_investment > 0:
         share = incoming_investment / posterior_valuation
-        return email, share
+        return Attribution(email, share)
     else:
         return None
 
@@ -202,25 +202,24 @@ def renormalize(attributions, incoming_attribution):
     "renormalized."  This effectively dilutes the attributions by the magnitude
     of the incoming attribution.
     """
-    incoming_email, incoming_share = incoming_attribution
-    target_proportion = Decimal("1") - incoming_share
+    target_proportion = Decimal("1") - incoming_attribution.share
     for email in attributions:
         # renormalize to reflect dilution
         attributions[email] *= target_proportion
     # add incoming share to existing investor or record new investor
-    attributions[incoming_email] = (
-        attributions.get(incoming_email, 0) + incoming_share
+    attributions[incoming_attribution.email] = (
+        attributions.get(incoming_attribution.email, 0) + incoming_attribution.share
     )
 
 
-def correct_rounding_error(attributions, incoming_email):
+def correct_rounding_error(attributions, incoming_attribution):
     """Due to finite precision, the Decimal module will round up or down
     on the last decimal place. This could result in the aggregate value not
     quite totaling to 1. This corrects that total by either adding or
     subtracting the difference from the incoming attribution (by convention).
     """
     difference = get_rounding_difference(attributions)
-    attributions[incoming_email] -= difference
+    attributions[incoming_attribution.email] -= difference
 
 
 def write_attributions(attributions):
@@ -256,7 +255,7 @@ def dilute_attributions(incoming_attribution, attributions):
     and correcting any rounding error that may arise from this.
     """
     renormalize(attributions, incoming_attribution)
-    correct_rounding_error(attributions, incoming_attribution[0])
+    correct_rounding_error(attributions, incoming_attribution)
 
 
 def inflate_valuation(valuation, amount):
