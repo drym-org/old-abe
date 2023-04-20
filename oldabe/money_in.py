@@ -291,7 +291,7 @@ def distribute_payment(payment, attributions):
     transactions = generate_transactions(
         payment.amount, attributions, payment.file, commit_hash
     )
-    write_append_transactions(transactions)
+    return transactions
 
 
 def handle_investment(payment, attributions, price, prior_valuation):
@@ -334,12 +334,13 @@ def process_new_attributable_payments(attributions):
     price = read_price()
     valuation = read_valuation()
     unprocessed_payments = _get_unprocessed_payment_files(attributable=True)
+    transactions = []
     for payment_file in unprocessed_payments:
         print(payment_file)
         payment = read_payment(payment_file, attributable=True)
-        distribute_payment(payment, attributions)
+        transactions += distribute_payment(payment, attributions)
         valuation = handle_investment(payment, attributions, price, valuation)
-    return valuation
+    return transactions, valuation
 
 
 def process_new_nonattributable_payments(attributions):
@@ -363,10 +364,14 @@ def process_new_nonattributable_payments(attributions):
 
 def process_new_payments():
     attributions = read_attributions()
-    # this does not change attributions
+    # this does not change attributions or valuation
     process_new_nonattributable_payments(attributions)
-    # this may mutate attributions
-    posterior_valuation = process_new_attributable_payments(attributions)
+    # this may mutate attributions and inflate valuation
+    transactions, posterior_valuation = process_new_attributable_payments(attributions)
+    # we only write the changes to disk at the end
+    # so that if any errors are encountered, no
+    # changes are made.
+    write_append_transactions(transactions)
     write_attributions(attributions)
     write_valuation(posterior_valuation)
 
