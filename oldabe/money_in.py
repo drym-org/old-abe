@@ -167,9 +167,9 @@ def calculate_incoming_investment(payment, price):
     return max(0, incoming_investment)
 
 
-def calculate_incoming_attribution(email,
-                                   incoming_investment,
-                                   posterior_valuation):
+def calculate_incoming_attribution(
+    email, incoming_investment, posterior_valuation
+):
     """
     If there is an incoming investment, find out what proportion it
     represents of the overall (posterior) valuation of the project.
@@ -208,7 +208,8 @@ def renormalize(attributions, incoming_attribution):
         attributions[email] *= target_proportion
     # add incoming share to existing investor or record new investor
     attributions[incoming_attribution.email] = (
-        attributions.get(incoming_attribution.email, 0) + incoming_attribution.share
+        attributions.get(incoming_attribution.email, 0)
+        + incoming_attribution.share
     )
 
 
@@ -301,10 +302,10 @@ def handle_investment(payment, attributions, price, prior_valuation):
     attributed a share commensurate with their investment, diluting the
     attributions.
     """
-    incoming_investment = calculate_incoming_investment(
-        payment, price
+    incoming_investment = calculate_incoming_investment(payment, price)
+    posterior_valuation = inflate_valuation(
+        prior_valuation, incoming_investment
     )
-    posterior_valuation = inflate_valuation(prior_valuation, incoming_investment)
     incoming_attribution = calculate_incoming_attribution(
         payment.email, incoming_investment, posterior_valuation
     )
@@ -365,7 +366,9 @@ def process_new_payments():
     # this does not change attributions or valuation
     process_new_nonattributable_payments(attributions)
     # this may mutate attributions and inflate valuation
-    transactions, posterior_valuation = process_new_attributable_payments(attributions)
+    transactions, posterior_valuation = process_new_attributable_payments(
+        attributions
+    )
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no
     # changes are made.

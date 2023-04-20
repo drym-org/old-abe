@@ -109,7 +109,9 @@ class TestGenerateTransactions:
         for t in result:
             assert t.amount == normalized_attributions[t.email] * amount
 
-    def test_everyone_in_attributions_are_represented(self, normalized_attributions):
+    def test_everyone_in_attributions_are_represented(
+        self, normalized_attributions
+    ):
         amount = 100
         payment_file = 'payment-1.txt'
         commit_hash = 'abc123'
@@ -142,25 +144,30 @@ class TestGenerateTransactions:
 
 
 class TestProcessNewAttributablePayments:
-
     @patch('oldabe.money_in._get_unprocessed_payment_files')
     @patch('oldabe.money_in.read_valuation')
     @patch('oldabe.money_in.read_price')
     @patch('oldabe.money_in.read_payment')
-    def test_collects_transactions_for_all_payments(self,
-                                                    mock_read_payment,
-                                                    mock_read_price,
-                                                    mock_read_valuation,
-                                                    mock_unprocessed_files,
-                                                    normalized_attributions):
+    def test_collects_transactions_for_all_payments(
+        self,
+        mock_read_payment,
+        mock_read_price,
+        mock_read_valuation,
+        mock_unprocessed_files,
+        normalized_attributions,
+    ):
         price = 100
         valuation = 1000
         payments = [Payment('a@b.com', 100), Payment('a@b.com', 200)]
         mock_read_payment.side_effect = call_sequence(payments)
         mock_read_price.return_value = price
         mock_read_valuation.return_value = valuation
-        mock_unprocessed_files.return_value = payments  # just any list of the right size
-        transactions, _ = process_new_attributable_payments(normalized_attributions)
+        mock_unprocessed_files.return_value = (
+            payments  # just any list of the right size
+        )
+        transactions, _ = process_new_attributable_payments(
+            normalized_attributions
+        )
         # generates N transactions for each payment,
         # and there are two payments
         assert len(transactions) == 2 * len(normalized_attributions)
@@ -174,13 +181,17 @@ class TestCalculateIncomingAttribution:
         assert calculate_incoming_attribution('a@b.co', 0, 10000) == None
 
     def test_normal_incoming_investment(self):
-        assert calculate_incoming_attribution('a@b.co', 50, 10000) == Attribution(
+        assert calculate_incoming_attribution(
+            'a@b.co', 50, 10000
+        ) == Attribution(
             'a@b.co',
             0.005,
         )
 
     def test_large_incoming_investment(self):
-        assert calculate_incoming_attribution('a@b.co', 5000, 10000) == Attribution(
+        assert calculate_incoming_attribution(
+            'a@b.co', 5000, 10000
+        ) == Attribution(
             'a@b.co',
             0.5,
         )
@@ -327,11 +338,16 @@ class TestCorrectRoundingError:
         attributions = request.getfixturevalue(attributions)
         mock_rounding_difference.return_value = test_diff
         incoming_email = 'a@b.com'
-        incoming_attribution = Attribution(incoming_email, attributions[incoming_email])
+        incoming_attribution = Attribution(
+            incoming_email, attributions[incoming_email]
+        )
         other_attributions = attributions.copy()
         other_attributions.pop(incoming_attribution.email)
         correct_rounding_error(attributions, incoming_attribution)
-        assert attributions[incoming_attribution.email] == incoming_attribution.share - test_diff
+        assert (
+            attributions[incoming_attribution.email]
+            == incoming_attribution.share - test_diff
+        )
 
     @pytest.mark.parametrize(
         "attributions, test_diff",
@@ -354,7 +370,9 @@ class TestCorrectRoundingError:
         attributions = request.getfixturevalue(attributions)
         mock_rounding_difference.return_value = test_diff
         incoming_email = 'a@b.com'
-        incoming_attribution = Attribution(incoming_email, attributions[incoming_email])
+        incoming_attribution = Attribution(
+            incoming_email, attributions[incoming_email]
+        )
         other_attributions = attributions.copy()
         other_attributions.pop(incoming_attribution.email)
         correct_rounding_error(attributions, incoming_attribution)
