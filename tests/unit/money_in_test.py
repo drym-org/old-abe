@@ -11,7 +11,7 @@ from oldabe.money_in import (
     renormalize,
     inflate_valuation,
 )
-from oldabe.models import Payment
+from oldabe.models import Attribution, Payment
 import pytest
 from unittest.mock import patch
 from .fixtures import (
@@ -136,13 +136,13 @@ class TestCalculateIncomingAttribution:
         assert calculate_incoming_attribution('a@b.co', 0, 10000) == None
 
     def test_normal_incoming_investment(self):
-        assert calculate_incoming_attribution('a@b.co', 50, 10000) == (
+        assert calculate_incoming_attribution('a@b.co', 50, 10000) == Attribution(
             'a@b.co',
             0.005,
         )
 
     def test_large_incoming_investment(self):
-        assert calculate_incoming_attribution('a@b.co', 5000, 10000) == (
+        assert calculate_incoming_attribution('a@b.co', 5000, 10000) == Attribution(
             'a@b.co',
             0.5,
         )
@@ -204,7 +204,7 @@ class TestRenormalize:
             'c@d.com': Decimal('0.05'),
         }
 
-        incoming_attribution = ['c@d.com', Decimal('0.05')]
+        incoming_attribution = Attribution('c@d.com', Decimal('0.05'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -216,7 +216,7 @@ class TestRenormalize:
             'c@d.com': Decimal('0.5'),
         }
 
-        incoming_attribution = ['c@d.com', Decimal('0.5')]
+        incoming_attribution = Attribution('c@d.com', Decimal('0.5'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -228,7 +228,7 @@ class TestRenormalize:
             'c@d.com': Decimal('0.7'),
         }
 
-        incoming_attribution = ['c@d.com', Decimal('0.7')]
+        incoming_attribution = Attribution('c@d.com', Decimal('0.7'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -239,7 +239,7 @@ class TestRenormalize:
             'b@c.com': Decimal('0.81'),
         }
 
-        incoming_attribution = ['b@c.com', Decimal('0.05')]
+        incoming_attribution = Attribution('b@c.com', Decimal('0.05'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -250,7 +250,7 @@ class TestRenormalize:
             'b@c.com': Decimal('0.9'),
         }
 
-        incoming_attribution = ['b@c.com', Decimal('0.5')]
+        incoming_attribution = Attribution('b@c.com', Decimal('0.5'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -261,7 +261,7 @@ class TestRenormalize:
             'b@c.com': Decimal('0.94'),
         }
 
-        incoming_attribution = ['b@c.com', Decimal('0.7')]
+        incoming_attribution = Attribution('b@c.com', Decimal('0.7'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -289,11 +289,11 @@ class TestCorrectRoundingError:
         attributions = request.getfixturevalue(attributions)
         mock_rounding_difference.return_value = test_diff
         incoming_email = 'a@b.com'
-        incoming_share = attributions[incoming_email]
+        incoming_attribution = Attribution(incoming_email, attributions[incoming_email])
         other_attributions = attributions.copy()
-        other_attributions.pop(incoming_email)
-        correct_rounding_error(attributions, incoming_email)
-        assert attributions[incoming_email] == incoming_share - test_diff
+        other_attributions.pop(incoming_attribution.email)
+        correct_rounding_error(attributions, incoming_attribution)
+        assert attributions[incoming_attribution.email] == incoming_attribution.share - test_diff
 
     @pytest.mark.parametrize(
         "attributions, test_diff",
@@ -316,10 +316,11 @@ class TestCorrectRoundingError:
         attributions = request.getfixturevalue(attributions)
         mock_rounding_difference.return_value = test_diff
         incoming_email = 'a@b.com'
+        incoming_attribution = Attribution(incoming_email, attributions[incoming_email])
         other_attributions = attributions.copy()
-        other_attributions.pop(incoming_email)
-        correct_rounding_error(attributions, incoming_email)
-        attributions.pop(incoming_email)
+        other_attributions.pop(incoming_attribution.email)
+        correct_rounding_error(attributions, incoming_attribution)
+        attributions.pop(incoming_attribution.email)
         assert attributions == other_attributions
 
 
