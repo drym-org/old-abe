@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from models import Transaction
+from .models import Transaction
 from datetime import datetime
 import csv
 import os
@@ -42,16 +42,21 @@ def read_payout_amounts():
     return balances
 
 
-def compute_balances(owed, paid):
+def compute_balances(owed: dict, paid: dict):
+    """
+    Compute the balance owed to each contributor.
+    """
     balances = defaultdict(int)
     for email in owed.keys():
         balance = owed[email] - paid[email]
-        if balance > Decimal(0):
+        if balance > Decimal("0"):
             balances[email] = balance
     return balances
 
 
-def prepare_message(balances):
+def prepare_message(balances: dict):
+    if not balances:
+        return "There are no outstanding balances."
     balances_table = ""
     for name, balance in balances.items():
         balances_table += f"{name} | {balance:.2f}\n"
