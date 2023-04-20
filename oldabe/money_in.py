@@ -257,7 +257,6 @@ def dilute_attributions(incoming_attribution, attributions):
     """
     renormalize(attributions, incoming_attribution)
     correct_rounding_error(attributions, incoming_attribution[0])
-    write_attributions(attributions)
 
 
 def inflate_valuation(valuation, amount):
@@ -265,9 +264,7 @@ def inflate_valuation(valuation, amount):
     Determine the posterior valuation as the fresh investment amount
     added to the prior valuation.
     """
-    new_valuation = valuation + amount
-    write_valuation(new_valuation)
-    return new_valuation
+    return valuation + amount
 
 
 def get_git_revision_short_hash() -> str:
@@ -315,6 +312,7 @@ def handle_investment(payment, attributions, price, prior_valuation):
     )
     if incoming_attribution:
         dilute_attributions(incoming_attribution, attributions)
+    return posterior_valuation
 
 
 def _get_unprocessed_payment_files(attributable=True):
@@ -340,7 +338,8 @@ def process_new_attributable_payments(attributions):
         print(payment_file)
         payment = read_payment(payment_file, attributable=True)
         distribute_payment(payment, attributions)
-        handle_investment(payment, attributions, price, valuation)
+        valuation = handle_investment(payment, attributions, price, valuation)
+    return valuation
 
 
 def process_new_nonattributable_payments(attributions):
@@ -366,7 +365,10 @@ def process_new_payments():
     attributions = read_attributions()
     # this does not change attributions
     process_new_nonattributable_payments(attributions)
-    process_new_attributable_payments(attributions)
+    # this may mutate attributions
+    posterior_valuation = process_new_attributable_payments(attributions)
+    write_attributions(attributions)
+    write_valuation(posterior_valuation)
 
 
 def main():
