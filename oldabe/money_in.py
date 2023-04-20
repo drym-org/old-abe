@@ -237,7 +237,7 @@ def write_attributions(attributions):
             writer.writerow(row)
 
 
-def write_transactions(transactions):
+def write_append_transactions(transactions):
     with open(TRANSACTIONS_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in transactions:
@@ -294,7 +294,7 @@ def distribute_payment(payment, attributions):
     transactions = generate_transactions(
         payment.amount, attributions, payment.file, commit_hash
     )
-    write_transactions(transactions)
+    write_append_transactions(transactions)
 
 
 def handle_investment(payment, attributions, price, prior_valuation):
