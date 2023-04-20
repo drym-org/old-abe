@@ -10,10 +10,12 @@ from oldabe.money_in import (
     ROUNDING_TOLERANCE,
     renormalize,
     inflate_valuation,
+    process_new_attributable_payments,
 )
 from oldabe.models import Attribution, Payment
 import pytest
 from unittest.mock import patch
+from .utils import call_sequence
 from .fixtures import (
     normalized_attributions,
     excess_attributions,
@@ -107,6 +109,17 @@ class TestGenerateTransactions:
         for t in result:
             assert t.amount == normalized_attributions[t.email] * amount
 
+    def test_everyone_in_attributions_are_represented(self, normalized_attributions):
+        amount = 100
+        payment_file = 'payment-1.txt'
+        commit_hash = 'abc123'
+        result = generate_transactions(
+            amount, normalized_attributions, payment_file, commit_hash
+        )
+        emails = [t.email for t in result]
+        for contributor in normalized_attributions:
+            assert contributor in emails
+
     def test_transaction_refers_to_payment(self, normalized_attributions):
         amount = 100
         payment_file = 'payment-1.txt'
@@ -126,6 +139,31 @@ class TestGenerateTransactions:
         )
         t = result[0]
         assert t.commit_hash == commit_hash
+
+
+class TestProcessNewAttributablePayments:
+
+    @patch('oldabe.money_in._get_unprocessed_payment_files')
+    @patch('oldabe.money_in.read_valuation')
+    @patch('oldabe.money_in.read_price')
+    @patch('oldabe.money_in.read_payment')
+    def test_collects_transactions_for_all_payments(self,
+                                                    mock_read_payment,
+                                                    mock_read_price,
+                                                    mock_read_valuation,
+                                                    mock_unprocessed_files,
+                                                    normalized_attributions):
+        price = 100
+        valuation = 1000
+        payments = [Payment('a@b.com', 100), Payment('a@b.com', 200)]
+        mock_read_payment.side_effect = call_sequence(payments)
+        mock_read_price.return_value = price
+        mock_read_valuation.return_value = valuation
+        mock_unprocessed_files.return_value = payments  # just any list of the right size
+        transactions, _ = process_new_attributable_payments(normalized_attributions)
+        # generates N transactions for each payment,
+        # and there are two payments
+        assert len(transactions) == 2 * len(normalized_attributions)
 
 
 class TestCalculateIncomingAttribution:
@@ -324,7 +362,7 @@ class TestCorrectRoundingError:
         assert attributions == other_attributions
 
 
-class TestUpdateValuation:
+class TestInflateValuation:
     @patch('oldabe.money_in.open')
     def test_valuation_inflates_by_fresh_value(self, mock_open):
         amount = 100
