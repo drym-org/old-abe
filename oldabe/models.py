@@ -12,6 +12,7 @@ class Transaction:
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 
+@dataclass
 class Debt:
     email: str = None
     amount: Decimal = None
