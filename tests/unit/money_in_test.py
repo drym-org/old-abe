@@ -9,7 +9,7 @@ from oldabe.money_in import (
     get_rounding_difference,
     ROUNDING_TOLERANCE,
     renormalize,
-    update_valuation,
+    inflate_valuation,
 )
 from oldabe.models import Payment
 import pytest
@@ -328,7 +328,7 @@ class TestUpdateValuation:
     def test_valuation_inflates_by_fresh_value(self, mock_open):
         amount = 100
         valuation = 1000
-        new_valuation = update_valuation(valuation, amount)
+        new_valuation = inflate_valuation(valuation, amount)
         assert new_valuation == amount + valuation
 
 
