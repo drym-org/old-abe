@@ -177,9 +177,8 @@ def calculate_incoming_attribution(
     If there is an incoming investment, find out what proportion it
     represents of the overall (posterior) valuation of the project.
     """
-    nondilutable_shares = [a.share for a in attributions.values() if not a.dilutable]
-    nondilutable_proportion = sum(nondilutable_shares)
-    dilutable_proportion = 1 - nondilutable_proportion
+    dilutable_shares = [a.share for a in attributions.values() if a.dilutable]
+    dilutable_proportion = sum(dilutable_shares)
     if incoming_investment > 0:
         share = incoming_investment / (posterior_valuation * dilutable_proportion)
         return Attribution(email, share)
