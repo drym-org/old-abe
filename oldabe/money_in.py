@@ -92,6 +92,7 @@ def read_attributions():
     with open(ATTRIBUTIONS_FILE) as f:
         for row in csv.reader(f):
             email, percentage, dilutable = row
+            dilutable = bool(int(dilutable))
             attributions[email] = Attribution(email=email,
                                               share=parse_percentage(percentage),
                                               dilutable=dilutable)
@@ -170,14 +171,17 @@ def calculate_incoming_investment(payment, price):
 
 
 def calculate_incoming_attribution(
-    email, incoming_investment, posterior_valuation
+        email, incoming_investment, posterior_valuation, attributions
 ):
     """
     If there is an incoming investment, find out what proportion it
     represents of the overall (posterior) valuation of the project.
     """
+    nondilutable_shares = [a.share for a in attributions.values() if not a.dilutable]
+    nondilutable_proportion = sum(nondilutable_shares)
+    dilutable_proportion = 1 - nondilutable_proportion
     if incoming_investment > 0:
-        share = incoming_investment / posterior_valuation
+        share = incoming_investment / (posterior_valuation * dilutable_proportion)
         return Attribution(email, share)
     else:
         return None
@@ -210,8 +214,9 @@ def renormalize(attributions, incoming_attribution):
     """
     nondilutable_shares = [a.share for a in attributions.values() if not a.dilutable]
     nondilutable_proportion = sum(nondilutable_shares)
-    target_proportion = Decimal("1") - nondilutable_proportion - incoming_attribution.share
-    for email in attributions:
+    target_proportion = (Decimal("1") - nondilutable_proportion - incoming_attribution.share) / (Decimal('1') - nondilutable_proportion)
+    dilutable_attributions = {k: v for k, v in attributions.items() if v.dilutable}
+    for email in dilutable_attributions:
         # renormalize to reflect dilution
         attributions[email].share *= target_proportion
     # add incoming share to existing investor or record new investor
@@ -318,7 +323,7 @@ def handle_investment(payment, attributions, price, prior_valuation):
         prior_valuation, incoming_investment
     )
     incoming_attribution = calculate_incoming_attribution(
-        payment.email, incoming_investment, posterior_valuation
+        payment.email, incoming_investment, posterior_valuation, attributions
     )
     if incoming_attribution:
         dilute_attributions(incoming_attribution, attributions)
