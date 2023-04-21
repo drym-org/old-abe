@@ -179,8 +179,9 @@ def calculate_incoming_attribution(
     """
     dilutable_shares = [a.share for a in attributions.values() if a.dilutable]
     dilutable_proportion = sum(dilutable_shares)
+    dilutable_valuation = posterior_valuation * dilutable_proportion
     if incoming_investment > 0:
-        share = incoming_investment / (posterior_valuation * dilutable_proportion)
+        share = incoming_investment / dilutable_valuation
         return Attribution(email, share)
     else:
         return None
@@ -211,9 +212,9 @@ def renormalize(attributions, incoming_attribution):
     "renormalized."  This effectively dilutes the attributions by the magnitude
     of the incoming attribution.
     """
-    nondilutable_shares = [a.share for a in attributions.values() if not a.dilutable]
-    nondilutable_proportion = sum(nondilutable_shares)
-    target_proportion = (Decimal("1") - nondilutable_proportion - incoming_attribution.share) / (Decimal('1') - nondilutable_proportion)
+    dilutable_shares = [a.share for a in attributions.values() if a.dilutable]
+    dilutable_proportion = sum(dilutable_shares)
+    target_proportion = dilutable_proportion - incoming_attribution.share / dilutable_proportion
     dilutable_attributions = {k: v for k, v in attributions.items() if v.dilutable}
     for email in dilutable_attributions:
         # renormalize to reflect dilution
