@@ -9,11 +9,13 @@ from oldabe.money_in import (
     get_rounding_difference,
     ROUNDING_TOLERANCE,
     renormalize,
-    update_valuation,
+    inflate_valuation,
+    process_new_attributable_payments,
 )
-from oldabe.models import Payment
+from oldabe.models import Attribution, Payment
 import pytest
 from unittest.mock import patch
+from .utils import call_sequence
 from .fixtures import (
     normalized_attributions,
     excess_attributions,
@@ -107,6 +109,19 @@ class TestGenerateTransactions:
         for t in result:
             assert t.amount == normalized_attributions[t.email] * amount
 
+    def test_everyone_in_attributions_are_represented(
+        self, normalized_attributions
+    ):
+        amount = 100
+        payment_file = 'payment-1.txt'
+        commit_hash = 'abc123'
+        result = generate_transactions(
+            amount, normalized_attributions, payment_file, commit_hash
+        )
+        emails = [t.email for t in result]
+        for contributor in normalized_attributions:
+            assert contributor in emails
+
     def test_transaction_refers_to_payment(self, normalized_attributions):
         amount = 100
         payment_file = 'payment-1.txt'
@@ -128,6 +143,36 @@ class TestGenerateTransactions:
         assert t.commit_hash == commit_hash
 
 
+class TestProcessNewAttributablePayments:
+    @patch('oldabe.money_in._get_unprocessed_payment_files')
+    @patch('oldabe.money_in.read_valuation')
+    @patch('oldabe.money_in.read_price')
+    @patch('oldabe.money_in.read_payment')
+    def test_collects_transactions_for_all_payments(
+        self,
+        mock_read_payment,
+        mock_read_price,
+        mock_read_valuation,
+        mock_unprocessed_files,
+        normalized_attributions,
+    ):
+        price = 100
+        valuation = 1000
+        payments = [Payment('a@b.com', 100), Payment('a@b.com', 200)]
+        mock_read_payment.side_effect = call_sequence(payments)
+        mock_read_price.return_value = price
+        mock_read_valuation.return_value = valuation
+        mock_unprocessed_files.return_value = (
+            payments  # just any list of the right size
+        )
+        transactions, _ = process_new_attributable_payments(
+            normalized_attributions
+        )
+        # generates N transactions for each payment,
+        # and there are two payments
+        assert len(transactions) == 2 * len(normalized_attributions)
+
+
 class TestCalculateIncomingAttribution:
     def test_incoming_investment_less_than_zero(self):
         assert calculate_incoming_attribution('a@b.co', -50, 10000) == None
@@ -136,13 +181,17 @@ class TestCalculateIncomingAttribution:
         assert calculate_incoming_attribution('a@b.co', 0, 10000) == None
 
     def test_normal_incoming_investment(self):
-        assert calculate_incoming_attribution('a@b.co', 50, 10000) == (
+        assert calculate_incoming_attribution(
+            'a@b.co', 50, 10000
+        ) == Attribution(
             'a@b.co',
             0.005,
         )
 
     def test_large_incoming_investment(self):
-        assert calculate_incoming_attribution('a@b.co', 5000, 10000) == (
+        assert calculate_incoming_attribution(
+            'a@b.co', 5000, 10000
+        ) == Attribution(
             'a@b.co',
             0.5,
         )
@@ -204,7 +253,7 @@ class TestRenormalize:
             'c@d.com': Decimal('0.05'),
         }
 
-        incoming_attribution = ['c@d.com', Decimal('0.05')]
+        incoming_attribution = Attribution('c@d.com', Decimal('0.05'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -216,7 +265,7 @@ class TestRenormalize:
             'c@d.com': Decimal('0.5'),
         }
 
-        incoming_attribution = ['c@d.com', Decimal('0.5')]
+        incoming_attribution = Attribution('c@d.com', Decimal('0.5'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -228,7 +277,7 @@ class TestRenormalize:
             'c@d.com': Decimal('0.7'),
         }
 
-        incoming_attribution = ['c@d.com', Decimal('0.7')]
+        incoming_attribution = Attribution('c@d.com', Decimal('0.7'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -239,7 +288,7 @@ class TestRenormalize:
             'b@c.com': Decimal('0.81'),
         }
 
-        incoming_attribution = ['b@c.com', Decimal('0.05')]
+        incoming_attribution = Attribution('b@c.com', Decimal('0.05'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -250,7 +299,7 @@ class TestRenormalize:
             'b@c.com': Decimal('0.9'),
         }
 
-        incoming_attribution = ['b@c.com', Decimal('0.5')]
+        incoming_attribution = Attribution('b@c.com', Decimal('0.5'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -261,7 +310,7 @@ class TestRenormalize:
             'b@c.com': Decimal('0.94'),
         }
 
-        incoming_attribution = ['b@c.com', Decimal('0.7')]
+        incoming_attribution = Attribution('b@c.com', Decimal('0.7'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -289,11 +338,16 @@ class TestCorrectRoundingError:
         attributions = request.getfixturevalue(attributions)
         mock_rounding_difference.return_value = test_diff
         incoming_email = 'a@b.com'
-        incoming_share = attributions[incoming_email]
+        incoming_attribution = Attribution(
+            incoming_email, attributions[incoming_email]
+        )
         other_attributions = attributions.copy()
-        other_attributions.pop(incoming_email)
-        correct_rounding_error(attributions, incoming_email)
-        assert attributions[incoming_email] == incoming_share - test_diff
+        other_attributions.pop(incoming_attribution.email)
+        correct_rounding_error(attributions, incoming_attribution)
+        assert (
+            attributions[incoming_attribution.email]
+            == incoming_attribution.share - test_diff
+        )
 
     @pytest.mark.parametrize(
         "attributions, test_diff",
@@ -316,19 +370,22 @@ class TestCorrectRoundingError:
         attributions = request.getfixturevalue(attributions)
         mock_rounding_difference.return_value = test_diff
         incoming_email = 'a@b.com'
+        incoming_attribution = Attribution(
+            incoming_email, attributions[incoming_email]
+        )
         other_attributions = attributions.copy()
-        other_attributions.pop(incoming_email)
-        correct_rounding_error(attributions, incoming_email)
-        attributions.pop(incoming_email)
+        other_attributions.pop(incoming_attribution.email)
+        correct_rounding_error(attributions, incoming_attribution)
+        attributions.pop(incoming_attribution.email)
         assert attributions == other_attributions
 
 
-class TestUpdateValuation:
+class TestInflateValuation:
     @patch('oldabe.money_in.open')
     def test_valuation_inflates_by_fresh_value(self, mock_open):
         amount = 100
         valuation = 1000
-        new_valuation = update_valuation(valuation, amount)
+        new_valuation = inflate_valuation(valuation, amount)
         assert new_valuation == amount + valuation
 
 

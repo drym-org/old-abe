@@ -6,7 +6,7 @@ from dataclasses import astuple
 import re
 import os
 import subprocess
-from .models import Payment, Transaction
+from .models import Attribution, Payment, Transaction
 
 ABE_ROOT = 'abe'
 PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
@@ -17,6 +17,8 @@ TRANSACTIONS_FILE = os.path.join(ABE_ROOT, 'transactions.txt')
 PRICE_FILE = os.path.join(ABE_ROOT, 'price.txt')
 VALUATION_FILE = os.path.join(ABE_ROOT, 'valuation.txt')
 ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attributions.txt')
+
+ROUNDING_TOLERANCE = Decimal("0.000001")
 
 
 def parse_percentage(value):
@@ -165,27 +167,25 @@ def calculate_incoming_investment(payment, price):
     return max(0, incoming_investment)
 
 
-def calculate_incoming_attribution(email, incoming_investment, valuation):
+def calculate_incoming_attribution(
+    email, incoming_investment, posterior_valuation
+):
     """
     If there is an incoming investment, find out what proportion it
-    represents of the overall valuation of the project.
+    represents of the overall (posterior) valuation of the project.
     """
     if incoming_investment > 0:
-        # TODO - do we need to wrap anything in a Decimal here?
-        share = incoming_investment / valuation
-        return email, share
+        share = incoming_investment / posterior_valuation
+        return Attribution(email, share)
     else:
         return None
 
 
-ROUNDING_TOLERANCE = Decimal("0.000001")
-
-
 def get_rounding_difference(attributions):
-    """Due to finite precision, the Decimal module will round up or down
-    on the last decimal place. This could result in the aggregate value not
-    quite totaling to 1. This corrects that total by either adding or
-    subtracting the difference from the incoming attribution.
+    """
+    Get the difference of the total of the attributions from 1, which is
+    expected to occur due to finite precision. If the difference exceeds the
+    expected error tolerance, an error is signaled.
     """
     total = sum(attributions.values())
     difference = total - Decimal("1")
@@ -194,24 +194,39 @@ def get_rounding_difference(attributions):
 
 
 def renormalize(attributions, incoming_attribution):
-    incoming_email, incoming_share = incoming_attribution
-    target_proportion = Decimal("1") - incoming_share
+    """
+    The incoming attribution is determined as a proportion of the total
+    posterior valuation.  As the existing attributions total to 1 and don't
+    account for it, they must be proportionately scaled so that their new total
+    added to the incoming attribution once again totals to one, i.e. is
+    "renormalized."  This effectively dilutes the attributions by the magnitude
+    of the incoming attribution.
+    """
+    target_proportion = Decimal("1") - incoming_attribution.share
     for email in attributions:
         # renormalize to reflect dilution
         attributions[email] *= target_proportion
     # add incoming share to existing investor or record new investor
-    attributions[incoming_email] = (
-        attributions.get(incoming_email, 0) + incoming_share
+    attributions[incoming_attribution.email] = (
+        attributions.get(incoming_attribution.email, 0)
+        + incoming_attribution.share
     )
+
+
+def correct_rounding_error(attributions, incoming_attribution):
+    """Due to finite precision, the Decimal module will round up or down
+    on the last decimal place. This could result in the aggregate value not
+    quite totaling to 1. This corrects that total by either adding or
+    subtracting the difference from the incoming attribution (by convention).
+    """
+    difference = get_rounding_difference(attributions)
+    attributions[incoming_attribution.email] -= difference
 
 
 def write_attributions(attributions):
     # don't write attributions if they aren't normalized
     assert sum(attributions.values()) == Decimal("1")
     # format for output as percentages
-    # BUG: this step causes the result to lose precision
-    # and not total to 100 exactly, since some trailing
-    # decimal positions are lost after multiplying by 100.
     attributions = [
         (email, serialize_proportion(share))
         for email, share in attributions.items()
@@ -222,30 +237,34 @@ def write_attributions(attributions):
             writer.writerow(row)
 
 
-def correct_rounding_error(attributions, incoming_email):
-    difference = get_rounding_difference(attributions)
-    attributions[incoming_email] -= difference
-
-
-def update_attributions(incoming_attribution, attributions):
-    renormalize(attributions, incoming_attribution)
-    correct_rounding_error(attributions, incoming_attribution[0])
-    write_attributions(attributions)
-
-
-def update_transactions(transactions):
+def write_append_transactions(transactions):
     with open(TRANSACTIONS_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in transactions:
             writer.writerow(astuple(row))
 
 
-def update_valuation(valuation, amount):
-    new_valuation = valuation + amount
+def write_valuation(valuation):
     with open(VALUATION_FILE, 'w') as f:
         writer = csv.writer(f)
-        writer.writerow((new_valuation,))
-    return new_valuation
+        writer.writerow((valuation,))
+
+
+def dilute_attributions(incoming_attribution, attributions):
+    """
+    Incorporate a fresh attributive share by diluting existing attributions,
+    and correcting any rounding error that may arise from this.
+    """
+    renormalize(attributions, incoming_attribution)
+    correct_rounding_error(attributions, incoming_attribution)
+
+
+def inflate_valuation(valuation, amount):
+    """
+    Determine the posterior valuation as the fresh investment amount
+    added to the prior valuation.
+    """
+    return valuation + amount
 
 
 def get_git_revision_short_hash() -> str:
@@ -257,7 +276,7 @@ def get_git_revision_short_hash() -> str:
     )
 
 
-def process_payment(payment, attributions):
+def distribute_payment(payment, attributions):
     """
     Generate transactions to contributors from a (new) payment.
 
@@ -272,10 +291,10 @@ def process_payment(payment, attributions):
     transactions = generate_transactions(
         payment.amount, attributions, payment.file, commit_hash
     )
-    update_transactions(transactions)
+    return transactions
 
 
-def handle_investment(payment, attributions, price, valuation):
+def handle_investment(payment, attributions, price, prior_valuation):
     """
     For "attributable" payments (the default), we determine
     if some portion of it counts as an investment in the project. If it does,
@@ -285,13 +304,15 @@ def handle_investment(payment, attributions, price, valuation):
     """
     incoming_investment = calculate_incoming_investment(payment, price)
     # inflate valuation by the amount of the fresh investment
-    valuation = update_valuation(valuation, incoming_investment)
+    posterior_valuation = inflate_valuation(
+        prior_valuation, incoming_investment
+    )
     incoming_attribution = calculate_incoming_attribution(
-        payment.email, incoming_investment, valuation
+        payment.email, incoming_investment, posterior_valuation
     )
     if incoming_attribution:
-        # dilute attributions
-        update_attributions(incoming_attribution, attributions)
+        dilute_attributions(incoming_attribution, attributions)
+    return posterior_valuation
 
 
 def _get_unprocessed_payment_files(attributable=True):
@@ -313,11 +334,13 @@ def process_new_attributable_payments(attributions):
     price = read_price()
     valuation = read_valuation()
     unprocessed_payments = _get_unprocessed_payment_files(attributable=True)
+    transactions = []
     for payment_file in unprocessed_payments:
         print(payment_file)
         payment = read_payment(payment_file, attributable=True)
-        process_payment(payment, attributions)
-        handle_investment(payment, attributions, price, valuation)
+        transactions += distribute_payment(payment, attributions)
+        valuation = handle_investment(payment, attributions, price, valuation)
+    return transactions, valuation
 
 
 def process_new_nonattributable_payments(attributions):
@@ -336,13 +359,23 @@ def process_new_nonattributable_payments(attributions):
     for payment_file in unprocessed_payments:
         print(payment_file)
         payment = read_payment(payment_file, attributable=False)
-        process_payment(payment, attributions)
+        distribute_payment(payment, attributions)
 
 
 def process_new_payments():
     attributions = read_attributions()
-    process_new_attributable_payments(attributions)
+    # this does not change attributions or valuation
     process_new_nonattributable_payments(attributions)
+    # this may mutate attributions and inflate valuation
+    transactions, posterior_valuation = process_new_attributable_payments(
+        attributions
+    )
+    # we only write the changes to disk at the end
+    # so that if any errors are encountered, no
+    # changes are made.
+    write_append_transactions(transactions)
+    write_attributions(attributions)
+    write_valuation(posterior_valuation)
 
 
 def main():
