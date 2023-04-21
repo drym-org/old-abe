@@ -283,9 +283,7 @@ def handle_investment(payment, attributions, price, valuation):
     attributed a share commensurate with their investment, diluting the
     attributions.
     """
-    incoming_investment = calculate_incoming_investment(
-        payment, price
-    )
+    incoming_investment = calculate_incoming_investment(payment, price)
     # inflate valuation by the amount of the fresh investment
     valuation = update_valuation(valuation, incoming_investment)
     incoming_attribution = calculate_incoming_attribution(

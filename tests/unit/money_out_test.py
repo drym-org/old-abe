@@ -1,6 +1,6 @@
 from oldabe.money_out import (
     compute_balances,
-    prepare_message,
+    prepare_balances_message,
 )
 from collections import defaultdict
 import pytest
@@ -67,11 +67,11 @@ class TestPrepareMessage:
         ],
     )
     def test_matrix(self, balances):
-        result = prepare_message(balances)
+        result = prepare_balances_message(balances)
         for k in balances.keys():
             assert k in result
 
     def test_no_balances(self):
         balances = {}
-        result = prepare_message(balances)
-        assert result == "There are no outstanding balances."
+        result = prepare_balances_message(balances)
+        assert result == "There are no outstanding (payable) balances."
