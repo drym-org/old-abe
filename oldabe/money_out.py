@@ -127,7 +127,7 @@ def main():
     balances_message = prepare_balances_message(balances)
     outstanding_debts = read_outstanding_debt_amounts()
     debts_message = prepare_debts_message(outstanding_debts)
-    print(balances_message)
+    print(combined_message(balances_message, debts_message))
 
 
 if __name__ == "__main__":
