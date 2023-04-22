@@ -11,6 +11,8 @@ echo "Running ls..."
 echo $(ls /)
 echo "... done."
 
+export PYTHONPATH=/:$PYTHONPATH
+
 echo "Running ls /github/workspace..."
 echo $(ls /github/workspace)
 echo "... done."
