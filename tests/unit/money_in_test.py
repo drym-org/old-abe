@@ -174,32 +174,45 @@ class TestProcessNewAttributablePayments:
 
 
 class TestCalculateIncomingAttribution:
-    def test_incoming_investment_less_than_zero(self):
-        assert calculate_incoming_attribution('a@b.co', -50, 10000) == None
-
-    def test_incoming_investment_is_zero(self):
-        assert calculate_incoming_attribution('a@b.co', 0, 10000) == None
-
-    def test_normal_incoming_investment(self):
-        assert calculate_incoming_attribution(
-            'a@b.co', 50, 10000
-        ) == Attribution(
-            'a@b.co',
-            0.005,
+    def test_incoming_investment_less_than_zero(self, normalized_attributions):
+        assert (
+            calculate_incoming_attribution(
+                'a@b.co', -50, 10000, normalized_attributions
+            )
+            == None
         )
 
-    def test_large_incoming_investment(self):
+    def test_incoming_investment_is_zero(self, normalized_attributions):
+        assert (
+            calculate_incoming_attribution(
+                'a@b.co', 0, 10000, normalized_attributions
+            )
+            == None
+        )
+
+    def test_normal_incoming_investment(self, normalized_attributions):
         assert calculate_incoming_attribution(
-            'a@b.co', 5000, 10000
+            'a@b.co', 50, 10000, normalized_attributions
         ) == Attribution(
             'a@b.co',
-            0.5,
+            Decimal('0.005'),
+        )
+
+    def test_large_incoming_investment(self, normalized_attributions):
+        assert calculate_incoming_attribution(
+            'a@b.co', 5000, 10000, normalized_attributions
+        ) == Attribution(
+            'a@b.co',
+            Decimal('0.5'),
         )
 
 
 class TestGetRoundingDifference:
     def test_attributions_already_one(self):
-        attributions = {'a@b.com': Attribution('a@b.com', Decimal("0.2")), 'b@c.com': Attribution('b@c.com', Decimal("0.8"))}
+        attributions = {
+            'a@b.com': Attribution('a@b.com', Decimal("0.2")),
+            'b@c.com': Attribution('b@c.com', Decimal("0.8")),
+        }
         difference = get_rounding_difference(attributions)
         assert difference == Decimal(0)
 

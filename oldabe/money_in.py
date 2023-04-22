@@ -93,9 +93,11 @@ def read_attributions():
         for row in csv.reader(f):
             email, percentage, dilutable = row
             dilutable = bool(int(dilutable))
-            attributions[email] = Attribution(email=email,
-                                              share=parse_percentage(percentage),
-                                              dilutable=dilutable)
+            attributions[email] = Attribution(
+                email=email,
+                share=parse_percentage(percentage),
+                dilutable=dilutable,
+            )
     assert _get_attributions_total(attributions) == Decimal("1")
     return attributions
 
@@ -171,7 +173,7 @@ def calculate_incoming_investment(payment, price):
 
 
 def calculate_incoming_attribution(
-        email, incoming_investment, posterior_valuation, attributions
+    email, incoming_investment, posterior_valuation, attributions
 ):
     """
     If there is an incoming investment, find out what proportion it
@@ -214,8 +216,13 @@ def renormalize(attributions, incoming_attribution):
     """
     dilutable_shares = [a.share for a in attributions.values() if a.dilutable]
     dilutable_proportion = sum(dilutable_shares)
-    target_proportion = dilutable_proportion - incoming_attribution.share / dilutable_proportion
-    dilutable_attributions = {k: v for k, v in attributions.items() if v.dilutable}
+    target_proportion = (
+        dilutable_proportion
+        - incoming_attribution.share / dilutable_proportion
+    )
+    dilutable_attributions = {
+        k: v for k, v in attributions.items() if v.dilutable
+    }
     for email in dilutable_attributions:
         # renormalize to reflect dilution
         attributions[email].share *= target_proportion
@@ -224,7 +231,7 @@ def renormalize(attributions, incoming_attribution):
     attributions[incoming_attribution.email] = Attribution(
         incoming_attribution.email,
         (existing_attribution.share if existing_attribution else 0)
-        + incoming_attribution.share
+        + incoming_attribution.share,
     )
 
 
