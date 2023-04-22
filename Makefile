@@ -7,6 +7,7 @@ UNIT_TESTS_PATH = tests/unit
 
 help:
 	@echo "clean - remove all build, test, coverage and Python artifacts"
+	@echo "build - install package and dependencies globally but from the local path"
 	@echo "build - install package and dependencies for local development"
 	@echo "install-docs - Install dependencies for building the documentation"
 	@echo "build-docs - Build self-contained docs that could be hosted somewhere"
@@ -36,6 +37,9 @@ help:
 	@echo "tldr - alias for test-tldr"
 	@echo "coverage - check code coverage quickly with the default Python"
 	@echo "sdist - package"
+
+install:
+	pip install -e .
 
 build:
 	pip install -e .[dev]
