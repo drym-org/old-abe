@@ -18,7 +18,7 @@ echo $(ls /github/workspace)
 echo "... done."
 
 echo "Running money_in script..."
-python /oldabe/money_in.py
+python -m oldabe.money_in
 echo "... done."
 
 # Note that running this locally would cause your global
@@ -39,5 +39,5 @@ echo "... done."
 set -e
 
 echo "Running money_out script..."
-echo balances=$(python /oldabe/money_out.py) >> $GITHUB_OUTPUT
+echo balances=$(python -m oldabe.money_out) >> $GITHUB_OUTPUT
 echo "... done."
