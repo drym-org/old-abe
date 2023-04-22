@@ -175,20 +175,10 @@ class TestProcessNewAttributablePayments:
 
 class TestCalculateIncomingAttribution:
     def test_incoming_investment_less_than_zero(self, normalized_attributions):
-        assert (
-            calculate_incoming_attribution(
-                'a@b.co', -50, 10000
-            )
-            == None
-        )
+        assert calculate_incoming_attribution('a@b.co', -50, 10000) == None
 
     def test_incoming_investment_is_zero(self, normalized_attributions):
-        assert (
-            calculate_incoming_attribution(
-                'a@b.co', 0, 10000
-            )
-            == None
-        )
+        assert calculate_incoming_attribution('a@b.co', 0, 10000) == None
 
     def test_normal_incoming_investment(self, normalized_attributions):
         assert calculate_incoming_attribution(
