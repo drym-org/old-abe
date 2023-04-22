@@ -175,14 +175,24 @@ class TestProcessNewAttributablePayments:
 
 class TestCalculateIncomingAttribution:
     def test_incoming_investment_less_than_zero(self, normalized_attributions):
-        assert calculate_incoming_attribution('a@b.co', -50, 10000) == None
+        assert (
+            calculate_incoming_attribution(
+                'a@b.co', Decimal('-50'), Decimal('10000')
+            )
+            == None
+        )
 
     def test_incoming_investment_is_zero(self, normalized_attributions):
-        assert calculate_incoming_attribution('a@b.co', 0, 10000) == None
+        assert (
+            calculate_incoming_attribution(
+                'a@b.co', Decimal('0'), Decimal('10000')
+            )
+            == None
+        )
 
     def test_normal_incoming_investment(self, normalized_attributions):
         assert calculate_incoming_attribution(
-            'a@b.co', 50, 10000
+            'a@b.co', Decimal('50'), Decimal('10000')
         ) == Attribution(
             'a@b.co',
             Decimal('0.005'),
@@ -190,7 +200,7 @@ class TestCalculateIncomingAttribution:
 
     def test_large_incoming_investment(self, normalized_attributions):
         assert calculate_incoming_attribution(
-            'a@b.co', 5000, 10000
+            'a@b.co', Decimal('5000'), Decimal('10000')
         ) == Attribution(
             'a@b.co',
             Decimal('0.5'),
