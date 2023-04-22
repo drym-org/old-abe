@@ -4,6 +4,9 @@
 # termination with a non-zero exit code
 set -e
 
+echo "PWD is: "
+echo $(pwd)
+
 echo "Running ls..."
 echo $(ls /)
 echo "... done."
