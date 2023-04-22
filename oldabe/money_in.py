@@ -92,11 +92,10 @@ def read_attributions():
     with open(ATTRIBUTIONS_FILE) as f:
         for row in csv.reader(f):
             email, percentage, dilutable = row
-            dilutable = bool(int(dilutable))
             attributions[email] = Attribution(
                 email=email,
                 share=parse_percentage(percentage),
-                dilutable=dilutable,
+                dilutable=bool(int(dilutable)),
             )
     assert _get_attributions_total(attributions) == Decimal("1")
     return attributions
@@ -247,7 +246,7 @@ def write_attributions(attributions):
     assert _get_attributions_total(attributions) == Decimal("1")
     # format for output as percentages
     attributions = [
-        (a.email, serialize_proportion(a.share), a.dilutable)
+        (a.email, serialize_proportion(a.share), (1 if a.dilutable else 0))
         for a in attributions.values()
     ]
     with open(ATTRIBUTIONS_FILE, 'w') as f:
@@ -357,6 +356,9 @@ def process_new_attributable_payments(attributions):
     for payment_file in unprocessed_payments:
         print(payment_file)
         payment = read_payment(payment_file, attributable=True)
+        existing_attribution = attributions.get(payment.email)
+        if existing_attribution and not existing_attribution.dilutable:
+            raise Exception('Non-dilutable contributor cannot make attributable payments!')
         transactions += distribute_payment(payment, attributions)
         valuation = handle_investment(payment, attributions, price, valuation)
     return transactions, valuation
