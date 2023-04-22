@@ -92,7 +92,6 @@ class TestPrepareDebtsMessage:
         for k in debts.keys():
             assert k in result
 
-
     def test_no_debts(self):
         debts = {}
         result = prepare_debts_message(debts)
