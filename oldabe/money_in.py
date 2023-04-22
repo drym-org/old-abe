@@ -91,9 +91,13 @@ def read_attributions():
     attributions = {}
     with open(ATTRIBUTIONS_FILE) as f:
         for row in csv.reader(f):
-            email, percentage = row
-            attributions[email] = parse_percentage(percentage)
-    assert sum(attributions.values()) == Decimal("1")
+            email, percentage, dilutable = row
+            attributions[email] = Attribution(
+                email=email,
+                share=parse_percentage(percentage),
+                dilutable=bool(int(dilutable)),
+            )
+    assert _get_attributions_total(attributions) == Decimal("1")
     return attributions
 
 
@@ -139,8 +143,8 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
     assert amount > 0
     assert attributions
     transactions = []
-    for email, percentage in attributions.items():
-        t = Transaction(email, amount * percentage, payment_file, commit_hash)
+    for a in attributions.values():
+        t = Transaction(a.email, amount * a.share, payment_file, commit_hash)
         transactions.append(t)
     return transactions
 
@@ -181,13 +185,17 @@ def calculate_incoming_attribution(
         return None
 
 
+def _get_attributions_total(attributions):
+    return sum(a.share for a in attributions.values())
+
+
 def get_rounding_difference(attributions):
     """
     Get the difference of the total of the attributions from 1, which is
     expected to occur due to finite precision. If the difference exceeds the
     expected error tolerance, an error is signaled.
     """
-    total = sum(attributions.values())
+    total = _get_attributions_total(attributions)
     difference = total - Decimal("1")
     assert abs(difference) <= ROUNDING_TOLERANCE
     return difference
@@ -202,14 +210,23 @@ def renormalize(attributions, incoming_attribution):
     "renormalized."  This effectively dilutes the attributions by the magnitude
     of the incoming attribution.
     """
-    target_proportion = Decimal("1") - incoming_attribution.share
-    for email in attributions:
+    dilutable_shares = [a.share for a in attributions.values() if a.dilutable]
+    dilutable_proportion = sum(dilutable_shares)
+    target_proportion = (
+        dilutable_proportion - incoming_attribution.share
+    ) / dilutable_proportion
+    dilutable_attributions = {
+        k: v for k, v in attributions.items() if v.dilutable
+    }
+    for email in dilutable_attributions:
         # renormalize to reflect dilution
-        attributions[email] *= target_proportion
+        attributions[email].share *= target_proportion
     # add incoming share to existing investor or record new investor
-    attributions[incoming_attribution.email] = (
-        attributions.get(incoming_attribution.email, 0)
-        + incoming_attribution.share
+    existing_attribution = attributions.get(incoming_attribution.email, None)
+    attributions[incoming_attribution.email] = Attribution(
+        incoming_attribution.email,
+        (existing_attribution.share if existing_attribution else 0)
+        + incoming_attribution.share,
     )
 
 
@@ -220,16 +237,16 @@ def correct_rounding_error(attributions, incoming_attribution):
     subtracting the difference from the incoming attribution (by convention).
     """
     difference = get_rounding_difference(attributions)
-    attributions[incoming_attribution.email] -= difference
+    attributions[incoming_attribution.email].share -= difference
 
 
 def write_attributions(attributions):
     # don't write attributions if they aren't normalized
-    assert sum(attributions.values()) == Decimal("1")
+    assert _get_attributions_total(attributions) == Decimal("1")
     # format for output as percentages
     attributions = [
-        (email, serialize_proportion(share))
-        for email, share in attributions.items()
+        (a.email, serialize_proportion(a.share), (1 if a.dilutable else 0))
+        for a in attributions.values()
     ]
     with open(ATTRIBUTIONS_FILE, 'w') as f:
         writer = csv.writer(f)
@@ -338,6 +355,11 @@ def process_new_attributable_payments(attributions):
     for payment_file in unprocessed_payments:
         print(payment_file)
         payment = read_payment(payment_file, attributable=True)
+        existing_attribution = attributions.get(payment.email)
+        if existing_attribution and not existing_attribution.dilutable:
+            raise Exception(
+                'Non-dilutable contributor cannot make attributable payments!'
+            )
         transactions += distribute_payment(payment, attributions)
         valuation = handle_investment(payment, attributions, price, valuation)
     return transactions, valuation

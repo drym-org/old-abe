@@ -36,3 +36,4 @@ class Payment:
 class Attribution:
     email: str = None
     share: Decimal = 0
+    dilutable: bool = True
