@@ -217,8 +217,8 @@ def renormalize(attributions, incoming_attribution):
     dilutable_shares = [a.share for a in attributions.values() if a.dilutable]
     dilutable_proportion = sum(dilutable_shares)
     target_proportion = (
-        dilutable_proportion
-        - incoming_attribution.share / dilutable_proportion
+        (dilutable_proportion
+        - incoming_attribution.share) / dilutable_proportion
     )
     dilutable_attributions = {
         k: v for k, v in attributions.items() if v.dilutable
