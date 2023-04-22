@@ -36,7 +36,10 @@ def read_payout(payout_file):
 
 def read_payout_amounts():
     balances = defaultdict(int)
-    payout_files = os.listdir(PAYOUTS_DIR)
+    try:
+        payout_files = os.listdir(PAYOUTS_DIR)
+    except FileNotFoundError:
+        payout_files = []
     for payout_file in payout_files:
         email, amount = read_payout(payout_file)
         balances[email] += amount
