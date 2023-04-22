@@ -173,17 +173,14 @@ def calculate_incoming_investment(payment, price):
 
 
 def calculate_incoming_attribution(
-    email, incoming_investment, posterior_valuation, attributions
+    email, incoming_investment, posterior_valuation
 ):
     """
     If there is an incoming investment, find out what proportion it
     represents of the overall (posterior) valuation of the project.
     """
-    dilutable_shares = [a.share for a in attributions.values() if a.dilutable]
-    dilutable_proportion = sum(dilutable_shares)
-    dilutable_valuation = posterior_valuation * dilutable_proportion
     if incoming_investment > 0:
-        share = incoming_investment / dilutable_valuation
+        share = incoming_investment / posterior_valuation
         return Attribution(email, share)
     else:
         return None
@@ -330,7 +327,7 @@ def handle_investment(payment, attributions, price, prior_valuation):
         prior_valuation, incoming_investment
     )
     incoming_attribution = calculate_incoming_attribution(
-        payment.email, incoming_investment, posterior_valuation, attributions
+        payment.email, incoming_investment, posterior_valuation
     )
     if incoming_attribution:
         dilute_attributions(incoming_attribution, attributions)
