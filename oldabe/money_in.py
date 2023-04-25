@@ -13,10 +13,10 @@ PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
 NONATTRIBUTABLE_PAYMENTS_DIR = os.path.join(
     ABE_ROOT, 'payments', 'nonattributable'
 )
-TRANSACTIONS_FILE = os.path.join(ABE_ROOT, 'transactions.txt')
-PRICE_FILE = os.path.join(ABE_ROOT, 'price.txt')
-VALUATION_FILE = os.path.join(ABE_ROOT, 'valuation.txt')
-ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attributions.txt')
+TRANSACTIONS_FILE = 'transactions.txt'
+PRICE_FILE = 'price.txt'
+VALUATION_FILE = 'valuation.txt'
+ATTRIBUTIONS_FILE = 'attributions.txt'
 
 ROUNDING_TOLERANCE = Decimal("0.000001")
 
@@ -83,7 +83,8 @@ def read_payment(payment_file, attributable=True):
 
 
 def read_price():
-    with open(PRICE_FILE) as f:
+    price_file = os.path.join(ABE_ROOT, PRICE_FILE)
+    with open(price_file) as f:
         price = f.readline()
         price = Decimal(re.sub("[^0-9.]", "", price))
         return price
@@ -92,15 +93,17 @@ def read_price():
 # note that commas are used as a decimal separator in some languages
 # (e.g. Spain Spanish), so that would need to be handled at some point
 def read_valuation():
-    with open(VALUATION_FILE) as f:
+    valuation_file = os.path.join(ABE_ROOT, VALUATION_FILE)
+    with open(valuation_file) as f:
         valuation = f.readline()
         valuation = Decimal(re.sub("[^0-9.]", "", valuation))
         return valuation
 
 
-def read_attributions():
+def read_attributions(operational=False):
     attributions = {}
-    with open(ATTRIBUTIONS_FILE) as f:
+    attributions_file = os.path.join(ABE_ROOT, ATTRIBUTIONS_FILE)
+    with open(attributions_file) as f:
         for row in csv.reader(f):
             email, percentage = row
             attributions[email] = parse_percentage(percentage)
@@ -127,7 +130,8 @@ def find_unprocessed_payment_files(attributable=True):
     3. find those which haven't been recorded and return those
     """
     recorded_payments = set()
-    with open(TRANSACTIONS_FILE) as f:
+    transactions_file = os.path.join(ABE_ROOT, TRANSACTIONS_FILE)
+    with open(transactions_file) as f:
         for (
             _email,
             _amount,
@@ -246,14 +250,16 @@ def write_attributions(attributions):
         (email, serialize_proportion(share))
         for email, share in attributions.items()
     ]
-    with open(ATTRIBUTIONS_FILE, 'w') as f:
+    attributions_file = os.path.join(ABE_ROOT, ATTRIBUTIONS_FILE)
+    with open(attributions_file, 'w') as f:
         writer = csv.writer(f)
         for row in attributions:
             writer.writerow(row)
 
 
 def write_append_transactions(transactions):
-    with open(TRANSACTIONS_FILE, 'a') as f:
+    transactions_file = os.path.join(ABE_ROOT, TRANSACTIONS_FILE)
+    with open(transactions_file, 'a') as f:
         writer = csv.writer(f)
         for row in transactions:
             writer.writerow(astuple(row))
@@ -261,7 +267,8 @@ def write_append_transactions(transactions):
 
 def write_valuation(valuation):
     rounded_valuation = f"{valuation:.2f}"
-    with open(VALUATION_FILE, 'w') as f:
+    valuation_file = os.path.join(ABE_ROOT, VALUATION_FILE)
+    with open(valuation_file, 'w') as f:
         writer = csv.writer(f)
         writer.writerow((rounded_valuation,))
 
