@@ -44,8 +44,14 @@ class TestParsePercentage:
     def test_0(self):
         assert parse_percentage('0') == Decimal('0')
 
+    def test_0_point_0(self):
+        assert parse_percentage('0.0') == Decimal('0')
+
     def test_100(self):
         assert parse_percentage('100') == Decimal('1')
+
+    def test_100_point_0(self):
+        assert parse_percentage('100.0') == Decimal('1')
 
 
 class TestSerializeProportion:
