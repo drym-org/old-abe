@@ -208,122 +208,107 @@ class TestCalculateIncomingAttribution:
 
 
 class TestGetRoundingDifference:
-    def test_attributions_already_one(self):
-        attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal("0.2")),
-            'b@c.com': Attribution('b@c.com', Decimal("0.8")),
-        }
-        difference = get_rounding_difference(attributions)
-        assert difference == Decimal(0)
-
-    def test_attributions_exceed_below_tolerance(self):
-        test_diff = ROUNDING_TOLERANCE / Decimal("2")
-        attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal("0.2")),
-            'b@c.com': Attribution('b@c.com', Decimal("0.8")),
-            'c@d.com': Attribution('c@d.com', test_diff),
-        }
+    def test_attributions_already_one(self, normalized_attributions):
+        attributions = normalized_attributions
+        test_diff = Decimal("0")
         difference = get_rounding_difference(attributions)
         assert difference == test_diff
 
-    def test_attributions_exceed_above_tolerance(self):
+    def test_attributions_exceed_below_tolerance(
+        self, normalized_attributions
+    ):
+        attributions = normalized_attributions
+        test_diff = ROUNDING_TOLERANCE / Decimal("2")
+        attributions['c@d.com'] = Attribution('c@d.com', test_diff)
+        difference = get_rounding_difference(attributions)
+        assert difference == test_diff
+
+    def test_attributions_exceed_above_tolerance(
+        self, normalized_attributions
+    ):
+        attributions = normalized_attributions
         test_diff = ROUNDING_TOLERANCE * Decimal("2")
-        attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal("0.2")),
-            'b@c.com': Attribution('b@c.com', Decimal("0.8")),
-            'c@d.com': Attribution('c@d.com', test_diff),
-        }
+        attributions['c@d.com'] = Attribution('c@d.com', test_diff)
         with pytest.raises(AssertionError):
             _ = get_rounding_difference(attributions)
 
-    def test_attributions_exceed_by_tolerance(self):
+    def test_attributions_exceed_by_tolerance(self, normalized_attributions):
+        attributions = normalized_attributions
         test_diff = ROUNDING_TOLERANCE
-        attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal("0.2")),
-            'b@c.com': Attribution('b@c.com', Decimal("0.8")),
-            'c@d.com': Attribution('c@d.com', test_diff),
-        }
+        attributions['c@d.com'] = Attribution('c@d.com', test_diff)
         difference = get_rounding_difference(attributions)
         assert difference == test_diff
 
-    def test_attributions_below_one(self):
+    def test_attributions_below_one(self, normalized_attributions):
+        attributions = normalized_attributions
         test_diff = ROUNDING_TOLERANCE / Decimal("2")
-        attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal("0.2")),
-            'b@c.com': Attribution('b@c.com', Decimal("0.8") - test_diff),
-        }
+        attributions['b@c.com'] = Attribution(
+            'b@c.com', attributions['b@c.com'].share - test_diff
+        )
         difference = get_rounding_difference(attributions)
         assert difference == -test_diff
 
 
-# ariana
 class TestRenormalize:
-    def test_new_investor_5_percent(self, normalized_attributions):
+    @pytest.mark.parametrize(
+        "incoming_attribution, renormalized_attributions",
+        [
+            # new investor
+            (
+                Attribution('c@d.com', Decimal('0.05')),
+                {
+                    'a@b.com': Attribution('a@b.com', Decimal('0.19')),
+                    'b@c.com': Attribution('b@c.com', Decimal('0.76')),
+                    'c@d.com': Attribution('c@d.com', Decimal('0.05')),
+                },
+            ),
+            (
+                Attribution('c@d.com', Decimal('0.5')),
+                {
+                    'a@b.com': Attribution('a@b.com', Decimal('0.1')),
+                    'b@c.com': Attribution('b@c.com', Decimal('0.4')),
+                    'c@d.com': Attribution('c@d.com', Decimal('0.5')),
+                },
+            ),
+            (
+                Attribution('c@d.com', Decimal('0.7')),
+                {
+                    'a@b.com': Attribution('a@b.com', Decimal('0.06')),
+                    'b@c.com': Attribution('b@c.com', Decimal('0.24')),
+                    'c@d.com': Attribution('c@d.com', Decimal('0.7')),
+                },
+            ),
+            # existing investor
+            (
+                Attribution('b@c.com', Decimal('0.05')),
+                {
+                    'a@b.com': Attribution('a@b.com', Decimal('0.19')),
+                    'b@c.com': Attribution('b@c.com', Decimal('0.81')),
+                },
+            ),
+            (
+                Attribution('b@c.com', Decimal('0.5')),
+                {
+                    'a@b.com': Attribution('a@b.com', Decimal('0.1')),
+                    'b@c.com': Attribution('b@c.com', Decimal('0.9')),
+                },
+            ),
+            (
+                Attribution('b@c.com', Decimal('0.7')),
+                {
+                    'a@b.com': Attribution('a@b.com', Decimal('0.06')),
+                    'b@c.com': Attribution('b@c.com', Decimal('0.94')),
+                },
+            ),
+        ],
+    )
+    def test_matrix(
+        self,
+        incoming_attribution,
+        renormalized_attributions,
+        normalized_attributions,
+    ):
         attributions = normalized_attributions
-        renormalized_attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal('0.19')),
-            'b@c.com': Attribution('b@c.com', Decimal('0.76')),
-            'c@d.com': Attribution('c@d.com', Decimal('0.05')),
-        }
-
-        incoming_attribution = Attribution('c@d.com', Decimal('0.05'))
-        renormalize(attributions, incoming_attribution)
-        assert attributions == renormalized_attributions
-
-    def test_new_investor_50_percent(self, normalized_attributions):
-        attributions = normalized_attributions
-        renormalized_attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal('0.1')),
-            'b@c.com': Attribution('b@c.com', Decimal('0.4')),
-            'c@d.com': Attribution('c@d.com', Decimal('0.5')),
-        }
-
-        incoming_attribution = Attribution('c@d.com', Decimal('0.5'))
-        renormalize(attributions, incoming_attribution)
-        assert attributions == renormalized_attributions
-
-    def test_new_investor_70_percent(self, normalized_attributions):
-        attributions = normalized_attributions
-        renormalized_attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal('0.06')),
-            'b@c.com': Attribution('b@c.com', Decimal('0.24')),
-            'c@d.com': Attribution('c@d.com', Decimal('0.7')),
-        }
-
-        incoming_attribution = Attribution('c@d.com', Decimal('0.7'))
-        renormalize(attributions, incoming_attribution)
-        assert attributions == renormalized_attributions
-
-    def test_existing_investor_5_percent(self, normalized_attributions):
-        attributions = normalized_attributions
-        renormalized_attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal('0.19')),
-            'b@c.com': Attribution('b@c.com', Decimal('0.81')),
-        }
-
-        incoming_attribution = Attribution('b@c.com', Decimal('0.05'))
-        renormalize(attributions, incoming_attribution)
-        assert attributions == renormalized_attributions
-
-    def test_existing_investor_50_percent(self, normalized_attributions):
-        attributions = normalized_attributions
-        renormalized_attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal('0.1')),
-            'b@c.com': Attribution('b@c.com', Decimal('0.9')),
-        }
-
-        incoming_attribution = Attribution('b@c.com', Decimal('0.5'))
-        renormalize(attributions, incoming_attribution)
-        assert attributions == renormalized_attributions
-
-    def test_existing_investor_70_percent(self, normalized_attributions):
-        attributions = normalized_attributions
-        renormalized_attributions = {
-            'a@b.com': Attribution('a@b.com', Decimal('0.06')),
-            'b@c.com': Attribution('b@c.com', Decimal('0.94')),
-        }
-
-        incoming_attribution = Attribution('b@c.com', Decimal('0.7'))
         renormalize(attributions, incoming_attribution)
         assert attributions == renormalized_attributions
 
@@ -432,8 +417,3 @@ class TestCalculateIncomingInvestment:
         mock_amount_paid.return_value = prior_contribution + incoming_amount
         result = calculate_incoming_investment(payment, price)
         assert result == expected_investment
-
-
-# jair
-class TestWriteAttributions:
-    pass
