@@ -273,9 +273,10 @@ def write_append_transactions(transactions):
 
 
 def write_valuation(valuation):
+    rounded_valuation = f"{valuation:.2f}"
     with open(VALUATION_FILE, 'w') as f:
         writer = csv.writer(f)
-        writer.writerow((valuation,))
+        writer.writerow((rounded_valuation,))
 
 
 def dilute_attributions(incoming_attribution, attributions):
