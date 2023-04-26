@@ -77,9 +77,9 @@ def read_payment(payment_file, attributable=True):
     )
     with open(os.path.join(payments_dir, payment_file)) as f:
         for row in csv.reader(f, skipinitialspace=True):
-            name, email, amount, _date = row
+            name, _email, amount, _date = row
             amount = re.sub("[^0-9.]", "", amount)
-            return Payment(email, Decimal(amount), attributable, payment_file)
+            return Payment(name, Decimal(amount), attributable, payment_file)
 
 
 def read_price():
