@@ -44,23 +44,40 @@ class TestParsePercentage:
     def test_0(self):
         assert parse_percentage('0') == Decimal('0')
 
+    def test_0_point_0(self):
+        assert parse_percentage('0.0') == Decimal('0')
+
     def test_100(self):
         assert parse_percentage('100') == Decimal('1')
+
+    def test_100_point_0(self):
+        assert parse_percentage('100.0') == Decimal('1')
 
 
 class TestSerializeProportion:
     def test_0(self):
-        assert serialize_proportion(Decimal('0')) == '0.0'
+        assert serialize_proportion(Decimal('0')) == '0'
 
-    # todo - I think we decided we're ok with these trailing zeros?
+    def test_0_point_0(self):
+        assert serialize_proportion(Decimal('0.0')) == '0'
+
+    def test_1(self):
+        assert serialize_proportion(Decimal('1')) == '100'
+
+    def test_1_point_0(self):
+        assert serialize_proportion(Decimal('1.0')) == '100'
+
     def test_almost_1(self):
-        assert serialize_proportion(Decimal('0.9523452')) == '95.2345200'
+        assert serialize_proportion(Decimal('0.9523452')) == '95.23452'
+
+    def test_low_precision_number(self):
+        assert serialize_proportion(Decimal('0.2')) == '20'
 
     def test_very_small_number(self):
-        assert serialize_proportion(Decimal('0.0000002')) == '0.0000200'
+        assert serialize_proportion(Decimal('0.0000002')) == '0.00002'
 
     def test_decimal_places_at_precision_context(self):
-        assert serialize_proportion(Decimal('0.1234567891')) == '12.3456789100'
+        assert serialize_proportion(Decimal('0.1234567891')) == '12.34567891'
 
 
 class TestGenerateTransactions:

@@ -47,16 +47,27 @@ def serialize_proportion(value):
     # otherwise, decimal gets translated '2E-7.0'
     value = format(value, "f")
     if "." in value:
-        value = value + "0"
+        value = value + "00"
     else:
-        value = value + ".0"
+        value = value + ".00"
     value = re.sub(
         r"(?P<pre>\d)\.(?P<post>\d{2})(?P<rest>\d*)",
-        r"\g<pre>\g<post>.\g<rest>0",  # note trailing zero
+        # match a number followed by a decimal point
+        # followed by at least two digits
+        r"\g<pre>\g<post>.\g<rest>",
+        # move the decimal point two places to the right
         value,
     )
-    value = re.sub(r"^0+(\d*)", r"\1", value)
+    # strip leading insignificant zeroes
+    value = value.lstrip("0")
+    # ensure there's a single leading zero if it is
+    # a decimal value less than 1
     value = re.sub(r"^\.", r"0.", value)
+    if "." in value:
+        # strip trailing insignificant zeroes
+        value = value.rstrip("0")
+        # remove decimal point if whole number
+        value = re.sub(r"\.$", r"", value)
     return value
 
 
