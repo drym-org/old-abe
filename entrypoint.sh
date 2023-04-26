@@ -32,8 +32,8 @@ set +e
 
 git commit -m "Updated transactions and attributions"
 git fetch
-git rebase origin/main
-git push origin main
+git rebase origin/`git remote set-head origin -a | cut -d' ' -f4`
+git push origin `git remote set-head origin -a | cut -d' ' -f4`
 echo "... done."
 
 set -e
