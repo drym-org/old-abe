@@ -394,11 +394,14 @@ class TestCorrectRoundingError:
 
 class TestInflateValuation:
     @patch('oldabe.money_in.open')
-    def test_valuation_inflates_by_fresh_value(self, mock_open):
-        amount = 100
+    def test_valuation_inflates_by_fresh_value(self, mock_open, shortfall_attributions):
+        attributions = shortfall_attributions
+        attributions['p@q.com'] = Attribution('p@q.com', Decimal('0.1'), dilutable=False)
+        incoming_investment = 100
+        valuation_delta = incoming_investment * Decimal('0.9')
         valuation = 1000
-        new_valuation = inflate_valuation(valuation, amount)
-        assert new_valuation == amount + valuation
+        new_valuation = inflate_valuation(valuation, incoming_investment, attributions)
+        assert new_valuation == valuation + valuation_delta
 
 
 class TestCalculateIncomingInvestment:
