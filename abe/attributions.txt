@@ -1,3 +1,4 @@
-Sid,34%
-Ariana,33%
-Jair,33%
+Sid,32.3%,1
+Ariana,31.35%,1
+Jair,31.35%,1
+DIA,5%,0
