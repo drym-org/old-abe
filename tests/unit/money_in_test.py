@@ -161,6 +161,8 @@ class TestGenerateTransactions:
 
 
 class TestProcessNewAttributablePayments:
+    @patch('oldabe.money_in.handle_investment')
+    @patch('oldabe.money_in.distribute_payment')
     @patch('oldabe.money_in._get_unprocessed_payment_files')
     @patch('oldabe.money_in.read_valuation')
     @patch('oldabe.money_in.read_price')
@@ -171,6 +173,8 @@ class TestProcessNewAttributablePayments:
         mock_read_price,
         mock_read_valuation,
         mock_unprocessed_files,
+        mock_distribute_payment,
+        mock_handle_investment,
         normalized_attributions,
     ):
         price = 100
@@ -182,6 +186,11 @@ class TestProcessNewAttributablePayments:
         mock_unprocessed_files.return_value = (
             payments  # just any list of the right size
         )
+        # just any list of the right size
+        transaction_batches = [normalized_attributions.keys(),
+                               normalized_attributions.keys()]
+        mock_distribute_payment.side_effect = call_sequence(transaction_batches)
+        mock_handle_investment.return_value = valuation # doesn't matter
         transactions, _ = process_new_attributable_payments(
             normalized_attributions
         )
