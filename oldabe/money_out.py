@@ -28,10 +28,9 @@ def read_transaction_amounts():
 def read_payout(payout_file):
     with open(os.path.join(PAYOUTS_DIR, payout_file)) as f:
         for row in csv.reader(f):
-            name, email, amount = row
-            email = email.strip()
+            name, _email, amount, _date = row
             amount = Decimal(re.sub("[^0-9.]", "", amount))
-            return email, amount
+            return name, amount
 
 
 def read_payout_amounts():
@@ -41,8 +40,8 @@ def read_payout_amounts():
     except FileNotFoundError:
         payout_files = []
     for payout_file in payout_files:
-        email, amount = read_payout(payout_file)
-        balances[email] += amount
+        name, amount = read_payout(payout_file)
+        balances[name] += amount
     return balances
 
 
