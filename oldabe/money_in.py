@@ -113,18 +113,21 @@ def read_attributions(attributions_filename):
     return attributions
 
 
-def get_payment_files(attributable=True):
-    payments_dir = (
-        PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
-    )
-    return {
-        f
-        for f in os.listdir(payments_dir)
-        if not os.path.isdir(os.path.join(payments_dir, f))
-    }
+def get_payments():
+    payments = [
+        read_payment(f, attributable=True)
+        for f in os.listdir(PAYMENTS_DIR)
+        if not os.path.isdir(os.path.join(PAYMENTS_DIR, f))
+    ]
+    payments += [
+        read_payment(f, attributable=False)
+        for f in os.listdir(NONATTRIBUTABLE_PAYMENTS_DIR)
+        if not os.path.isdir(os.path.join(NONATTRIBUTABLE_PAYMENTS_DIR, f))
+    ]
+    return payments
 
 
-def find_unprocessed_payment_files(attributable=True):
+def find_unprocessed_payments():
     """
     1. Read the transactions file to find out which payments are already
        recorded as transactions
@@ -142,10 +145,10 @@ def find_unprocessed_payment_files(attributable=True):
             _created_at,
         ) in csv.reader(f):
             recorded_payments.add(payment_file)
-    all_payments = get_payment_files(attributable)
+    all_payments = set(get_payments())
     print("all payments")
     print(all_payments)
-    return all_payments.difference(recorded_payments)
+    return [p for p in all_payments if p.file not in recorded_payments]
 
 
 def generate_transactions(amount, attributions, payment_file, commit_hash):
@@ -162,14 +165,10 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
     return transactions
 
 
-def total_amount_paid(for_email, attributable=True):
-    payments = 0
-    payment_files = get_payment_files(attributable)
-    for payment_file in payment_files:
-        payment = read_payment(payment_file, attributable)
-        if payment.email == for_email:
-            payments += payment.amount
-    return payments
+def total_amount_paid(for_email):
+    return sum(p.amount
+               for p in get_payments()
+               if p.attributable and p.email == for_email)
 
 
 def calculate_incoming_investment(payment, price):
@@ -344,85 +343,49 @@ def handle_investment(payment, attributions, price, prior_valuation):
     return posterior_valuation
 
 
-def _get_unprocessed_payment_files(attributable=True):
+def _get_unprocessed_payments():
     try:
-        unprocessed_payments = find_unprocessed_payment_files(attributable)
+        unprocessed_payments = find_unprocessed_payments()
     except FileNotFoundError:
         unprocessed_payments = []
     print(unprocessed_payments)
     return unprocessed_payments
 
 
-def process_new_attributable_payments(attributions):
+def _process_payments(instruments, attributions):
     """
-    Process payments that are "attributable" (i.e. the default).
-
-    For such payments, some portion of it may count as an investment.
-    Investments (a) inflate the valuation and (b) dilute attributions.
+    Process new payments by paying out instruments and then, from the amount
+    left over, paying out attributions.
     """
-    unprocessed_payments = _get_unprocessed_payment_files(attributable=True)
-    transactions = []
-    for payment_file in unprocessed_payments:
-        print(payment_file)
-        payment = read_payment(payment_file, attributable=True)
-        transactions += distribute_payment(payment, attributions)
-        valuation = handle_investment(payment, attributions, price, valuation)
-    return transactions, valuation
-
-
-def process_new_nonattributable_payments(attributions):
-    """
-    Process payments that are "nonattributable."
-
-    For nonattributable payments, the entire amount is treated as compensation
-    and no component of it counts towards investment. This is typically the
-    case for attributive revenue, that is, revenue from downstream projects
-    that recognize the present project in their attributions.
-
-    Note that nonattributable payments do not inflate the valuation nor do they
-    dilute attributions.
-    """
-    unprocessed_payments = _get_unprocessed_payment_files(attributable=False)
-    for payment_file in unprocessed_payments:
-        print(payment_file)
-        payment = read_payment(payment_file, attributable=False)
-        distribute_payment(payment, attributions)
-
-
-def _process_payments(instruments, attributions, attributable):
     price = read_price()
     valuation = read_valuation()
     new_transactions = []
-    unprocessed_payments = _get_unprocessed_payment_files(attributable)
-    for payment_file in unprocessed_payments:
-        payment = read_payment(payment_file, attributable)
+    unprocessed_payments = _get_unprocessed_payments()
+    for payment in unprocessed_payments:
         transactions = distribute_payment(payment, instruments)
         new_transactions += transactions
         amount_paid_out = sum(t.amount for t in transactions)
+        # deduct the amount paid out to instruments before
+        # processing it for attributions
         payment.amount -= amount_paid_out
         if payment.amount > ACCOUNTING_ZERO:
             new_transactions += distribute_payment(payment, attributions)
-        if attributable:
+        if payment.attributable:
             valuation = handle_investment(payment, attributions, price, valuation)
     return new_transactions, valuation
 
 
 def process_new_payments(attributions):
 
-    attributions = read_attributions(ATTRIBUTIONS_FILE)
     instruments = read_attributions(INSTRUMENTS_FILE)
+    attributions = read_attributions(ATTRIBUTIONS_FILE)
 
-    new_transactions = []
-
-    transactions, _ = _process_payments(instruments, attributions, attributable=False)
-    new_transactions += transactions
-    transactions, posterior_valuation = _process_payments(instruments, attributions, attributable=True)
-    new_transactions += transactions
+    transactions, posterior_valuation = _process_payments(instruments, attributions)
 
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no
     # changes are made.
-    write_append_transactions(new_transactions)
+    write_append_transactions(transactions)
     write_attributions(attributions)
     write_valuation(posterior_valuation)
 
