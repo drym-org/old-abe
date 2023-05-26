@@ -17,8 +17,10 @@ TRANSACTIONS_FILE = 'transactions.txt'
 PRICE_FILE = 'price.txt'
 VALUATION_FILE = 'valuation.txt'
 ATTRIBUTIONS_FILE = 'attributions.txt'
+INSTRUMENTS_FILE = 'instruments.txt'
 
 ROUNDING_TOLERANCE = Decimal("0.000001")
+ACCOUNTING_ZERO = Decimal("0.01")
 
 
 def parse_percentage(value):
@@ -100,9 +102,9 @@ def read_valuation():
         return valuation
 
 
-def read_attributions(operational=False):
+def read_attributions(attributions_filename):
     attributions = {}
-    attributions_file = os.path.join(ABE_ROOT, ATTRIBUTIONS_FILE)
+    attributions_file = os.path.join(ABE_ROOT, attributions_filename)
     with open(attributions_file) as f:
         for row in csv.reader(f):
             email, percentage = row
@@ -358,8 +360,6 @@ def process_new_attributable_payments(attributions):
     For such payments, some portion of it may count as an investment.
     Investments (a) inflate the valuation and (b) dilute attributions.
     """
-    price = read_price()
-    valuation = read_valuation()
     unprocessed_payments = _get_unprocessed_payment_files(attributable=True)
     transactions = []
     for payment_file in unprocessed_payments:
@@ -389,18 +389,40 @@ def process_new_nonattributable_payments(attributions):
         distribute_payment(payment, attributions)
 
 
-def process_new_payments():
-    attributions = read_attributions()
-    # this does not change attributions or valuation
-    process_new_nonattributable_payments(attributions)
-    # this may mutate attributions and inflate valuation
-    transactions, posterior_valuation = process_new_attributable_payments(
-        attributions
-    )
+def _process_payments(instruments, attributions, attributable):
+    price = read_price()
+    valuation = read_valuation()
+    new_transactions = []
+    unprocessed_payments = _get_unprocessed_payment_files(attributable)
+    for payment_file in unprocessed_payments:
+        payment = read_payment(payment_file, attributable)
+        transactions = distribute_payment(payment, instruments)
+        new_transactions += transactions
+        amount_paid_out = sum(t.amount for t in transactions)
+        payment.amount -= amount_paid_out
+        if payment.amount > ACCOUNTING_ZERO:
+            new_transactions += distribute_payment(payment, attributions)
+        if attributable:
+            valuation = handle_investment(payment, attributions, price, valuation)
+    return new_transactions, valuation
+
+
+def process_new_payments(attributions):
+
+    attributions = read_attributions(ATTRIBUTIONS_FILE)
+    instruments = read_attributions(INSTRUMENTS_FILE)
+
+    new_transactions = []
+
+    transactions, _ = _process_payments(instruments, attributions, attributable=False)
+    new_transactions += transactions
+    transactions, posterior_valuation = _process_payments(instruments, attributions, attributable=True)
+    new_transactions += transactions
+
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no
     # changes are made.
-    write_append_transactions(transactions)
+    write_append_transactions(new_transactions)
     write_attributions(attributions)
     write_valuation(posterior_valuation)
 
