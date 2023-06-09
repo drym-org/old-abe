@@ -13,12 +13,14 @@ PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
 NONATTRIBUTABLE_PAYMENTS_DIR = os.path.join(
     ABE_ROOT, 'payments', 'nonattributable'
 )
-TRANSACTIONS_FILE = os.path.join(ABE_ROOT, 'transactions.txt')
-PRICE_FILE = os.path.join(ABE_ROOT, 'price.txt')
-VALUATION_FILE = os.path.join(ABE_ROOT, 'valuation.txt')
-ATTRIBUTIONS_FILE = os.path.join(ABE_ROOT, 'attributions.txt')
+TRANSACTIONS_FILE = 'transactions.txt'
+PRICE_FILE = 'price.txt'
+VALUATION_FILE = 'valuation.txt'
+ATTRIBUTIONS_FILE = 'attributions.txt'
+INSTRUMENTS_FILE = 'instruments.txt'
 
 ROUNDING_TOLERANCE = Decimal("0.000001")
+ACCOUNTING_ZERO = Decimal("0.01")
 
 
 def parse_percentage(value):
@@ -72,6 +74,9 @@ def serialize_proportion(value):
 
 
 def read_payment(payment_file, attributable=True):
+    """
+    Reads a payment file and uses the contents to create a Payment object.
+    """
     payments_dir = (
         PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
     )
@@ -83,7 +88,8 @@ def read_payment(payment_file, attributable=True):
 
 
 def read_price():
-    with open(PRICE_FILE) as f:
+    price_file = os.path.join(ABE_ROOT, PRICE_FILE)
+    with open(price_file) as f:
         price = f.readline()
         price = Decimal(re.sub("[^0-9.]", "", price))
         return price
@@ -92,46 +98,53 @@ def read_price():
 # note that commas are used as a decimal separator in some languages
 # (e.g. Spain Spanish), so that would need to be handled at some point
 def read_valuation():
-    with open(VALUATION_FILE) as f:
+    valuation_file = os.path.join(ABE_ROOT, VALUATION_FILE)
+    with open(valuation_file) as f:
         valuation = f.readline()
         valuation = Decimal(re.sub("[^0-9.]", "", valuation))
         return valuation
 
 
-def read_attributions():
+def read_attributions(attributions_filename):
     attributions = {}
-    with open(ATTRIBUTIONS_FILE) as f:
+    attributions_file = os.path.join(ABE_ROOT, attributions_filename)
+    with open(attributions_file) as f:
         for row in csv.reader(f):
-            email, percentage, dilutable = row
-            attributions[email] = Attribution(
-                email=email,
-                share=parse_percentage(percentage),
-                dilutable=bool(int(dilutable)),
-            )
+            email, percentage = row
+            attributions[email] = parse_percentage(percentage)
     assert _get_attributions_total(attributions) == Decimal("1")
     return attributions
 
 
-def get_payment_files(attributable=True):
-    payments_dir = (
-        PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
-    )
-    return {
-        f
-        for f in os.listdir(payments_dir)
-        if not os.path.isdir(os.path.join(payments_dir, f))
-    }
+def get_all_payments():
+    """
+    Reads payment files and returns all existing payment objects.
+    """
+    payments = [
+        read_payment(f, attributable=True)
+        for f in os.listdir(PAYMENTS_DIR)
+        if not os.path.isdir(os.path.join(PAYMENTS_DIR, f))
+    ]
+    payments += [
+        read_payment(f, attributable=False)
+        for f in os.listdir(NONATTRIBUTABLE_PAYMENTS_DIR)
+        if not os.path.isdir(os.path.join(NONATTRIBUTABLE_PAYMENTS_DIR, f))
+    ]
+    return payments
 
 
-def find_unprocessed_payment_files(attributable=True):
+def find_unprocessed_payments():
     """
     1. Read the transactions file to find out which payments are already
        recorded as transactions
-    2. Read the payments folder to get all payments
-    3. find those which haven't been recorded and return those
+    2. Read the payments folder to get all payments, as Payment objects
+    3. Return those which haven't been recorded in a transaction
+
+    Return type: list of Payment objects
     """
     recorded_payments = set()
-    with open(TRANSACTIONS_FILE) as f:
+    transactions_file = os.path.join(ABE_ROOT, TRANSACTIONS_FILE)
+    with open(transactions_file) as f:
         for (
             _email,
             _amount,
@@ -140,10 +153,10 @@ def find_unprocessed_payment_files(attributable=True):
             _created_at,
         ) in csv.reader(f):
             recorded_payments.add(payment_file)
-    all_payments = get_payment_files(attributable)
+    all_payments = set(get_all_payments())
     print("all payments")
     print(all_payments)
-    return all_payments.difference(recorded_payments)
+    return [p for p in all_payments if p.file not in recorded_payments]
 
 
 def generate_transactions(amount, attributions, payment_file, commit_hash):
@@ -154,20 +167,23 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
     assert amount > 0
     assert attributions
     transactions = []
-    for a in attributions.values():
-        t = Transaction(a.email, amount * a.share, payment_file, commit_hash)
+    for email, share in attributions.items():
+        t = Transaction(email, amount * share, payment_file, commit_hash)
         transactions.append(t)
     return transactions
 
 
-def total_amount_paid(for_email, attributable=True):
-    payments = 0
-    payment_files = get_payment_files(attributable)
-    for payment_file in payment_files:
-        payment = read_payment(payment_file, attributable)
-        if payment.email == for_email:
-            payments += payment.amount
-    return payments
+def total_amount_paid(for_email):
+    """
+    Calculates the sum of a single user's attributable payments for
+    determining how much the user has invested in the project so far.
+    Non-attributable payments do not count towards investment.
+    """
+    return sum(
+        p.amount
+        for p in get_all_payments()
+        if p.attributable and p.email == for_email
+    )
 
 
 def calculate_incoming_investment(payment, price):
@@ -175,7 +191,7 @@ def calculate_incoming_investment(payment, price):
     If the payment brings the aggregate amount paid by the payee
     above the price, then that excess is treated as investment.
     """
-    total_payments = total_amount_paid(payment.email, attributable=True)
+    total_payments = total_amount_paid(payment.email)
     previous_total = total_payments - payment.amount
     # how much of the incoming amount goes towards investment?
     incoming_investment = total_payments - max(price, previous_total)
@@ -197,7 +213,7 @@ def calculate_incoming_attribution(
 
 
 def _get_attributions_total(attributions):
-    return sum(a.share for a in attributions.values())
+    return sum(attributions.values())
 
 
 def get_rounding_difference(attributions):
@@ -221,24 +237,15 @@ def renormalize(attributions, incoming_attribution):
     "renormalized."  This effectively dilutes the attributions by the magnitude
     of the incoming attribution.
     """
-    dilutable_shares = [a.share for a in attributions.values() if a.dilutable]
-    dilutable_proportion = sum(dilutable_shares)
-    target_proportion = (
-        dilutable_proportion - incoming_attribution.share
-    ) / dilutable_proportion
-    dilutable_attributions = {
-        k: v for k, v in attributions.items() if v.dilutable
-    }
-    for email in dilutable_attributions:
+    target_proportion = Decimal("1") - incoming_attribution.share
+    for email in attributions:
         # renormalize to reflect dilution
-        attributions[email].share *= target_proportion
+        attributions[email] *= target_proportion
     # add incoming share to existing investor or record new investor
     existing_attribution = attributions.get(incoming_attribution.email, None)
-    attributions[incoming_attribution.email] = Attribution(
-        incoming_attribution.email,
-        (existing_attribution.share if existing_attribution else 0)
-        + incoming_attribution.share,
-    )
+    attributions[incoming_attribution.email] = (
+        existing_attribution if existing_attribution else 0
+    ) + incoming_attribution.share
 
 
 def correct_rounding_error(attributions, incoming_attribution):
@@ -248,7 +255,7 @@ def correct_rounding_error(attributions, incoming_attribution):
     subtracting the difference from the incoming attribution (by convention).
     """
     difference = get_rounding_difference(attributions)
-    attributions[incoming_attribution.email].share -= difference
+    attributions[incoming_attribution.email] -= difference
 
 
 def write_attributions(attributions):
@@ -256,17 +263,19 @@ def write_attributions(attributions):
     assert _get_attributions_total(attributions) == Decimal("1")
     # format for output as percentages
     attributions = [
-        (a.email, serialize_proportion(a.share), (1 if a.dilutable else 0))
-        for a in attributions.values()
+        (email, serialize_proportion(share))
+        for email, share in attributions.items()
     ]
-    with open(ATTRIBUTIONS_FILE, 'w') as f:
+    attributions_file = os.path.join(ABE_ROOT, ATTRIBUTIONS_FILE)
+    with open(attributions_file, 'w') as f:
         writer = csv.writer(f)
         for row in attributions:
             writer.writerow(row)
 
 
 def write_append_transactions(transactions):
-    with open(TRANSACTIONS_FILE, 'a') as f:
+    transactions_file = os.path.join(ABE_ROOT, TRANSACTIONS_FILE)
+    with open(transactions_file, 'a') as f:
         writer = csv.writer(f)
         for row in transactions:
             writer.writerow(astuple(row))
@@ -274,7 +283,8 @@ def write_append_transactions(transactions):
 
 def write_valuation(valuation):
     rounded_valuation = f"{valuation:.2f}"
-    with open(VALUATION_FILE, 'w') as f:
+    valuation_file = os.path.join(ABE_ROOT, VALUATION_FILE)
+    with open(valuation_file, 'w') as f:
         writer = csv.writer(f)
         writer.writerow((rounded_valuation,))
 
@@ -288,15 +298,11 @@ def dilute_attributions(incoming_attribution, attributions):
     correct_rounding_error(attributions, incoming_attribution)
 
 
-def inflate_valuation(valuation, incoming_investment, attributions):
+def inflate_valuation(valuation, amount):
     """
     Determine the posterior valuation as the fresh investment amount
-    added to the prior valuation, after retaining only that component
-    of the incoming investment that is retained in the current project.
+    added to the prior valuation.
     """
-    dilutable_shares = [a.share for a in attributions.values() if a.dilutable]
-    dilutable_proportion = sum(dilutable_shares)
-    amount = incoming_investment * dilutable_proportion
     return valuation + amount
 
 
@@ -338,7 +344,7 @@ def handle_investment(payment, attributions, price, prior_valuation):
     incoming_investment = calculate_incoming_investment(payment, price)
     # inflate valuation by the amount of the fresh investment
     posterior_valuation = inflate_valuation(
-        prior_valuation, incoming_investment, attributions,
+        prior_valuation, incoming_investment
     )
     incoming_attribution = calculate_incoming_attribution(
         payment.email, incoming_investment, posterior_valuation
@@ -348,66 +354,55 @@ def handle_investment(payment, attributions, price, prior_valuation):
     return posterior_valuation
 
 
-def _get_unprocessed_payment_files(attributable=True):
+def _get_unprocessed_payments():
     try:
-        unprocessed_payments = find_unprocessed_payment_files(attributable)
+        unprocessed_payments = find_unprocessed_payments()
     except FileNotFoundError:
         unprocessed_payments = []
     print(unprocessed_payments)
     return unprocessed_payments
 
 
-def process_new_attributable_payments(attributions):
+def process_payments(instruments, attributions):
     """
-    Process payments that are "attributable" (i.e. the default).
-
-    For such payments, some portion of it may count as an investment.
-    Investments (a) inflate the valuation and (b) dilute attributions.
+    Process new payments by paying out instruments and then, from the amount
+    left over, paying out attributions.
+    Returns all newly created transactions and the updated valuation amount
+    after all of the new payments have been processed.
     """
     price = read_price()
     valuation = read_valuation()
-    unprocessed_payments = _get_unprocessed_payment_files(attributable=True)
-    transactions = []
-    for payment_file in unprocessed_payments:
-        print(payment_file)
-        payment = read_payment(payment_file, attributable=True)
-        existing_attribution = attributions.get(payment.email)
-        if existing_attribution and not existing_attribution.dilutable:
-            raise Exception(
-                'Non-dilutable contributor cannot make attributable payments!'
+    new_transactions = []
+    unprocessed_payments = _get_unprocessed_payments()
+    for payment in unprocessed_payments:
+        transactions = distribute_payment(payment, instruments)
+        new_transactions += transactions
+        amount_paid_out = sum(t.amount for t in transactions)
+        # deduct the amount paid out to instruments before
+        # processing it for attributions
+        payment.amount -= amount_paid_out
+        if payment.amount > ACCOUNTING_ZERO:
+            new_transactions += distribute_payment(payment, attributions)
+        if payment.attributable:
+            valuation = handle_investment(
+                payment, attributions, price, valuation
             )
-        transactions += distribute_payment(payment, attributions)
-        valuation = handle_investment(payment, attributions, price, valuation)
-    return transactions, valuation
+    return new_transactions, valuation
 
 
-def process_new_nonattributable_payments(attributions):
+def process_payments_and_record_updates():
     """
-    Process payments that are "nonattributable."
-
-    For nonattributable payments, the entire amount is treated as compensation
-    and no component of it counts towards investment. This is typically the
-    case for attributive revenue, that is, revenue from downstream projects
-    that recognize the present project in their attributions.
-
-    Note that nonattributable payments do not inflate the valuation nor do they
-    dilute attributions.
+    Allocate incoming payments to contributors according to the instruments
+    and attributions files. Record updated transactions, valuation, and
+    renormalized attributions only after all payments have been processed.
     """
-    unprocessed_payments = _get_unprocessed_payment_files(attributable=False)
-    for payment_file in unprocessed_payments:
-        print(payment_file)
-        payment = read_payment(payment_file, attributable=False)
-        distribute_payment(payment, attributions)
+    instruments = read_attributions(INSTRUMENTS_FILE)
+    attributions = read_attributions(ATTRIBUTIONS_FILE)
 
-
-def process_new_payments():
-    attributions = read_attributions()
-    # this does not change attributions or valuation
-    process_new_nonattributable_payments(attributions)
-    # this may mutate attributions and inflate valuation
-    transactions, posterior_valuation = process_new_attributable_payments(
-        attributions
+    transactions, posterior_valuation = process_payments(
+        instruments, attributions
     )
+
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no
     # changes are made.
@@ -422,7 +417,7 @@ def main():
     # it is run, to avoid any possible accounting errors
     getcontext().prec = 10
 
-    process_new_payments()
+    process_payments_and_record_updates()
 
 
 if __name__ == "__main__":
