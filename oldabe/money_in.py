@@ -126,11 +126,14 @@ def get_all_payments():
         for f in os.listdir(PAYMENTS_DIR)
         if not os.path.isdir(os.path.join(PAYMENTS_DIR, f))
     ]
-    payments += [
-        read_payment(f, attributable=False)
+    try:
+        payments += [
+            read_payment(f, attributable=False)
         for f in os.listdir(NONATTRIBUTABLE_PAYMENTS_DIR)
         if not os.path.isdir(os.path.join(NONATTRIBUTABLE_PAYMENTS_DIR, f))
-    ]
+        ]
+    except FileNotFoundError:
+        pass
     return payments
 
 
@@ -154,7 +157,7 @@ def find_unprocessed_payments():
             _created_at,
         ) in csv.reader(f):
             recorded_payments.add(payment_file)
-    all_payments = set(get_all_payments())
+    all_payments = get_all_payments()
     print("all payments")
     print(all_payments)
     return [p for p in all_payments if p.file not in recorded_payments]
