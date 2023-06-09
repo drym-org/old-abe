@@ -105,14 +105,15 @@ def read_valuation():
         return valuation
 
 
-def read_attributions(attributions_filename):
+def read_attributions(attributions_filename, validate=True):
     attributions = {}
     attributions_file = os.path.join(ABE_ROOT, attributions_filename)
     with open(attributions_file) as f:
         for row in csv.reader(f):
             email, percentage = row
             attributions[email] = parse_percentage(percentage)
-    assert _get_attributions_total(attributions) == Decimal("1")
+    if validate:
+        assert _get_attributions_total(attributions) == Decimal("1")
     return attributions
 
 
@@ -396,7 +397,7 @@ def process_payments_and_record_updates():
     and attributions files. Record updated transactions, valuation, and
     renormalized attributions only after all payments have been processed.
     """
-    instruments = read_attributions(INSTRUMENTS_FILE)
+    instruments = read_attributions(INSTRUMENTS_FILE, validate=False)
     attributions = read_attributions(ATTRIBUTIONS_FILE)
 
     transactions, posterior_valuation = process_payments(
