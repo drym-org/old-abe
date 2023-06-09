@@ -298,15 +298,11 @@ def dilute_attributions(incoming_attribution, attributions):
     correct_rounding_error(attributions, incoming_attribution)
 
 
-def inflate_valuation(valuation, incoming_investment, attributions):
+def inflate_valuation(valuation, amount):
     """
     Determine the posterior valuation as the fresh investment amount
-    added to the prior valuation, after retaining only that component
-    of the incoming investment that is retained in the current project.
+    added to the prior valuation.
     """
-    dilutable_shares = [a.share for a in attributions.values() if a.dilutable]
-    dilutable_proportion = sum(dilutable_shares)
-    amount = incoming_investment * dilutable_proportion
     return valuation + amount
 
 
@@ -348,7 +344,7 @@ def handle_investment(payment, attributions, price, prior_valuation):
     incoming_investment = calculate_incoming_investment(payment, price)
     # inflate valuation by the amount of the fresh investment
     posterior_valuation = inflate_valuation(
-        prior_valuation, incoming_investment, attributions,
+        prior_valuation, incoming_investment
     )
     incoming_attribution = calculate_incoming_attribution(
         payment.email, incoming_investment, posterior_valuation
