@@ -74,6 +74,9 @@ def serialize_proportion(value):
 
 
 def read_payment(payment_file, attributable=True):
+    """
+    Reads a payment file and uses the contents to create a Payment object.
+    """
     payments_dir = (
         PAYMENTS_DIR if attributable else NONATTRIBUTABLE_PAYMENTS_DIR
     )
@@ -113,7 +116,10 @@ def read_attributions(attributions_filename):
     return attributions
 
 
-def get_payments():
+def get_all_payments():
+    """
+    Reads payment files and returns all existing payment objects.
+    """
     payments = [
         read_payment(f, attributable=True)
         for f in os.listdir(PAYMENTS_DIR)
@@ -131,8 +137,10 @@ def find_unprocessed_payments():
     """
     1. Read the transactions file to find out which payments are already
        recorded as transactions
-    2. Read the payments folder to get all payments
-    3. find those which haven't been recorded and return those
+    2. Read the payments folder to get all payments, as Payment objects
+    3. Return those which haven't been recorded in a transaction
+
+    Return type: list of Payment objects
     """
     recorded_payments = set()
     transactions_file = os.path.join(ABE_ROOT, TRANSACTIONS_FILE)
@@ -145,7 +153,7 @@ def find_unprocessed_payments():
             _created_at,
         ) in csv.reader(f):
             recorded_payments.add(payment_file)
-    all_payments = set(get_payments())
+    all_payments = set(get_all_payments())
     print("all payments")
     print(all_payments)
     return [p for p in all_payments if p.file not in recorded_payments]
@@ -166,9 +174,16 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
 
 
 def total_amount_paid(for_email):
-    return sum(p.amount
-               for p in get_payments()
-               if p.attributable and p.email == for_email)
+    """
+    Calculates the sum of a single user's attributable payments for
+    determining how much the user has invested in the project so far.
+    Non-attributable payments do not count towards investment.
+    """
+    return sum(
+        p.amount
+        for p in get_all_payments()
+        if p.attributable and p.email == for_email
+    )
 
 
 def calculate_incoming_investment(payment, price):
@@ -176,7 +191,7 @@ def calculate_incoming_investment(payment, price):
     If the payment brings the aggregate amount paid by the payee
     above the price, then that excess is treated as investment.
     """
-    total_payments = total_amount_paid(payment.email, attributable=True)
+    total_payments = total_amount_paid(payment.email)
     previous_total = total_payments - payment.amount
     # how much of the incoming amount goes towards investment?
     incoming_investment = total_payments - max(price, previous_total)
@@ -352,10 +367,12 @@ def _get_unprocessed_payments():
     return unprocessed_payments
 
 
-def _process_payments(instruments, attributions):
+def process_payments(instruments, attributions):
     """
     Process new payments by paying out instruments and then, from the amount
     left over, paying out attributions.
+    Returns all newly created transactions and the updated valuation amount
+    after all of the new payments have been processed.
     """
     price = read_price()
     valuation = read_valuation()
@@ -371,16 +388,24 @@ def _process_payments(instruments, attributions):
         if payment.amount > ACCOUNTING_ZERO:
             new_transactions += distribute_payment(payment, attributions)
         if payment.attributable:
-            valuation = handle_investment(payment, attributions, price, valuation)
+            valuation = handle_investment(
+                payment, attributions, price, valuation
+            )
     return new_transactions, valuation
 
 
-def process_new_payments(attributions):
-
+def process_payments_and_record_updates():
+    """
+    Allocate incoming payments to contributors according to the instruments
+    and attributions files. Record updated transactions, valuation, and
+    renormalized attributions only after all payments have been processed.
+    """
     instruments = read_attributions(INSTRUMENTS_FILE)
     attributions = read_attributions(ATTRIBUTIONS_FILE)
 
-    transactions, posterior_valuation = _process_payments(instruments, attributions)
+    transactions, posterior_valuation = process_payments(
+        instruments, attributions
+    )
 
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no
@@ -396,7 +421,7 @@ def main():
     # it is run, to avoid any possible accounting errors
     getcontext().prec = 10
 
-    process_new_payments()
+    process_payments_and_record_updates()
 
 
 if __name__ == "__main__":

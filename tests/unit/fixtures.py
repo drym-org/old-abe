@@ -4,6 +4,14 @@ import pytest
 
 
 @pytest.fixture
+def instruments():
+    return {
+        'old_abe': Decimal("0.01"),
+        'dia': Decimal("0.05"),
+    }
+
+
+@pytest.fixture
 def normalized_attributions():
     return {
         'a@b.com': Decimal("0.2"),
