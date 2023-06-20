@@ -129,8 +129,8 @@ def get_all_payments():
     try:
         payments += [
             read_payment(f, attributable=False)
-        for f in os.listdir(NONATTRIBUTABLE_PAYMENTS_DIR)
-        if not os.path.isdir(os.path.join(NONATTRIBUTABLE_PAYMENTS_DIR, f))
+            for f in os.listdir(NONATTRIBUTABLE_PAYMENTS_DIR)
+            if not os.path.isdir(os.path.join(NONATTRIBUTABLE_PAYMENTS_DIR, f))
         ]
     except FileNotFoundError:
         pass
