@@ -3,6 +3,7 @@ from oldabe.money_in import (
     calculate_incoming_investment,
     parse_percentage,
     serialize_proportion,
+    total_amount_paid_to_project,
     calculate_incoming_attribution,
     correct_rounding_error,
     generate_transactions,
@@ -23,6 +24,8 @@ from .fixtures import (
     shortfall_attributions,
     empty_attributions,
     single_contributor_attributions,
+    itemized_payments,
+    new_itemized_payments,
 )  # noqa
 
 
@@ -415,6 +418,19 @@ class TestInflateValuation:
         assert new_valuation == amount + valuation
 
 
+class TotalAmountPaidToProject:
+    @patch('oldabe.money_in.get_existing_itemized_payments')
+    def test_total_amount_for_a(
+        self,
+        get_existing_itemized_payments,
+        itemized_payments,
+        new_itemized_payments,
+    ):
+        get_existing_itemized_payments.return_value = itemized_payments
+        total = total_amount_paid_to_project('a@b.com', new_itemized_payments)
+        assert total == 194
+
+
 class TestCalculateIncomingInvestment:
     @pytest.mark.parametrize(
         "prior_contribution, incoming_amount, price, expected_investment",
@@ -436,7 +452,7 @@ class TestCalculateIncomingInvestment:
     @patch('oldabe.money_in.total_amount_paid_to_project')
     def test_matrix(
         self,
-        mock_amount_paid,
+        total_amount_paid_to_project,
         prior_contribution,
         incoming_amount,
         price,
@@ -445,6 +461,8 @@ class TestCalculateIncomingInvestment:
         email = 'dummy@abe.org'
         payment = Payment(email, incoming_amount)
         # this is the total amount paid _including_ the incoming amount
-        mock_amount_paid.return_value = prior_contribution + incoming_amount
+        total_amount_paid_to_project.return_value = (
+            prior_contribution + incoming_amount
+        )
         result = calculate_incoming_investment(payment, price, [])
         assert result == expected_investment

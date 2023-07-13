@@ -226,7 +226,7 @@ def calculate_incoming_investment(payment, price, new_itemized_payments):
     total_payments = total_amount_paid_to_project(
         payment.email, new_itemized_payments
     )
-    previous_total = total_payments - payment.amount
+    previous_total = total_payments - payment.amount  # fees already deducted
     # how much of the incoming amount goes towards investment?
     incoming_investment = total_payments - max(price, previous_total)
     return max(0, incoming_investment)
@@ -422,6 +422,7 @@ def process_payments(instruments, attributions):
     new_itemized_payments = []
     unprocessed_payments = _get_unprocessed_payments()
     for payment in unprocessed_payments:
+        # first, process instruments (i.e. pay fees)
         transactions = distribute_payment(payment, instruments)
         new_transactions += transactions
         amount_paid_out = sum(t.amount for t in transactions)
@@ -437,6 +438,8 @@ def process_payments(instruments, attributions):
                 payment.file,
             )
         )
+        # next, process attributions - using the amount owed to the project
+        # (which is the amount leftover after paying instruments/fees)
         if payment.amount > ACCOUNTING_ZERO:
             new_transactions += distribute_payment(payment, attributions)
         if payment.attributable:
