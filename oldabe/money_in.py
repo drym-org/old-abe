@@ -14,7 +14,7 @@ NONATTRIBUTABLE_PAYMENTS_DIR = os.path.join(
     ABE_ROOT, 'payments', 'nonattributable'
 )
 TRANSACTIONS_FILE = 'transactions.txt'
-PAYMENT_ALLOCATIONS_FILE = 'payment_allocations.txt'
+ITEMIZED_PAYMENTS_FILE = 'itemized_payments.txt'
 PRICE_FILE = 'price.txt'
 VALUATION_FILE = 'valuation.txt'
 ATTRIBUTIONS_FILE = 'attributions.txt'
@@ -178,11 +178,11 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
     return transactions
 
 
-def get_existing_payment_allocations():
+def get_existing_itemized_payments():
     # TODO
-    payment_allocations = set()
-    payment_allocations_file = os.path.join(ABE_ROOT, PAYMENT_ALLOCATIONS_FILE)
-    with open(payment_allocations_file) as f:
+    itemized_payments = set()
+    itemized_payments_file = os.path.join(ABE_ROOT, ITEMIZED_PAYMENTS_FILE)
+    with open(itemized_payments_file) as f:
         for (
             email,
             fee_amount,
@@ -190,37 +190,37 @@ def get_existing_payment_allocations():
             attributable,
             payment_file,
         ) in csv.reader(f):
-            payment_allocation = PaymentAllocation(
+            itemized_payment = ItemizedPayment(
                 email,
                 fee_amount,
                 project_amount,
                 attributable,
                 payment_file,
             )
-            payment_allocations.add(payment_allocation)
-    return payment_allocations
+            itemized_payments.add(itemized_payment)
+    return itemized_payments
 
 
-def total_amount_paid_to_project(for_email, new_payment_allocations):
+def total_amount_paid_to_project(for_email, new_itemized_payments):
     """
     Calculates the sum of a single user's attributable payments for
     determining how much the user has invested in the project so far.
     Non-attributable payments do not count towards investment.
     """
-    all_payment_allocations = get_existing_payment_allocations() + new_payment_allocations
+    all_itemized_payments = get_existing_itemized_payments() + new_itemized_payments
     return sum(
         p.project_amount
-        for p in all_payment_allocations
+        for p in all_itemized_payments
         if p.attributable and p.email == for_email
     )
 
 
-def calculate_incoming_investment(payment, price, new_payment_allocations):
+def calculate_incoming_investment(payment, price, new_itemized_payments):
     """
     If the payment brings the aggregate amount paid by the payee
     above the price, then that excess is treated as investment.
     """
-    total_payments = total_amount_paid_to_project(payment.email, new_payment_allocations)
+    total_payments = total_amount_paid_to_project(payment.email, new_itemized_payments)
     previous_total = total_payments - payment.amount
     # how much of the incoming amount goes towards investment?
     incoming_investment = total_payments - max(price, previous_total)
@@ -310,11 +310,11 @@ def write_append_transactions(transactions):
             writer.writerow(astuple(row))
 
 
-def write_append_payment_allocations(payment_allocations):
-    payment_allocations_file = os.path.join(ABE_ROOT, PAYMENT_ALLOCATIONS_FILE)
-    with open(payment_allocations_file, 'a') as f:
+def write_append_itemized_payments(itemized_payments):
+    itemized_payments_file = os.path.join(ABE_ROOT, ITEMIZED_PAYMENTS_FILE)
+    with open(itemized_payments_file, 'a') as f:
         writer = csv.writer(f)
-        for row in payment_allocations:
+        for row in itemized_payments:
             writer.writerow(astuple(row))
 
 
@@ -370,7 +370,7 @@ def distribute_payment(payment, attributions):
     return transactions
 
 
-def handle_investment(payment, new_payment_allocations, attributions, price, prior_valuation):
+def handle_investment(payment, new_itemized_payments, attributions, price, prior_valuation):
     """
     For "attributable" payments (the default), we determine
     if some portion of it counts as an investment in the project. If it does,
@@ -378,7 +378,7 @@ def handle_investment(payment, new_payment_allocations, attributions, price, pri
     attributed a share commensurate with their investment, diluting the
     attributions.
     """
-    incoming_investment = calculate_incoming_investment(payment, price, new_payment_allocations)
+    incoming_investment = calculate_incoming_investment(payment, price, new_itemized_payments)
     # inflate valuation by the amount of the fresh investment
     posterior_valuation = inflate_valuation(
         prior_valuation, incoming_investment
@@ -410,7 +410,7 @@ def process_payments(instruments, attributions):
     price = read_price()
     valuation = read_valuation()
     new_transactions = []
-    new_payment_allocations = []
+    new_itemized_payments = []
     unprocessed_payments = _get_unprocessed_payments()
     for payment in unprocessed_payments:
         transactions = distribute_payment(payment, instruments)
@@ -419,7 +419,7 @@ def process_payments(instruments, attributions):
         # deduct the amount paid out to instruments before
         # processing it for attributions
         payment.amount -= amount_paid_out
-        new_payment_allocations += PaymentAllocation(
+        new_itemized_payments += ItemizedPayment(
             payment.email,
             amount_paid_out,
             payment.amount,
@@ -430,9 +430,9 @@ def process_payments(instruments, attributions):
             new_transactions += distribute_payment(payment, attributions)
         if payment.attributable:
             valuation = handle_investment(
-                payment, new_payment_allocations, attributions, price, valuation
+                payment, new_itemized_payments, attributions, price, valuation
             )
-    return new_transactions, valuation, new_payment_allocations
+    return new_transactions, valuation, new_itemized_payments
 
 
 def process_payments_and_record_updates():
@@ -444,7 +444,7 @@ def process_payments_and_record_updates():
     instruments = read_attributions(INSTRUMENTS_FILE, validate=False)
     attributions = read_attributions(ATTRIBUTIONS_FILE)
 
-    transactions, posterior_valuation, new_payment_allocations = process_payments(
+    transactions, posterior_valuation, new_itemized_payments = process_payments(
         instruments, attributions
     )
 
@@ -454,7 +454,7 @@ def process_payments_and_record_updates():
     write_append_transactions(transactions)
     write_attributions(attributions)
     write_valuation(posterior_valuation)
-    write_append_payment_allocations(new_payment_allocations)
+    write_append_itemized_payments(new_itemized_payments)
 
 
 def main():

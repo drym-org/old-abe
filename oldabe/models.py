@@ -32,12 +32,12 @@ class Payment:
     file: str = None
 
 
-# PaymentAllocation acts as a proxy for a Payment object that keeps track
+# ItemizedPayment acts as a proxy for a Payment object that keeps track
 # of how much of the original payment is owed to instruments and how much
 # is owed to directly to the project (attributions.txt). This allows us to
 # avoid mutating Payment records.
 @dataclass
-class PaymentAllocation
+class ItemizedPayment
     email: str = None
     fee_amount: Decimal = 0 # instruments
     project_amount: Decimal = 0 # attributions 
