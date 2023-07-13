@@ -6,7 +6,7 @@ from dataclasses import astuple
 import re
 import os
 import subprocess
-from .models import Attribution, Payment, Transaction
+from .models import Attribution, Payment, ItemizedPayment, Transaction
 
 ABE_ROOT = 'abe'
 PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
@@ -180,7 +180,7 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
 
 def get_existing_itemized_payments():
     # TODO
-    itemized_payments = set()
+    itemized_payments = []
     itemized_payments_file = os.path.join(ABE_ROOT, ITEMIZED_PAYMENTS_FILE)
     with open(itemized_payments_file) as f:
         for (
@@ -197,7 +197,7 @@ def get_existing_itemized_payments():
                 attributable,
                 payment_file,
             )
-            itemized_payments.add(itemized_payment)
+            itemized_payments.append(itemized_payment)
     return itemized_payments
 
 
@@ -428,12 +428,14 @@ def process_payments(instruments, attributions):
         # deduct the amount paid out to instruments before
         # processing it for attributions
         payment.amount -= amount_paid_out
-        new_itemized_payments += ItemizedPayment(
-            payment.email,
-            amount_paid_out,
-            payment.amount,
-            payment.attributable,
-            payment.payment_file,
+        new_itemized_payments.append(
+            ItemizedPayment(
+                payment.email,
+                amount_paid_out,
+                payment.amount,
+                payment.attributable,
+                payment.file,
+            )
         )
         if payment.amount > ACCOUNTING_ZERO:
             new_transactions += distribute_payment(payment, attributions)

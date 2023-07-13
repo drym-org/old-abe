@@ -186,7 +186,7 @@ class TestProcessPayments:
         mock_unprocessed_files.return_value = payments
         mock_get_all_payments.return_value = payments
 
-        transactions, _ = process_payments(
+        transactions, _, _ = process_payments(
             instruments, normalized_attributions
         )
         # generates a transaction for each payment and each contributor in the
@@ -433,7 +433,7 @@ class TestCalculateIncomingInvestment:
             (Decimal("120"), Decimal("20"), Decimal("100"), Decimal("20")),
         ],
     )
-    @patch('oldabe.money_in.total_amount_paid')
+    @patch('oldabe.money_in.total_amount_paid_to_project')
     def test_matrix(
         self,
         mock_amount_paid,
@@ -446,5 +446,5 @@ class TestCalculateIncomingInvestment:
         payment = Payment(email, incoming_amount)
         # this is the total amount paid _including_ the incoming amount
         mock_amount_paid.return_value = prior_contribution + incoming_amount
-        result = calculate_incoming_investment(payment, price)
+        result = calculate_incoming_investment(payment, price, [])
         assert result == expected_investment
