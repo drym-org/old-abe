@@ -420,7 +420,7 @@ class TestInflateValuation:
 
 class TotalAmountPaidToProject:
     @patch('oldabe.money_in.get_existing_itemized_payments')
-    def test_total_amount_for_a(
+    def test_total_amount_for_a_all_attributable(
         self,
         get_existing_itemized_payments,
         itemized_payments,
@@ -429,6 +429,17 @@ class TotalAmountPaidToProject:
         get_existing_itemized_payments.return_value = itemized_payments
         total = total_amount_paid_to_project('a@b.com', new_itemized_payments)
         assert total == 194
+
+    @patch('oldabe.money_in.get_existing_itemized_payments')
+    def test_total_amount_for_c_one_non_attributable(
+        self,
+        get_existing_itemized_payments,
+        itemized_payments,
+        new_itemized_payments,
+    ):
+        get_existing_itemized_payments.return_value = itemized_payments
+        total = total_amount_paid_to_project('c@d.com', new_itemized_payments)
+        assert total == 30
 
 
 class TestCalculateIncomingInvestment:

@@ -60,11 +60,8 @@ def itemized_payments():
 
 @pytest.fixture
 def new_itemized_payments():
-    data = [
-        ['a@b.com', '4', '80', 'payment-4.txt'],
-        ['d@e.com', '10', '90', 'payment-5.txt'],
-    ]
     return [
-        ItemizedPayment(ip[0], Decimal(ip[1]), Decimal(ip[2]), True, ip[3])
-        for index, ip in enumerate(data)
+        ItemizedPayment('a@b.com', Decimal('4'), Decimal('80'), True, 'payment-4.txt'),
+        ItemizedPayment('c@d.com', Decimal('5'), Decimal('20'), True, 'payment-5.txt'),
+        ItemizedPayment('c@d.com', Decimal('10'), Decimal('90'), False, 'payment-6.txt'),
     ]
