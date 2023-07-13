@@ -203,11 +203,14 @@ def get_existing_itemized_payments():
 
 def total_amount_paid_to_project(for_email, new_itemized_payments):
     """
-    Calculates the sum of a single user's attributable payments for
-    determining how much the user has invested in the project so far.
-    Non-attributable payments do not count towards investment.
+    Calculates the sum of a single user's attributable payments (minus
+    fees paid towards instruments) for determining how much the user
+    has invested in the project so far. Non-attributable payments do
+    not count towards investment.
     """
-    all_itemized_payments = get_existing_itemized_payments() + new_itemized_payments
+    all_itemized_payments = (
+        get_existing_itemized_payments() + new_itemized_payments
+    )
     return sum(
         p.project_amount
         for p in all_itemized_payments
@@ -220,7 +223,9 @@ def calculate_incoming_investment(payment, price, new_itemized_payments):
     If the payment brings the aggregate amount paid by the payee
     above the price, then that excess is treated as investment.
     """
-    total_payments = total_amount_paid_to_project(payment.email, new_itemized_payments)
+    total_payments = total_amount_paid_to_project(
+        payment.email, new_itemized_payments
+    )
     previous_total = total_payments - payment.amount
     # how much of the incoming amount goes towards investment?
     incoming_investment = total_payments - max(price, previous_total)
@@ -370,7 +375,9 @@ def distribute_payment(payment, attributions):
     return transactions
 
 
-def handle_investment(payment, new_itemized_payments, attributions, price, prior_valuation):
+def handle_investment(
+    payment, new_itemized_payments, attributions, price, prior_valuation
+):
     """
     For "attributable" payments (the default), we determine
     if some portion of it counts as an investment in the project. If it does,
@@ -378,7 +385,9 @@ def handle_investment(payment, new_itemized_payments, attributions, price, prior
     attributed a share commensurate with their investment, diluting the
     attributions.
     """
-    incoming_investment = calculate_incoming_investment(payment, price, new_itemized_payments)
+    incoming_investment = calculate_incoming_investment(
+        payment, price, new_itemized_payments
+    )
     # inflate valuation by the amount of the fresh investment
     posterior_valuation = inflate_valuation(
         prior_valuation, incoming_investment
@@ -444,9 +453,11 @@ def process_payments_and_record_updates():
     instruments = read_attributions(INSTRUMENTS_FILE, validate=False)
     attributions = read_attributions(ATTRIBUTIONS_FILE)
 
-    transactions, posterior_valuation, new_itemized_payments = process_payments(
-        instruments, attributions
-    )
+    (
+        transactions,
+        posterior_valuation,
+        new_itemized_payments,
+    ) = process_payments(instruments, attributions)
 
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no

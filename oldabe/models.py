@@ -37,12 +37,14 @@ class Payment:
 # is owed to directly to the project (attributions.txt). This allows us to
 # avoid mutating Payment records.
 @dataclass
-class ItemizedPayment
+class ItemizedPayment:
     email: str = None
-    fee_amount: Decimal = 0 # instruments
-    project_amount: Decimal = 0 # attributions 
+    fee_amount: Decimal = 0  # instruments
+    project_amount: Decimal = 0  # attributions
     attributable: bool = True
-    payment_file: str = None # acts like a foreign key to original payment object
+    payment_file: str = (
+        None  # acts like a foreign key to original payment object
+    )
 
 
 @dataclass
