@@ -412,6 +412,16 @@ def _get_unprocessed_payments():
     return unprocessed_payments
 
 
+def _create_itemized_payment(payment, fee_amount):
+    return ItemizedPayment(
+        payment.email,
+        fee_amount,
+        payment.amount,
+        payment.attributable,
+        payment.file,
+    )
+
+
 def process_payments(instruments, attributions):
     """
     Process new payments by paying out instruments and then, from the amount
@@ -433,13 +443,7 @@ def process_payments(instruments, attributions):
         # processing it for attributions
         payment.amount -= amount_paid_out
         new_itemized_payments.append(
-            ItemizedPayment(
-                payment.email,
-                amount_paid_out,
-                payment.amount,
-                payment.attributable,
-                payment.file,
-            )
+            _create_itemized_payment(payment, amount_paid_out)
         )
         # next, process attributions - using the amount owed to the project
         # (which is the amount leftover after paying instruments/fees)
