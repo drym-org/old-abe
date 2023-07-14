@@ -182,22 +182,25 @@ def get_existing_itemized_payments():
     # TODO
     itemized_payments = []
     itemized_payments_file = os.path.join(ABE_ROOT, ITEMIZED_PAYMENTS_FILE)
-    with open(itemized_payments_file) as f:
-        for (
-            email,
-            fee_amount,
-            project_amount,
-            attributable,
-            payment_file,
-        ) in csv.reader(f):
-            itemized_payment = ItemizedPayment(
+    try:
+        with open(itemized_payments_file) as f:
+            for (
                 email,
                 fee_amount,
                 project_amount,
                 attributable,
                 payment_file,
-            )
-            itemized_payments.append(itemized_payment)
+            ) in csv.reader(f):
+                itemized_payment = ItemizedPayment(
+                    email,
+                    fee_amount,
+                    project_amount,
+                    attributable,
+                    payment_file,
+                )
+                itemized_payments.append(itemized_payment)
+    except FileNotFoundError:
+        itemized_payments = []
     return itemized_payments
 
 
