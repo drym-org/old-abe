@@ -32,6 +32,21 @@ class Payment:
     file: str = None
 
 
+# ItemizedPayment acts as a proxy for a Payment object that keeps track
+# of how much of the original payment is owed to instruments and how much
+# is owed to directly to the project (attributions.txt). This allows us to
+# avoid mutating Payment records.
+@dataclass
+class ItemizedPayment:
+    email: str = None
+    fee_amount: Decimal = 0  # instruments
+    project_amount: Decimal = 0  # attributions
+    attributable: bool = True
+    payment_file: str = (
+        None  # acts like a foreign key to original payment object
+    )
+
+
 @dataclass
 class Attribution:
     email: str = None
