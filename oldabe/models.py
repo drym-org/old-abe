@@ -23,6 +23,12 @@ class Debt:
     commit_hash: str = None
     created_at: datetime = field(default_factory=datetime.utcnow)
 
+    def is_fulfilled(self):
+        return self.amount_paid == self.amount
+
+    def amount_remaining(self):
+        return self.amount - self.amount_paid
+
 
 @dataclass
 class Payment:
