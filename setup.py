@@ -1,6 +1,6 @@
 from setuptools import setup
 
-requirements = ['click']
+requirements = []
 
 test_requirements = [
     'pytest',
@@ -12,7 +12,7 @@ test_requirements = [
     'coveralls',
 ]
 
-dev_requirements = ['flake8', 'bump2version', 'sphinx', 'pre-commit', 'black']
+dev_requirements = ['flake8', 'black']
 
 setup_requirements = ['pytest-runner']
 
