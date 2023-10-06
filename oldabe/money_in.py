@@ -396,9 +396,12 @@ def get_payable_debts(unpayable_contributors):
 
 
 def pay_debts(payable_debts, payment):
-    # returns debts, transactions
-    # go through debts in chronological order
-    # pay each as much as possible, stopping when either money runs out, or no further debts
+    """
+    Go through debts in chronological order, and pay each as much as possible,
+    stopping when either the money runs out, or there are no further debts.
+    Returns the updated debts reflecting fresh payments to be made this time,
+    and transactions representing those fresh payments.
+    """
     updated_debts = []
     transactions = []
     for debt in sorted(payable_debts, key=lambda x: x.created_at):
@@ -426,6 +429,9 @@ def get_unpayable_contributors():
 
 
 def create_debts(remaining_amount, unpayable_contributors, attributions, payment_file):
+    """
+    Create fresh debts (to unpayable contributors).
+    """
     unpayable_attributions = {email: share for email in attributions if email in unpayable_contributors}
     debts = []
     commit_hash = get_git_revision_short_hash()
@@ -437,13 +443,31 @@ def create_debts(remaining_amount, unpayable_contributors, attributions, payment
     return debts
 
 
-def write_debts():
-    # 1. Build a hash of all the processed debts, generating an id for each (based on email and payment file)
-    # 2. read the existing debts file, row by row
-    # 3. if the debt in the row is in the "processed" hash, then write the processed version instead of the input version
-    #    and remove it from the hash, otherwise write the input version
-    # 4. write the debts that remain in the processed hash
-    pass
+def write_debts(processed_debts):
+    """
+    1. Build a hash of all the processed debts, generating an id for each
+       (based on email and payment file).
+    2. read the existing debts file, row by row.
+    3. if the debt in the row is in the "processed" hash, then write the
+       processed version instead of the input version and remove it from the
+       hash, otherwise write the input version.
+    4. write the debts that remain in the processed hash.
+    """
+    existing_debts = read_debts()
+    processed_debts_hash = {debt.key(): debt for debt in processed_debts}
+    debts_file = os.path.join(ABE_ROOT, DEBTS_FILE)
+    writer = csv.writer(f)
+    with open(debts_file, 'w') as f:
+        for existing_debt in existing_debts:
+            # if the existing debt has been processed, write the processed version
+            # otherwise re-write the existing version
+            if processed_debt := processed_debts_hash.get(existing_debt.key()):
+                writer.writerow(astuple(processed_debt))
+                del processed_debts_hash[processed_debt.key()]
+            else:
+                writer.writerow(astuple(existing_debt))
+        for debt in processed_debts_hash.values():
+            writer.writerow(astuple(debt))
 
 
 def distribute_remaining_amount(remaining_amount, attributions, payment, unpayable_contributors):
@@ -493,15 +517,20 @@ def distribute_payment(payment, attributions):
     payable_debts = get_payable_debts(unpayable_contributors)
     updated_debts, debt_transactions = pay_debts(payable_debts, payment)
     remaining_amount = payment.amount - sum(t.amount for t in debt_transactions)
-    fresh_debts = create_debts(remaining_amount, unpayable_contributors, attributions, payment.payment_file)
+
+    fresh_debts = []
+    equity_transactions = []
+    if remaining_amount > ACCOUNTING_ZERO:
+        fresh_debts = create_debts(remaining_amount, unpayable_contributors, attributions, payment.payment_file)
+
+        equity_transactions = (distribute_remaining_amount(remaining_amount,
+                                                           attributions,
+                                                           payment,
+                                                           unpayable_contributors)
+                               if remaining_amount else [])
 
     debts = updated_debts + fresh_debts
-
-    transactions = (distribute_remaining_amount(remaining_amount,
-                                                attributions,
-                                                payment,
-                                                unpayable_contributors)
-                    if remaining_amount else [])
+    transactions = equity_transactions + debt_transactions
 
     return debts, transactions
 

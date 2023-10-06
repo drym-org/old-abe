@@ -23,6 +23,9 @@ class Debt:
     commit_hash: str = None
     created_at: datetime = field(default_factory=datetime.utcnow)
 
+    def key(self):
+        return (self.email, self.payment_file)
+
     def is_fulfilled(self):
         return self.amount_paid == self.amount
 
