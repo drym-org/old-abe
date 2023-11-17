@@ -326,6 +326,17 @@ def write_append_itemized_payments(itemized_payments):
             writer.writerow(astuple(row))
 
 
+# TODO - when we write debts
+# 1) read all from the file and transform into a hash, where the key is a 
+#   unique identifier constructed from the email + payment file and the value
+#   is a debt object
+# 2) take the newly created/modified debt objects (all in one list) and iterate
+#   through - searching the full hash for each new debt object - modify if it
+#   was found, and add to the hash if not found
+# 3) convert the hash into a list, ordered by created_at field, then write to
+#   the debts file (completely replacing existing contents)
+
+
 def write_valuation(valuation):
     rounded_valuation = f"{valuation:.2f}"
     valuation_file = os.path.join(ABE_ROOT, VALUATION_FILE)
@@ -438,6 +449,7 @@ def process_payments(instruments, attributions):
         # first, process instruments (i.e. pay fees)
         transactions = distribute_payment(payment, instruments)
         new_transactions += transactions
+        # TODO - may need to calculate this differently with debts in the mix
         amount_paid_out = sum(t.amount for t in transactions)
         # deduct the amount paid out to instruments before
         # processing it for attributions
