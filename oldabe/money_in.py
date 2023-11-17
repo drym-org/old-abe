@@ -517,13 +517,21 @@ def distribute_payment(payment, attributions):
     # 3. (if leftover) identify unpayable people in the relevant attributions file
     # 4. record debt for each of them according to their attribution
     # 5. distribute according to renormalized (remainder) attributions
-    #    a. find out how much each person is owed according to attributions
-    #    b. renormalize and find out how much we are about to pay them
-    #    c. create transactions for the difference between b and their total advance (which could be zero), if above zero
-    #    d. find out who has advances and decrement all of these by the amount we are about to pay them, aggregating this amount
-    #    e. apply the total decremented advances to everyone who has zero advances, after renormalizing over them
-    #    f. create transactions for these payout amounts in e
-    #    g. create advances equal to the difference between b and a
+    #    a. find out the total amount each person would be owed (if everyone were payable) according to attributions
+    #    b. then renormalize (by excluding unpayable people) and find out how much we are actually about to pay them
+    #    c. create transactions for the difference between b and their total advance, if above zero
+    #    d. create advances for all payable people equal to the difference between b and a
+    #    e. among those we are about to pay, find out who has advances and decrement all of these by the amount
+    #       we are about to pay them, aggregating this amount
+    #    f. apply the total decremented advances to
+    #         i. all those who have zero advances (including any who _now_ have zero advances), if any,
+    #            after renormalizing over them, recording an advance to them for each such payment(!),
+    #            since we consider this payment to exceed their attributive share this time around
+    #        ii. all payable people, otherwise (i.e. everyone has advances), once again recording an
+    #            advance for each such payment in this case
+    #    f2. apply the total decremented advances to all payable contributors,
+    #        recording an advance for each of them.
+    #    g. create transactions for these payout amounts in f
     unpayable_contributors = get_unpayable_contributors()
     payable_debts = get_payable_debts(unpayable_contributors)
     updated_debts, debt_transactions = pay_debts(payable_debts, payment)

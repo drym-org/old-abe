@@ -34,6 +34,11 @@ class Debt:
 
 
 @dataclass
+class Advance:
+    pass
+
+
+@dataclass
 class Payment:
     email: str = None
     amount: Decimal = 0
