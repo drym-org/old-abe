@@ -175,8 +175,8 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
     assert amount > 0
     assert attributions
     transactions = []
-    for email, share in attributions.items():
-        t = Transaction(email, amount * share, payment_file, commit_hash)
+    for email, amount_owed in get_amounts_owed(amount, attributions):
+        t = Transaction(email, amount_owed, payment_file, commit_hash)
         transactions.append(t)
     return transactions
 
@@ -268,9 +268,10 @@ def get_rounding_difference(attributions):
     return difference
 
 
-def renormalize(attributions, target_proportion):
+def normalize(attributions):
+    total_share = sum(share for _, share in attributions.items())
+    target_proportion = Decimal("1") / total_share
     for email in attributions:
-        # renormalize to reflect dilution
         attributions[email] *= target_proportion
 
 
@@ -432,7 +433,10 @@ def create_debts(remaining_amount, unpayable_contributors, attributions, payment
     """
     Create fresh debts (to unpayable contributors).
     """
-    unpayable_attributions = {email: share for email in attributions if email in unpayable_contributors}
+    unpayable_attributions = {email: share
+                              for email, share
+                              in attributions.items()
+                              if email in unpayable_contributors}
     debts = []
     commit_hash = get_git_revision_short_hash()
     for email, share in unpayable_attributions.items():
@@ -470,24 +474,77 @@ def write_debts(processed_debts):
             writer.writerow(astuple(debt))
 
 
-def distribute_remaining_amount(remaining_amount, attributions, payment, unpayable_contributors):
+def renormalize(attributions, excluded_contributors):
+    target_proportion = 1 / (1 - sum(attributions[email] for email in excluded_contributors))
+    remainder_attributions = {}
+    for email in attributions:
+        # renormalize to reflect dilution
+        remainder_attributions[email] = attributions[email] * target_proportion
+    return remainder_attributions
+
+
+def get_amounts_owed(total_amount, attributions):
+    return {email: share * total_amount
+            for email, share in attributions.items()}
+
+
+def distribute_remaining_amount(remaining_amount, truncated_payable_attributions, payment):
     """
     After paying off debts, distribute remaining amount to payable contributors
     in the attributions file, by renormalizing after excluding unpayable
     contributors.
     """
-    commit_hash = get_git_revision_short_hash()
-    target_proportion = 1 / (1 - sum(attributions[email] for email in unpayable_contributors))
-    remainder_attributions = {}
-    for email in attributions:
-        # renormalize to reflect dilution
-        remainder_attributions[email] = attributions[email] * target_proportion
+    # $15 pre-existing advance
+    # $10 amount they are owed
+    # $20 amount we are about to pay them
+    # A:
+    #   pay them $5
+    #   draw down $15 advance to zero
+    #   pot is at $15
+    # B:
+    #   increase advance by $10 (i.e. b - a)
+    #   draw down $25 to $5
+    #   $20 remains in the pot
+    #   but we give it to them and increase their advance to $35
+    # Next time (assume no unpayable contributors):
+    # B:
+    #   advance = $35
+    #   a = $10
+    #   b = $10
+    #   draw $35 down to $25
+    #   $10 remains in the pot
+    #   $5 (say) is allocated to them
+    #   increase advance by $5 to $30
+    # a. find out the total amount each person would be owed
+    #   (if everyone were payable) according to attributions
+    # b. then renormalize (by excluding unpayable people) and
+    #   find out how much we are actually about to pay them
+    # d. create advances for all payable people equal to
+    #   the difference between b and a
+    # c. record "initial owed amount" for the difference between b and
+    #   their total advance, if above zero
+    # e. among those we are about to pay, find out who has advances and
+    #   decrement all of these by the amount
+    #   we are about to pay them, aggregating this amount
+    # f. apply the total decremented advances to all payable contributors,
+    #    recording an advance for each of them.
+    # g. create transactions for these payout amounts in f
+    #
+    #
+    # Goals: make sure advances eventually decrease
+    #        and that the numbers look fair
 
-    # figure out how much each person in the attributions file is owed from
-    # this payment, generating a transaction for each stakeholder.
+    amounts_owed = get_amounts_owed(remaining_amount, truncated_payable_attributions)
+    remainder_attributions = normalize(truncated_payable_attributions)
+    advances
     transactions = generate_transactions(
         remaining_amount, remainder_attributions, payment.file, commit_hash
     )
+
+
+
+    commit_hash = get_git_revision_short_hash()
+
 
     return transactions
 
@@ -506,21 +563,6 @@ def distribute_payment(payment, attributions):
     # 3. (if leftover) identify unpayable people in the relevant attributions file
     # 4. record debt for each of them according to their attribution
     # 5. distribute according to renormalized (remainder) attributions
-    #    a. find out the total amount each person would be owed (if everyone were payable) according to attributions
-    #    b. then renormalize (by excluding unpayable people) and find out how much we are actually about to pay them
-    #    c. create transactions for the difference between b and their total advance, if above zero
-    #    d. create advances for all payable people equal to the difference between b and a
-    #    e. among those we are about to pay, find out who has advances and decrement all of these by the amount
-    #       we are about to pay them, aggregating this amount
-    #    f. apply the total decremented advances to
-    #         i. all those who have zero advances (including any who _now_ have zero advances), if any,
-    #            after renormalizing over them, recording an advance to them for each such payment(!),
-    #            since we consider this payment to exceed their attributive share this time around
-    #        ii. all payable people, otherwise (i.e. everyone has advances), once again recording an
-    #            advance for each such payment in this case
-    #    f2. apply the total decremented advances to all payable contributors,
-    #        recording an advance for each of them.
-    #    g. create transactions for these payout amounts in f
     unpayable_contributors = get_unpayable_contributors()
     payable_debts = get_payable_debts(unpayable_contributors)
     updated_debts, debt_transactions = pay_debts(payable_debts, payment)
@@ -529,12 +571,12 @@ def distribute_payment(payment, attributions):
     fresh_debts = []
     equity_transactions = []
     if remaining_amount > ACCOUNTING_ZERO:
+        # TODO: pass truncated unpayable attributions instead of (unpayable contributors, attributions)
         fresh_debts = create_debts(remaining_amount, unpayable_contributors, attributions, payment.payment_file)
 
         equity_transactions = (distribute_remaining_amount(remaining_amount,
-                                                           attributions,
-                                                           payment,
-                                                           unpayable_contributors)
+                                                           truncated_payable_attributions,
+                                                           payment)
                                if remaining_amount else [])
 
     debts = updated_debts + fresh_debts
