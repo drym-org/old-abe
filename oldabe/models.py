@@ -35,7 +35,12 @@ class Debt:
 
 @dataclass
 class Advance:
-    pass
+    email: str = None
+    amount: Decimal = 0
+
+    payment_file: str = None
+    commit_hash: str = None
+    created_at: datetime = field(default_factory=datetime.utcnow)
 
 
 @dataclass
