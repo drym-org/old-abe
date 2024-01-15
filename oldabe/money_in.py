@@ -29,6 +29,7 @@ ROUNDING_TOLERANCE = Decimal("0.000001")
 ACCOUNTING_ZERO = Decimal("0.01")
 
 
+# TODO - move to utils
 def parse_percentage(value):
     """
     Translates values expressed in percentage format (75.234) into
@@ -46,6 +47,7 @@ def parse_percentage(value):
     return value
 
 
+# TODO - move to utils
 def serialize_proportion(value):
     """
     Translates values expressed in decimal format (0.75234) into
@@ -258,6 +260,7 @@ def _get_attributions_total(attributions):
     return sum(attributions.values())
 
 
+# TODO - move to utils
 def get_rounding_difference(attributions):
     """
     Get the difference of the total of the attributions from 1, which is
@@ -277,6 +280,7 @@ def normalize(attributions):
         attributions[email] *= target_proportion
 
 
+# TODO - move to utils
 def correct_rounding_error(attributions, incoming_attribution):
     """Due to finite precision, the Decimal module will round up or down
     on the last decimal place. This could result in the aggregate value not
@@ -360,6 +364,7 @@ def inflate_valuation(valuation, amount):
     return valuation + amount
 
 
+# TODO - move to utils
 def get_git_revision_short_hash() -> str:
     """From https://stackoverflow.com/a/21901260"""
     return (
@@ -402,8 +407,14 @@ def read_advances():
     return advances
 
 
-def _is_debt_fulfilled(debt):
-    return debt.amount_paid != debt.amount
+# get_advance_total_by_contributor
+# get_advance_sum_by_contributor/email/user
+def get_sum_of_advances_by_contributor():
+    all_advances = read_advances()
+    advance_totals = {email: sum(a.amount for a in advances)
+                      for email, advances
+                      in all_advances.items()}
+    return advance_totals
 
 
 def get_payable_debts(unpayable_contributors):
@@ -570,10 +581,9 @@ def distribute_payment(payment, attributions):
                         for email, amount in amounts_owed.items()
                         if email not in unpayable_contributors}
 
-        all_advances = read_advances()
-        advance_totals = {email: sum(a.amount for a in advances)
-                          for email, advances
-                          in all_advances.items()}
+        # use the amount owed to each contributor to draw down any advances
+        # they may already have and then decrement their amount owed accordingly
+        advance_totals = get_sum_of_advances_by_contributor()
         negative_advances = []
         for email, advance_total in advance_totals.items():
             amount_owed = amounts_owed.get(email, 0)
@@ -598,7 +608,7 @@ def distribute_payment(payment, attributions):
         # this will now need to be updated to reflect the above comment
         # will be almost the same as before except that remaining_amount will be
         # redistribution_pot instead.
-        equity_transactions = (distribute_remaining_amount(remaining_amount,
+        equity_transactions = (distribute_remaining_amount(redistribution_pot,
                                                            truncated_payable_attributions,
                                                            payment)
                                if remaining_amount else [])
