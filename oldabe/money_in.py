@@ -418,8 +418,6 @@ def read_advances():
     return advances
 
 
-# get_advance_total_by_contributor
-# get_advance_sum_by_contributor/email/user
 def get_sum_of_advances_by_contributor():
     all_advances = read_advances()
     advance_totals = {email: sum(a.amount for a in advances)
