@@ -468,7 +468,7 @@ def create_debts(amounts_owed, unpayable_contributors, payment_file):
     debts = []
     commit_hash = get_git_revision_short_hash()
     for email, amount in unpayable_amounts_owed.items():
-        debt = Debt(email, amount, payment_file=payment_file, commit_hash=commit_hash))
+        debt = Debt(email, amount, payment_file=payment_file, commit_hash=commit_hash)
         debts.append(debt)
 
     return debts
@@ -515,10 +515,11 @@ def get_amounts_owed(total_amount, attributions):
             for email, share in attributions.items()}
 
 
-# TODO (turn into doc string): finally, redistribute the pot over all payable contributors
-# go through attributions for payable people and redistribute pot accordingly
-# create advances for each of those amounts, and add the amount to amounts_owed
 def redistribute_pot(redistribution_pot, attributions, unpayable_contributors, payment_file, amounts_owed):
+    # Redistribute the pot of remaining money over all payable contributors, according to attributions
+    # share (normalized to 100%). Create advances for those amounts (because they are in excess
+    # of the amount owed to each contributor from the original payment) and add the amounts to the
+    # amounts_owed dictionary to keep track of the full amount we are about to pay everyone.
     fresh_advances = []
     normalized_payable_attributions = normalize(
         {email: share for email, share in attributions.items() if email not in unpayable_contributors}
