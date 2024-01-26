@@ -419,6 +419,12 @@ def read_advances():
 
 
 def get_sum_of_advances_by_contributor():
+    """
+    Sum all Advance objects for each contributor to get the total amount
+    that they currently have in advances and have not yet drawn down.
+    Return a dictionary with the contributor's email as the key and the
+    their advance amount as the value.
+    """
     all_advances = read_advances()
     advance_totals = {email: sum(a.amount for a in advances)
                       for email, advances
@@ -525,10 +531,12 @@ def get_amounts_owed(total_amount, attributions):
 
 
 def redistribute_pot(redistribution_pot, attributions, unpayable_contributors, payment_file, amounts_owed):
-    # Redistribute the pot of remaining money over all payable contributors, according to attributions
-    # share (normalized to 100%). Create advances for those amounts (because they are in excess
-    # of the amount owed to each contributor from the original payment) and add the amounts to the
-    # amounts_owed dictionary to keep track of the full amount we are about to pay everyone.
+    """
+    Redistribute the pot of remaining money over all payable contributors, according to attributions
+    share (normalized to 100%). Create advances for those amounts (because they are in excess
+    of the amount owed to each contributor from the original payment) and add the amounts to the
+    amounts_owed dictionary to keep track of the full amount we are about to pay everyone.
+    """
     fresh_advances = []
     normalized_payable_attributions = normalize(
         {email: share for email, share in attributions.items() if email not in unpayable_contributors}
