@@ -574,6 +574,8 @@ def distribute_payment(payment, attributions):
 
     fresh_debts = []
     equity_transactions = []
+    negative_advances = []
+    fresh_advances = []
     if available_amount > ACCOUNTING_ZERO:
         amounts_owed = get_amounts_owed(available_amount, attributions)
         fresh_debts = create_debts(amounts_owed,
@@ -589,7 +591,6 @@ def distribute_payment(payment, attributions):
         # use the amount owed to each contributor to draw down any advances
         # they may already have and then decrement their amount owed accordingly
         advance_totals = get_sum_of_advances_by_contributor()
-        negative_advances = []
         for email, advance_total in advance_totals.items():
             amount_payable = amounts_payable.get(email, 0)
             drawdown_amount = max(advance_total - amount_payable, 0)
@@ -621,8 +622,9 @@ def distribute_payment(payment, attributions):
         
     debts = updated_debts + fresh_debts
     transactions = equity_transactions + debt_transactions
+    advances = negative_advances + fresh_advances
 
-    return debts, transactions
+    return debts, transactions, advances
 
 
 def handle_investment(
@@ -669,6 +671,11 @@ def _create_itemized_payment(payment, fee_amount):
     )
 
 
+# TODO - next step - see how the updates we've made for debts/advances
+# change things in the following process_payments function (return values
+# for distribute_payment, calculating amount_paid_out, make sure to
+# return any new advances so they can be written in the final step)
+# TODO - create new function for writing newly created advances to the file
 def process_payments(instruments, attributions):
     """
     Process new payments by paying out instruments and then, from the amount
@@ -683,7 +690,7 @@ def process_payments(instruments, attributions):
     unprocessed_payments = _get_unprocessed_payments()
     for payment in unprocessed_payments:
         # first, process instruments (i.e. pay fees)
-        debts, transactions = distribute_payment(payment, instruments)
+        debts, transactions, advances = distribute_payment(payment, instruments)
         new_transactions += transactions
         # TODO - may need to calculate this differently with debts in the mix
         amount_paid_out = sum(t.amount for t in transactions)
