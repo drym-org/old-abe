@@ -321,7 +321,7 @@ def write_append_itemized_payments(itemized_payments):
         for row in itemized_payments:
             writer.writerow(astuple(row))
 
-
+# [[ OLD NOTE - still relevant?? ]]
 # TODO - when we write debts
 # 1) read all from the file and transform into a hash, where the key is a 
 #   unique identifier constructed from the email + payment file and the value
