@@ -29,6 +29,7 @@ ROUNDING_TOLERANCE = Decimal("0.000001")
 ACCOUNTING_ZERO = Decimal("0.01")
 
 
+# TODO - move to utils
 def parse_percentage(value):
     """
     Translates values expressed in percentage format (75.234) into
@@ -46,6 +47,7 @@ def parse_percentage(value):
     return value
 
 
+# TODO - move to utils
 def serialize_proportion(value):
     """
     Translates values expressed in decimal format (0.75234) into
@@ -258,6 +260,7 @@ def _get_attributions_total(attributions):
     return sum(attributions.values())
 
 
+# TODO - move to utils
 def get_rounding_difference(attributions):
     """
     Get the difference of the total of the attributions from 1, which is
@@ -277,6 +280,7 @@ def normalize(attributions):
         attributions[email] *= target_proportion
 
 
+# TODO - move to utils
 def correct_rounding_error(attributions, incoming_attribution):
     """Due to finite precision, the Decimal module will round up or down
     on the last decimal place. This could result in the aggregate value not
@@ -360,6 +364,7 @@ def inflate_valuation(valuation, amount):
     return valuation + amount
 
 
+# TODO - move to utils
 def get_git_revision_short_hash() -> str:
     """From https://stackoverflow.com/a/21901260"""
     return (
@@ -402,8 +407,18 @@ def read_advances():
     return advances
 
 
-def _is_debt_fulfilled(debt):
-    return debt.amount_paid != debt.amount
+def get_sum_of_advances_by_contributor():
+    """
+    Sum all Advance objects for each contributor to get the total amount
+    that they currently have in advances and have not yet drawn down.
+    Return a dictionary with the contributor's email as the key and the
+    their advance amount as the value.
+    """
+    all_advances = read_advances()
+    advance_totals = {email: sum(a.amount for a in advances)
+                      for email, advances
+                      in all_advances.items()}
+    return advance_totals
 
 
 def get_payable_debts(unpayable_contributors):
@@ -451,13 +466,13 @@ def create_debts(amounts_owed, unpayable_contributors, payment_file):
     """
     Create fresh debts (to unpayable contributors).
     """
-    unpayable_amounts_owed = {email: amount
-                              for email, amount in amounts_owed.items()
-                              if email in unpayable_contributors}
+    amounts_unpayable = {email: amount
+                         for email, amount in amounts_owed.items()
+                         if email in unpayable_contributors}
     debts = []
     commit_hash = get_git_revision_short_hash()
-    for email, amount in unpayable_amounts_owed.items():
-        debt = Debt(email, amount, payment_file=payment_file, commit_hash=commit_hash))
+    for email, amount in amounts_unpayable.items():
+        debt = Debt(email, amount, payment_file=payment_file, commit_hash=commit_hash)
         debts.append(debt)
 
     return debts
@@ -504,34 +519,26 @@ def get_amounts_owed(total_amount, attributions):
             for email, share in attributions.items()}
 
 
-def distribute_remaining_amount(remaining_amount, truncated_payable_attributions, payment):
+def redistribute_pot(redistribution_pot, attributions, unpayable_contributors, payment_file, amounts_payable):
     """
-    After paying off debts, distribute remaining amount to payable contributors
-    in the attributions file, by renormalizing after excluding unpayable
-    contributors.
+    Redistribute the pot of remaining money over all payable contributors, according to attributions
+    share (normalized to 100%). Create advances for those amounts (because they are in excess
+    of the amount owed to each contributor from the original payment) and add the amounts to the
+    amounts_payable dictionary to keep track of the full amount we are about to pay everyone.
     """
-    amounts_owed = get_amounts_owed(remaining_amount, truncated_payable_attributions)
-    remainder_attributions = normalize(truncated_payable_attributions)
-    advances
-    transactions = generate_transactions(
-        remaining_amount, remainder_attributions, payment.file, commit_hash
+    fresh_advances = []
+    normalized_payable_attributions = normalize(
+        {email: share for email, share in attributions.items() if email not in unpayable_contributors}
     )
+    for email, share in normalized_payable_attributions.items():
+        advance_amount = redistribution_pot * share
+        fresh_advances.append(Advance(email=email,
+                                      amount=advance_amount,
+                                      payment_file=payment_file,
+                                      commit_hash=get_git_revision_short_hash()))
+        amounts_payable[email] += advance_amount
 
-    commit_hash = get_git_revision_short_hash()
-
-    return transactions
-
-
-def draw_down_advances(amounts_owed, unpayable_contributors):
-    """
-    Two things:
-    1. Draw down the advances (i.e. create negative advances)
-    2. Update payable amounts owed, reporting what we are actually
-       going to pay people at this stage.
-    """
-    payable_amounts_owed = {email: amount
-                            for email, amount in amounts_owed.items()
-                            if email not in unpayable_contributors}
+    return fresh_advances
 
 
 def distribute_payment(payment, attributions):
@@ -557,52 +564,44 @@ def distribute_payment(payment, attributions):
     fresh_debts = []
     equity_transactions = []
     if available_amount > ACCOUNTING_ZERO:
-        amounts_owed = {email: share * available_amount
-                        for email, share
-                        in attributions.items()}
+        amounts_owed = get_amounts_owed(available_amount, attributions)
         fresh_debts = create_debts(amounts_owed,
                                    unpayable_contributors,
                                    payment.payment_file)
         redistribution_pot = sum(d.amount for d in fresh_debts)
 
         # just retain payable people and their amounts owed
-        amounts_owed = {email: amount
-                        for email, amount in amounts_owed.items()
-                        if email not in unpayable_contributors}
+        amounts_payable = {email: amount
+                           for email, amount in amounts_owed.items()
+                           if email not in unpayable_contributors}
 
-        all_advances = read_advances()
-        advance_totals = {email: sum(a.amount for a in advances)
-                          for email, advances
-                          in all_advances.items()}
+        # use the amount owed to each contributor to draw down any advances
+        # they may already have and then decrement their amount owed accordingly
+        advance_totals = get_sum_of_advances_by_contributor()
         negative_advances = []
         for email, advance_total in advance_totals.items():
-            amount_owed = amounts_owed.get(email, 0)
-            drawdown_amount = max(advance_total - amount_owed, 0)
+            amount_payable = amounts_payable.get(email, 0)
+            drawdown_amount = max(advance_total - amount_payable, 0)
             if drawdown_amount:
                 negative_advance = Advance(email=email,
-                                           amount=-drawdown_amount # note minus sign
-                                           payment_file=payment.payment_file
+                                           amount=-drawdown_amount, # note minus sign
+                                           payment_file=payment.payment_file,
                                            commit_hash=commit_hash)
                 negative_advances.append(negative_advance)
-                amounts_owed[email] -= drawdown_amount
+                amounts_payable[email] -= drawdown_amount
 
         # note that these are drawn down amounts and therefore have negative amounts
         # and that's why we take the absolute value here
         redistribution_pot += sum(abs(a.amount) for a in negative_advances)
 
-        # TODO: finally, redistribute the pot over all payable contributors
-        # go through attributions for payable people and redistribute pot accordingly
-        # create advances for each of those amounts, and add the amount to amounts_owed
-        # later, generate transactions from the final amounts in amounts_owed
-
-        # this will now need to be updated to reflect the above comment
-        # will be almost the same as before except that remaining_amount will be
-        # redistribution_pot instead.
-        equity_transactions = (distribute_remaining_amount(remaining_amount,
-                                                           truncated_payable_attributions,
-                                                           payment)
-                               if remaining_amount else [])
-
+        # redistribute the pot over all payable contributors - produce fresh advances and add to amounts owed
+        fresh_advances = redistribute_pot(redistribution_pot,
+                                          attributions,
+                                          unpayable_contributors,
+                                          payment.payment_file,
+                                          amounts_payable)
+        # TODO - generate transactions from the final amounts in amounts_payable
+        
     debts = updated_debts + fresh_debts
     transactions = equity_transactions + debt_transactions
 
