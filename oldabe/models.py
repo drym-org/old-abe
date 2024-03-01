@@ -23,6 +23,28 @@ class Debt:
     commit_hash: str = None
     created_at: datetime = field(default_factory=datetime.utcnow)
 
+    def key(self):
+        return (self.email, self.payment_file)
+
+    def is_fulfilled(self):
+        return self.amount_paid == self.amount
+
+    def amount_remaining(self):
+        return self.amount - self.amount_paid
+
+
+# Individual advances can have a positive or negative amount (to
+# indicate an actual advance payment, or a drawn down advance).
+# To find the current advance amount for a given contributor,
+# sum all of their existing Advance objects.
+@dataclass
+class Advance:
+    email: str = None
+    amount: Decimal = 0
+    payment_file: str = None
+    commit_hash: str = None
+    created_at: datetime = field(default_factory=datetime.utcnow)
+
 
 @dataclass
 class Payment:
