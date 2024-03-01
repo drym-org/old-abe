@@ -605,13 +605,19 @@ def distribute_payment(payment, attributions):
         # and that's why we take the absolute value here
         redistribution_pot += sum(abs(a.amount) for a in negative_advances)
 
-        # redistribute the pot over all payable contributors - produce fresh advances and add to amounts owed
+        # redistribute the pot over all payable contributors - produce fresh advances and add to amounts payable
         fresh_advances = redistribute_pot(redistribution_pot,
                                           attributions,
                                           unpayable_contributors,
                                           payment.payment_file,
                                           amounts_payable)
-        # TODO - generate transactions from the final amounts in amounts_payable
+
+        for email, amount in amounts_payable.items():
+            new_equity_transaction = Transaction(email=email,
+                                                 amount=amount,
+                                                 payment_file=payment.payment_file,
+                                                 commit_hash=commit_hash)
+            equity_transactions.append(new_equity_transaction)
         
     debts = updated_debts + fresh_debts
     transactions = equity_transactions + debt_transactions
