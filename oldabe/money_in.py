@@ -547,10 +547,9 @@ def redistribute_pot(redistribution_pot, attributions, unpayable_contributors, p
     amounts_payable dictionary to keep track of the full amount we are about to pay everyone.
     """
     fresh_advances = []
-    normalized_payable_attributions = normalize(
-        {email: share for email, share in attributions.items() if email not in unpayable_contributors}
-    )
-    for email, share in normalized_payable_attributions.items():
+    payable_attributions = {email: share for email, share in attributions.items() if email not in unpayable_contributors}
+    normalize(payable_attributions)
+    for email, share in payable_attributions.items():
         advance_amount = redistribution_pot * share
         fresh_advances.append(Advance(email=email,
                                       amount=advance_amount,
