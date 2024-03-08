@@ -322,6 +322,26 @@ def write_append_itemized_payments(itemized_payments):
             writer.writerow(astuple(row))
 
 
+def write_append_advances(advances):
+    advances_file = os.path.join(ABE_ROOT, ADVANCES_FILE)
+    with open(advances_file, 'a') as f:
+        writer = csv.writer(f)
+        for row in advances:
+            writer.writerow(astuple(row))
+
+
+# [[ OLD NOTE - still relevant?? ]]
+# TODO - when we write debts
+# 1) read all from the file and transform into a hash, where the key is a 
+#   unique identifier constructed from the email + payment file and the value
+#   is a debt object
+# 2) take the newly created/modified debt objects (all in one list) and iterate
+#   through - searching the full hash for each new debt object - modify if it
+#   was found, and add to the hash if not found
+# 3) convert the hash into a list, ordered by created_at field, then write to
+#   the debts file (completely replacing existing contents)
+
+
 def write_valuation(valuation):
     rounded_valuation = f"{valuation:.2f}"
     valuation_file = os.path.join(ABE_ROOT, VALUATION_FILE)
@@ -563,6 +583,8 @@ def distribute_payment(payment, attributions):
 
     fresh_debts = []
     equity_transactions = []
+    negative_advances = []
+    fresh_advances = []
     if available_amount > ACCOUNTING_ZERO:
         amounts_owed = get_amounts_owed(available_amount, attributions)
         fresh_debts = create_debts(amounts_owed,
@@ -578,7 +600,6 @@ def distribute_payment(payment, attributions):
         # use the amount owed to each contributor to draw down any advances
         # they may already have and then decrement their amount owed accordingly
         advance_totals = get_sum_of_advances_by_contributor()
-        negative_advances = []
         for email, advance_total in advance_totals.items():
             amount_payable = amounts_payable.get(email, 0)
             drawdown_amount = max(advance_total - amount_payable, 0)
@@ -594,18 +615,25 @@ def distribute_payment(payment, attributions):
         # and that's why we take the absolute value here
         redistribution_pot += sum(abs(a.amount) for a in negative_advances)
 
-        # redistribute the pot over all payable contributors - produce fresh advances and add to amounts owed
+        # redistribute the pot over all payable contributors - produce fresh advances and add to amounts payable
         fresh_advances = redistribute_pot(redistribution_pot,
                                           attributions,
                                           unpayable_contributors,
                                           payment.payment_file,
                                           amounts_payable)
-        # TODO - generate transactions from the final amounts in amounts_payable
-        
+
+        for email, amount in amounts_payable.items():
+            new_equity_transaction = Transaction(email=email,
+                                                 amount=amount,
+                                                 payment_file=payment.payment_file,
+                                                 commit_hash=commit_hash)
+            equity_transactions.append(new_equity_transaction)
+
     debts = updated_debts + fresh_debts
     transactions = equity_transactions + debt_transactions
+    advances = negative_advances + fresh_advances
 
-    return debts, transactions
+    return debts, transactions, advances
 
 
 def handle_investment(
@@ -646,7 +674,7 @@ def _create_itemized_payment(payment, fee_amount):
     return ItemizedPayment(
         payment.email,
         fee_amount,
-        payment.amount,
+        payment.amount,  # already has fees deducted
         payment.attributable,
         payment.file,
     )
@@ -661,29 +689,36 @@ def process_payments(instruments, attributions):
     """
     price = read_price()
     valuation = read_valuation()
+    new_debts = []
+    new_advances = []
     new_transactions = []
     new_itemized_payments = []
     unprocessed_payments = _get_unprocessed_payments()
     for payment in unprocessed_payments:
         # first, process instruments (i.e. pay fees)
-        debts, transactions = distribute_payment(payment, instruments)
+        debts, transactions, advances = distribute_payment(payment, instruments)
         new_transactions += transactions
-        amount_paid_out = sum(t.amount for t in transactions)
+        new_debts += debts
+        new_advances += advances
+        fees_paid_out = sum(t.amount for t in transactions)
         # deduct the amount paid out to instruments before
         # processing it for attributions
-        payment.amount -= amount_paid_out
+        payment.amount -= fees_paid_out
         new_itemized_payments.append(
-            _create_itemized_payment(payment, amount_paid_out)
+            _create_itemized_payment(payment, fees_paid_out)
         )
         # next, process attributions - using the amount owed to the project
         # (which is the amount leftover after paying instruments/fees)
         if payment.amount > ACCOUNTING_ZERO:
-            new_transactions += distribute_payment(payment, attributions)
+            debts, transactions, advances = distribute_payment(payment, attributions)
+            new_transactions += transactions
+            new_debts += debts
+            new_advances += advances
         if payment.attributable:
             valuation = handle_investment(
                 payment, new_itemized_payments, attributions, price, valuation
             )
-    return debts, new_transactions, valuation, new_itemized_payments
+    return new_debts, new_transactions, valuation, new_itemized_payments, new_advances
 
 
 def process_payments_and_record_updates():
@@ -700,6 +735,7 @@ def process_payments_and_record_updates():
         transactions,
         posterior_valuation,
         new_itemized_payments,
+        advances,
     ) = process_payments(instruments, attributions)
 
     # we only write the changes to disk at the end
@@ -710,6 +746,7 @@ def process_payments_and_record_updates():
     write_attributions(attributions)
     write_valuation(posterior_valuation)
     write_append_itemized_payments(new_itemized_payments)
+    write_append_advances(advances)
 
 
 def main():
