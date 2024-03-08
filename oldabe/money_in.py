@@ -591,7 +591,7 @@ def distribute_payment(payment, attributions):
         amounts_owed = get_amounts_owed(available_amount, attributions)
         fresh_debts = create_debts(amounts_owed,
                                    unpayable_contributors,
-                                   payment.payment_file)
+                                   payment.file)
         redistribution_pot = sum(d.amount for d in fresh_debts)
 
         # just retain payable people and their amounts owed
@@ -608,7 +608,7 @@ def distribute_payment(payment, attributions):
             if drawdown_amount:
                 negative_advance = Advance(email=email,
                                            amount=-drawdown_amount, # note minus sign
-                                           payment_file=payment.payment_file,
+                                           payment_file=payment.file,
                                            commit_hash=commit_hash)
                 negative_advances.append(negative_advance)
                 amounts_payable[email] -= drawdown_amount
@@ -621,13 +621,13 @@ def distribute_payment(payment, attributions):
         fresh_advances = redistribute_pot(redistribution_pot,
                                           attributions,
                                           unpayable_contributors,
-                                          payment.payment_file,
+                                          payment.file,
                                           amounts_payable)
 
         for email, amount in amounts_payable.items():
             new_equity_transaction = Transaction(email=email,
                                                  amount=amount,
-                                                 payment_file=payment.payment_file,
+                                                 payment_file=payment.file,
                                                  commit_hash=commit_hash)
             equity_transactions.append(new_equity_transaction)
 
