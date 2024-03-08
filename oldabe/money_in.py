@@ -9,8 +9,8 @@ import os
 import subprocess
 from .models import Attribution, Payment, ItemizedPayment, Transaction
 
-# ABE_ROOT = 'abe'
-ABE_ROOT = '.'
+ABE_ROOT = './abe'
+# ABE_ROOT = '.'
 PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
 NONATTRIBUTABLE_PAYMENTS_DIR = os.path.join(
     ABE_ROOT, 'payments', 'nonattributable'
