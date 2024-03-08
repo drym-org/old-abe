@@ -321,6 +321,15 @@ def write_append_itemized_payments(itemized_payments):
         for row in itemized_payments:
             writer.writerow(astuple(row))
 
+
+def write_append_advances(advances):
+    advances_file = os.path.join(ABE_ROOT, ADVANCES_FILE)
+    with open(advances_file, 'a') as f:
+        writer = csv.writer(f)
+        for row in advances:
+            writer.writerow(astuple(row))
+
+
 # [[ OLD NOTE - still relevant?? ]]
 # TODO - when we write debts
 # 1) read all from the file and transform into a hash, where the key is a 
@@ -619,7 +628,7 @@ def distribute_payment(payment, attributions):
                                                  payment_file=payment.payment_file,
                                                  commit_hash=commit_hash)
             equity_transactions.append(new_equity_transaction)
-        
+
     debts = updated_debts + fresh_debts
     transactions = equity_transactions + debt_transactions
     advances = negative_advances + fresh_advances
@@ -665,17 +674,12 @@ def _create_itemized_payment(payment, fee_amount):
     return ItemizedPayment(
         payment.email,
         fee_amount,
-        payment.amount,
+        payment.amount,  # already has fees deducted
         payment.attributable,
         payment.file,
     )
 
 
-# TODO - next step - see how the updates we've made for debts/advances
-# change things in the following process_payments function (return values
-# for distribute_payment, calculating amount_paid_out, make sure to
-# return any new advances so they can be written in the final step)
-# TODO - create new function for writing newly created advances to the file
 def process_payments(instruments, attributions):
     """
     Process new payments by paying out instruments and then, from the amount
@@ -685,6 +689,8 @@ def process_payments(instruments, attributions):
     """
     price = read_price()
     valuation = read_valuation()
+    new_debts = []
+    new_advances = []
     new_transactions = []
     new_itemized_payments = []
     unprocessed_payments = _get_unprocessed_payments()
@@ -692,23 +698,27 @@ def process_payments(instruments, attributions):
         # first, process instruments (i.e. pay fees)
         debts, transactions, advances = distribute_payment(payment, instruments)
         new_transactions += transactions
-        # TODO - may need to calculate this differently with debts in the mix
-        amount_paid_out = sum(t.amount for t in transactions)
+        new_debts += debts
+        new_advances += advances
+        fees_paid_out = sum(t.amount for t in transactions)
         # deduct the amount paid out to instruments before
         # processing it for attributions
-        payment.amount -= amount_paid_out
+        payment.amount -= fees_paid_out
         new_itemized_payments.append(
-            _create_itemized_payment(payment, amount_paid_out)
+            _create_itemized_payment(payment, fees_paid_out)
         )
         # next, process attributions - using the amount owed to the project
         # (which is the amount leftover after paying instruments/fees)
         if payment.amount > ACCOUNTING_ZERO:
-            new_transactions += distribute_payment(payment, attributions)
+            debts, transactions, advances = distribute_payment(payment, attributions)
+            new_transactions += transactions
+            new_debts += debts
+            new_advances += advances
         if payment.attributable:
             valuation = handle_investment(
                 payment, new_itemized_payments, attributions, price, valuation
             )
-    return debts, new_transactions, valuation, new_itemized_payments
+    return new_debts, new_transactions, valuation, new_itemized_payments, new_advances
 
 
 def process_payments_and_record_updates():
@@ -725,6 +735,7 @@ def process_payments_and_record_updates():
         transactions,
         posterior_valuation,
         new_itemized_payments,
+        advances,
     ) = process_payments(instruments, attributions)
 
     # we only write the changes to disk at the end
@@ -735,6 +746,7 @@ def process_payments_and_record_updates():
     write_attributions(attributions)
     write_valuation(posterior_valuation)
     write_append_itemized_payments(new_itemized_payments)
+    write_append_advances(advances)
 
 
 def main():
