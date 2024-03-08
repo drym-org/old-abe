@@ -574,8 +574,10 @@ def distribute_payment(payment, attributions):
     # 2. pay them off in chronological order (maybe partially)
     # 3. (if leftover) identify unpayable people in the relevant attributions file
     # 4. record debt for each of them according to their attribution
+    print("Listing directory files...")
+    print(os.listdir(ABE_ROOT))
     commit_hash = get_git_revision_short_hash()
-    unpayable_contributors = get_unpayable_contributors()
+    unpayable_contributors = []  # get_unpayable_contributors()
     payable_debts = get_payable_debts(unpayable_contributors)
     updated_debts, debt_transactions = pay_debts(payable_debts, payment)
     # The "available" amount is what is left over after paying off debts
