@@ -2,7 +2,7 @@
 
 # ensure that any errors encountered cause immediate
 # termination with a non-zero exit code
-set -e
+set -euo pipefail
 
 echo "PWD is: "
 echo $(pwd)
@@ -28,15 +28,11 @@ git config --global user.email "abe@drym.org"
 git config --global user.name "Old Abe"
 git add abe/transactions.txt abe/attributions.txt abe/valuation.txt abe/itemized_payments.txt abe/advances.txt abe/debts.txt
 
-set +e
-
 git commit -m "Updated accounting records"
 git fetch
 git rebase origin/`git remote set-head origin -a | cut -d' ' -f4`
 git push origin `git remote set-head origin -a | cut -d' ' -f4`
 echo "... done."
-
-set -e
 
 echo "Running money_out script..."
 echo balances=$(python -m oldabe.money_out) >> $GITHUB_OUTPUT
