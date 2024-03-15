@@ -419,15 +419,18 @@ def read_debts():
 def read_advances():
     advances_file = os.path.join(ABE_ROOT, ADVANCES_FILE)
     advances = defaultdict(list)
-    with open(advances_file) as f:
-        for (
-            email,
-            amount,
-            payment_file,
-            commit_hash,
-            created_at,
-        ) in csv.reader(f):
-            advances[email].append(Advance(email, amount, payment_file, commit_hash, created_at))
+    try:
+        with open(advances_file) as f:
+            for (
+                email,
+                amount,
+                payment_file,
+                commit_hash,
+                created_at,
+            ) in csv.reader(f):
+                advances[email].append(Advance(email, amount, payment_file, commit_hash, created_at))
+    except FileNotFoundError:
+        pass
 
     return advances
 
