@@ -23,14 +23,14 @@ echo "... done."
 
 # Note that running this locally would cause your global
 # git config to be modified
-echo "Committing updated transactions and attributions back to repo..."
+echo "Committing updated accounting records back to repo..."
 git config --global user.email "abe@drym.org"
 git config --global user.name "Old Abe"
-git add abe/transactions.txt abe/attributions.txt abe/valuation.txt abe/itemized_payments.txt abe/advances.txt
+git add abe/transactions.txt abe/attributions.txt abe/valuation.txt abe/itemized_payments.txt abe/advances.txt abe/debts.txt
 
 set +e
 
-git commit -m "Updated transactions and attributions"
+git commit -m "Updated accounting records"
 git fetch
 git rebase origin/`git remote set-head origin -a | cut -d' ' -f4`
 git push origin `git remote set-head origin -a | cut -d' ' -f4`
