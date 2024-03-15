@@ -472,6 +472,10 @@ def pay_debts(payable_debts, payment):
 
 
 def get_unpayable_contributors():
+    """
+    Read the unpayable_contributors file to get the list of contributors who
+    are unpayable.
+    """
     unpayable_contributors_file = os.path.join(ABE_ROOT, UNPAYABLE_CONTRIBUTORS_FILE)
     contributors = []
     with open(unpayable_contributors_file) as f:
@@ -577,7 +581,7 @@ def distribute_payment(payment, attributions):
     print("Listing directory files...")
     print(os.listdir(ABE_ROOT))
     commit_hash = get_git_revision_short_hash()
-    unpayable_contributors = []  # get_unpayable_contributors()
+    unpayable_contributors = get_unpayable_contributors()
     payable_debts = get_payable_debts(unpayable_contributors)
     updated_debts, debt_transactions = pay_debts(payable_debts, payment)
     # The "available" amount is what is left over after paying off debts
