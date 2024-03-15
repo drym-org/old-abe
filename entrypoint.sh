@@ -1,4 +1,4 @@
-#!/bin/sh -l
+#!/bin/bash
 
 # ensure that any errors encountered cause immediate
 # termination with a non-zero exit code
