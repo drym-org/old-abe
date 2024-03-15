@@ -399,16 +399,19 @@ def get_git_revision_short_hash() -> str:
 def read_debts():
     debts_file = os.path.join(ABE_ROOT, DEBTS_FILE)
     debts = []
-    with open(debts_file) as f:
-        for (
-            email,
-            amount,
-            amount_paid,
-            payment_file,
-            commit_hash,
-            created_at,
-        ) in csv.reader(f):
-            debts.append(Debt(email, amount, amount_paid, payment_file, commit_hash, created_at))
+    try:
+        with open(debts_file) as f:
+            for (
+                email,
+                amount,
+                amount_paid,
+                payment_file,
+                commit_hash,
+                created_at,
+            ) in csv.reader(f):
+                debts.append(Debt(email, amount, amount_paid, payment_file, commit_hash, created_at))
+    except FileNotFoundError:
+        pass
 
     return debts
 
