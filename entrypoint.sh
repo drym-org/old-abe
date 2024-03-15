@@ -2,7 +2,7 @@
 
 # ensure that any errors encountered cause immediate
 # termination with a non-zero exit code
-set -euo pipefail
+set -eo pipefail
 
 echo "PWD is: "
 echo $(pwd)
@@ -11,7 +11,7 @@ echo "Running ls..."
 echo $(ls /)
 echo "... done."
 
-export PYTHONPATH="/:$PYTHONPATH"
+export PYTHONPATH=/:$PYTHONPATH
 
 echo "Running ls /github/workspace..."
 echo $(ls /github/workspace)
