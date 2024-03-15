@@ -7,7 +7,9 @@ from dataclasses import astuple
 import re
 import os
 import subprocess
-from .models import Advance, Attribution, Payment, ItemizedPayment, Transaction
+from .models import (
+    Advance, Attribution, Debt, Payment, ItemizedPayment, Transaction
+)
 
 ABE_ROOT = './abe'
 # ABE_ROOT = '.'
