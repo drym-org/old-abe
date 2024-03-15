@@ -630,11 +630,12 @@ def distribute_payment(payment, attributions):
         redistribution_pot += sum(abs(a.amount) for a in negative_advances)
 
         # redistribute the pot over all payable contributors - produce fresh advances and add to amounts payable
-        fresh_advances = redistribute_pot(redistribution_pot,
-                                          attributions,
-                                          unpayable_contributors,
-                                          payment.file,
-                                          amounts_payable)
+        if redistribution_pot > ACCOUNTING_ZERO:
+            fresh_advances = redistribute_pot(redistribution_pot,
+                                              attributions,
+                                              unpayable_contributors,
+                                              payment.file,
+                                              amounts_payable)
 
         for email, amount in amounts_payable.items():
             new_equity_transaction = Transaction(email=email,
