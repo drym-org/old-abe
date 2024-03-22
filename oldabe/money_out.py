@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from .models import Transaction, Debt
+from .models import Transaction, Debt, Advance
 from datetime import datetime
 import csv
 import os
@@ -12,6 +12,7 @@ ABE_ROOT = 'abe'
 PAYOUTS_DIR = os.path.join(ABE_ROOT, 'payouts')
 TRANSACTIONS_FILE = os.path.join(ABE_ROOT, 'transactions.txt')
 DEBTS_FILE = os.path.join(ABE_ROOT, 'debts.txt')
+ADVANCES_FILE = os.path.join(ABE_ROOT, 'advances.txt')
 
 
 def read_transaction_amounts():
@@ -105,13 +106,47 @@ def prepare_debts_message(outstanding_debts: dict):
     return "\r\n".join(line.strip() for line in message.split('\n')).strip()
 
 
-def combined_message(balances_message, debts_message):
+def read_advance_amounts():
+    advances = defaultdict(int)
+    with open(ADVANCES_FILE) as f:
+        for row in csv.reader(f):
+            a = Advance(*row)
+            a.amount = Decimal(a.amount)
+            advances[a.email] += a.amount
+    return advances
+
+
+def prepare_advances_message(advances: dict):
+    """ A temporary message reporting aggregate advances, for testing purposes.
+    """
+    if not advances:
+        return "There are no advances."
+    advances_table = ""
+    for name, advance in advances.items():
+        advances_table += f"{name} | {advance:.2f}\n"
+    message = f"""
+    The current advances are:
+
+    | Name | Advance |
+    | ---- | ------- |
+    {advances_table}
+
+    **Total** = {sum(advances.values()):.2f}
+    """
+    return "\r\n".join(line.strip() for line in message.split('\n')).strip()
+
+
+def combined_message(balances_message, debts_message, advances_message):
     message = f"""
     {balances_message}
 
     ----------------------------
 
     {debts_message}
+
+    ----------------------------
+
+    {advances_message}
     """
     return "\r\n".join(line.strip() for line in message.split('\n')).strip()
 
@@ -129,7 +164,9 @@ def main():
     balances_message = prepare_balances_message(balances)
     outstanding_debts = read_outstanding_debt_amounts()
     debts_message = prepare_debts_message(outstanding_debts)
-    print(combined_message(balances_message, debts_message))
+    advances = read_advance_amounts()
+    advances_message = prepare_advances_message(advances)
+    print(combined_message(balances_message, debts_message, advances_message))
 
 
 if __name__ == "__main__":
