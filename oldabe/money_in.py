@@ -387,6 +387,8 @@ def inflate_valuation(valuation, amount):
 
 
 # TODO - move to utils
+# and standardize the parsing from text into python objects
+# e.g. Decimal and DateTime
 def get_git_revision_short_hash() -> str:
     """From https://stackoverflow.com/a/21901260"""
     return (
