@@ -202,8 +202,8 @@ def get_existing_itemized_payments():
             ) in csv.reader(f):
                 itemized_payment = ItemizedPayment(
                     email,
-                    fee_amount,
-                    project_amount,
+                    Decimal(fee_amount),
+                    Decimal(project_amount),
                     attributable,
                     payment_file,
                 )
