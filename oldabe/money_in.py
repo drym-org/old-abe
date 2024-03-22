@@ -409,7 +409,7 @@ def read_debts():
                 commit_hash,
                 created_at,
             ) in csv.reader(f):
-                debts.append(Debt(email, amount, amount_paid, payment_file, commit_hash, created_at))
+                debts.append(Debt(email, Decimal(amount), Decimal(amount_paid), payment_file, commit_hash, created_at))
     except FileNotFoundError:
         pass
 
@@ -428,7 +428,7 @@ def read_advances():
                 commit_hash,
                 created_at,
             ) in csv.reader(f):
-                advances[email].append(Advance(email, amount, payment_file, commit_hash, created_at))
+                advances[email].append(Advance(email, Decimal(amount), payment_file, commit_hash, created_at))
     except FileNotFoundError:
         pass
 
