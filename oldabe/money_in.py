@@ -619,7 +619,7 @@ def distribute_payment(payment, attributions):
         advance_totals = get_sum_of_advances_by_contributor(attributions)
         for email, advance_total in advance_totals.items():
             amount_payable = amounts_payable.get(email, 0)
-            drawdown_amount = max(advance_total - amount_payable, 0)
+            drawdown_amount = min(advance_total, amount_payable)
             if drawdown_amount > ACCOUNTING_ZERO:
                 negative_advance = Advance(email=email,
                                            amount=-drawdown_amount, # note minus sign
