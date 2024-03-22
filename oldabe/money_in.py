@@ -418,7 +418,7 @@ def read_debts():
     return debts
 
 
-def read_advances():
+def read_advances(attributions):
     advances_file = os.path.join(ABE_ROOT, ADVANCES_FILE)
     advances = defaultdict(list)
     try:
@@ -430,21 +430,22 @@ def read_advances():
                 commit_hash,
                 created_at,
             ) in csv.reader(f):
-                advances[email].append(Advance(email, Decimal(amount), payment_file, commit_hash, created_at))
+                if email in attributions:
+                    advances[email].append(Advance(email, Decimal(amount), payment_file, commit_hash, created_at))
     except FileNotFoundError:
         pass
 
     return advances
 
 
-def get_sum_of_advances_by_contributor():
+def get_sum_of_advances_by_contributor(attributions):
     """
     Sum all Advance objects for each contributor to get the total amount
     that they currently have in advances and have not yet drawn down.
     Return a dictionary with the contributor's email as the key and the
     their advance amount as the value.
     """
-    all_advances = read_advances()
+    all_advances = read_advances(attributions)
     advance_totals = {email: sum(a.amount for a in advances)
                       for email, advances
                       in all_advances.items()}
@@ -614,8 +615,8 @@ def distribute_payment(payment, attributions):
                            if email not in unpayable_contributors}
 
         # use the amount owed to each contributor to draw down any advances
-        # they may already have and then decrement their amount owed accordingly
-        advance_totals = get_sum_of_advances_by_contributor()
+        # they may already have and then decrement their amount payable accordingly
+        advance_totals = get_sum_of_advances_by_contributor(attributions)
         for email, advance_total in advance_totals.items():
             amount_payable = amounts_payable.get(email, 0)
             drawdown_amount = max(advance_total - amount_payable, 0)
