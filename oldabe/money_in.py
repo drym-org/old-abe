@@ -452,10 +452,11 @@ def get_sum_of_advances_by_contributor(attributions):
     return advance_totals
 
 
-def get_payable_debts(unpayable_contributors):
+def get_payable_debts(unpayable_contributors, attributions):
     debts = read_debts()
     debts = [d for d in debts
              if not d.is_fulfilled()
+             and d.email in attributions
              and d.email not in unpayable_contributors]
     return debts
 
@@ -593,7 +594,7 @@ def distribute_payment(payment, attributions):
     print(os.listdir(ABE_ROOT))
     commit_hash = get_git_revision_short_hash()
     unpayable_contributors = get_unpayable_contributors()
-    payable_debts = get_payable_debts(unpayable_contributors)
+    payable_debts = get_payable_debts(unpayable_contributors, attributions)
     updated_debts, debt_transactions = pay_debts(payable_debts, payment)
     # The "available" amount is what is left over after paying off debts
     available_amount = payment.amount - sum(t.amount for t in debt_transactions)
