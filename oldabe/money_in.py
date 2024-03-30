@@ -470,12 +470,13 @@ def pay_debts(payable_debts, payment):
     """
     updated_debts = []
     transactions = []
+    available_amount = payment.amount
     for debt in sorted(payable_debts, key=lambda x: x.created_at):
-        payable_amount = min(payment.amount, debt.amount_remaining())
+        payable_amount = min(available_amount, debt.amount_remaining())
         if payable_amount < ACCOUNTING_ZERO:
             break
         debt.amount_paid += payable_amount
-        payment.amount -= payable_amount
+        available_amount -= payable_amount
         transaction = Transaction(debt.email, payable_amount, payment.file, debt.commit_hash)
         transactions.append(transaction)
         updated_debts.append(debt)
