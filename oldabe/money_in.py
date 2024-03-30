@@ -729,6 +729,10 @@ def process_payments(instruments, attributions):
         new_debts += debts
         new_advances += advances
         fees_paid_out = sum(t.amount for t in transactions)
+        print(f"fees paid out are {fees_paid_out}")
+        print(f"total transaction amounts {sum(t.amount for t in transactions)}")
+        print(f"total debt amounts {sum(d.amount for d in debts)}")
+        print(f"total advance amounts {sum(a.amount for a in advances)}")
         # deduct the amount paid out to instruments before
         # processing it for attributions
         payment.amount -= fees_paid_out
