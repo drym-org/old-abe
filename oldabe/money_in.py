@@ -603,8 +603,10 @@ def distribute_payment(payment, attributions):
     equity_transactions = []
     negative_advances = []
     fresh_advances = []
+    print(f"available amount is {available_amount}")
     if available_amount > ACCOUNTING_ZERO:
         amounts_owed = get_amounts_owed(available_amount, attributions)
+        print(f"total of amounts owed is {sum(v for v in amounts_owed.values())}")
         fresh_debts = create_debts(amounts_owed,
                                    unpayable_contributors,
                                    payment.file)
@@ -614,10 +616,12 @@ def distribute_payment(payment, attributions):
         amounts_payable = {email: amount
                            for email, amount in amounts_owed.items()
                            if email not in unpayable_contributors}
+        print(f"total of amounts payable is {sum(v for v in amounts_payable.values())}")
 
         # use the amount owed to each contributor to draw down any advances
         # they may already have and then decrement their amount payable accordingly
         advance_totals = get_sum_of_advances_by_contributor(attributions)
+        print(f"advance totals is {advance_totals}")
         for email, advance_total in advance_totals.items():
             amount_payable = amounts_payable.get(email, 0)
             drawdown_amount = min(advance_total, amount_payable)
@@ -632,6 +636,7 @@ def distribute_payment(payment, attributions):
         # note that these are drawn down amounts and therefore have negative amounts
         # and that's why we take the absolute value here
         redistribution_pot += sum(abs(a.amount) for a in negative_advances)
+        print(f"redistribution_pot is {redistribution_pot}")
 
         # redistribute the pot over all payable contributors - produce fresh advances and add to amounts payable
         if redistribution_pot > ACCOUNTING_ZERO:
@@ -648,6 +653,8 @@ def distribute_payment(payment, attributions):
                                                  commit_hash=commit_hash)
             equity_transactions.append(new_equity_transaction)
 
+    print(f"sum of equity transactions is {sum(t.amount for t in equity_transactions)}")
+    print(f"sum of debt transactions is {sum(t.amount for t in debt_transactions)}")
     debts = updated_debts + fresh_debts
     transactions = equity_transactions + debt_transactions
     advances = negative_advances + fresh_advances
