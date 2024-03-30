@@ -725,6 +725,7 @@ def process_payments(instruments, attributions):
     for payment in unprocessed_payments:
         # first, process instruments (i.e. pay fees)
         debts, transactions, advances = distribute_payment(payment, instruments)
+        print(f"payment amount BEFORE deducting fees is {payment.amount}")
         new_transactions += transactions
         new_debts += debts
         new_advances += advances
@@ -736,6 +737,7 @@ def process_payments(instruments, attributions):
         # deduct the amount paid out to instruments before
         # processing it for attributions
         payment.amount -= fees_paid_out
+        print(f"payment amount AFTER deducting fees is {payment.amount}")
         new_itemized_payments.append(
             _create_itemized_payment(payment, fees_paid_out)
         )
