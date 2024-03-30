@@ -597,6 +597,8 @@ def distribute_payment(payment, attributions):
     payable_debts = get_payable_debts(unpayable_contributors, attributions)
     updated_debts, debt_transactions = pay_debts(payable_debts, payment)
     # The "available" amount is what is left over after paying off debts
+    print(f"new payment amount is {payment.amount}")
+    print(f"sum of debt transactions is {sum(t.amount for t in debt_transactions)}")
     available_amount = payment.amount - sum(t.amount for t in debt_transactions)
 
     fresh_debts = []
