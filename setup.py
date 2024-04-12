@@ -7,6 +7,7 @@ test_requirements = [
     'pytest-pudb',
     'pytest-sugar',
     'pytest-tldr',
+    'pyfakefs',
     'tox',
     'tox-gh-actions',
     'coveralls',

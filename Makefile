@@ -5,6 +5,7 @@ DOCS-PATH=docs
 
 export PYTEST_DISABLE_PLUGIN_AUTOLOAD = 1
 UNIT_TESTS_PATH = tests/unit
+INTEGRATION_TESTS_PATH = tests/integration
 
 help:
 	@echo "clean - remove all build, test, coverage and Python artifacts"
@@ -23,6 +24,7 @@ help:
 	@echo "lint - alias for lint-source"
 	@echo "black - run black auto-formatting on all code"
 	@echo "test-unit - run unit tests"
+	@echo "test-integration - run integration tests"
 	@echo "test - run specified tests, e.g.:"
 	@echo "       make test DEST=tests/unit/my_module.py"
 	@echo "       (defaults to unit tests if none specified)"
@@ -93,7 +95,12 @@ black:
 test-unit:
 	python setup.py test --addopts $(UNIT_TESTS_PATH)
 
-test-all: clean-test test-unit
+# NOTE: does not work! Only works when this identical
+# command is run directly at the command line
+test-integration:
+	pytest $(INTEGRATION_TESTS_PATH)
+
+test-all: clean-test test-unit test-integration
 
 test:
 ifdef DEST
@@ -146,4 +153,4 @@ sdist: clean
 	python setup.py sdist
 	ls -l dist
 
-.PHONY: help build build-for-test docs clean clean-build clean-pyc clean-test lint-source lint-tests lint-all lint black test-unit test-all test test-stop test-debug test-matrix test-tldr test-wiki debug coverage cover-coveralls sdist
+.PHONY: help build build-for-test docs clean clean-build clean-pyc clean-test lint-source lint-tests lint-all lint black test-unit test-integration test-all test test-stop test-debug test-matrix test-tldr test-wiki debug coverage cover-coveralls sdist

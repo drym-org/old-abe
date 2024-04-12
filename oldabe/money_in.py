@@ -120,8 +120,10 @@ def read_attributions(attributions_filename, validate=True):
     attributions_file = os.path.join(ABE_ROOT, attributions_filename)
     with open(attributions_file) as f:
         for row in csv.reader(f):
-            email, percentage = row
-            attributions[email] = parse_percentage(percentage)
+            if row and row[0].strip():
+                email, percentage = row
+                email = email.strip()
+                attributions[email] = parse_percentage(percentage)
     if validate:
         assert _get_attributions_total(attributions) == Decimal("1")
     return attributions
