@@ -160,15 +160,18 @@ def find_unprocessed_payments():
     """
     recorded_payments = set()
     transactions_file = os.path.join(ABE_ROOT, TRANSACTIONS_FILE)
-    with open(transactions_file) as f:
-        for (
-            _email,
-            _amount,
-            payment_file,
-            _commit_hash,
-            _created_at,
-        ) in csv.reader(f):
-            recorded_payments.add(payment_file)
+    try:
+        with open(transactions_file) as f:
+            for (
+                _email,
+                _amount,
+                payment_file,
+                _commit_hash,
+                _created_at,
+            ) in csv.reader(f):
+                recorded_payments.add(payment_file)
+    except FileNotFoundError:
+        pass
     all_payments = get_all_payments()
     print("all payments")
     print(all_payments)
@@ -493,11 +496,14 @@ def get_unpayable_contributors():
     """
     unpayable_contributors_file = os.path.join(ABE_ROOT, UNPAYABLE_CONTRIBUTORS_FILE)
     contributors = []
-    with open(unpayable_contributors_file) as f:
-        for contributor in f:
-            contributor = contributor.strip()
-            if contributor:
-                contributors.append(contributor)
+    try:
+        with open(unpayable_contributors_file) as f:
+            for contributor in f:
+                contributor = contributor.strip()
+                if contributor:
+                    contributors.append(contributor)
+    except FileNotFoundError:
+        pass
     return contributors
 
 
@@ -692,15 +698,6 @@ def handle_investment(
     return posterior_valuation
 
 
-def _get_unprocessed_payments():
-    try:
-        unprocessed_payments = find_unprocessed_payments()
-    except FileNotFoundError:
-        unprocessed_payments = []
-    print(unprocessed_payments)
-    return unprocessed_payments
-
-
 def _create_itemized_payment(payment, fee_amount):
     return ItemizedPayment(
         payment.email,
@@ -724,7 +721,8 @@ def process_payments(instruments, attributions):
     new_advances = []
     new_transactions = []
     new_itemized_payments = []
-    unprocessed_payments = _get_unprocessed_payments()
+    unprocessed_payments = find_unprocessed_payments()
+    print("Unprocessed payments", unprocessed_payments)
     for payment in unprocessed_payments:
         # first, process instruments (i.e. pay fees)
         debts, transactions, advances = distribute_payment(payment, instruments)
@@ -766,6 +764,7 @@ def process_payments_and_record_updates():
     """
     instruments = read_attributions(INSTRUMENTS_FILE, validate=False)
     attributions = read_attributions(ATTRIBUTIONS_FILE)
+    print("Attributions are:", attributions)
 
     (
         debts,
@@ -775,6 +774,7 @@ def process_payments_and_record_updates():
         advances,
     ) = process_payments(instruments, attributions)
 
+    print("Transactions are:", transactions)
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no
     # changes are made.
