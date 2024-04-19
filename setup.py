@@ -8,6 +8,7 @@ test_requirements = [
     'pytest-sugar',
     'pytest-tldr',
     'pyfakefs',
+    'time_machine',
     'tox',
     'tox-gh-actions',
     'coveralls',
