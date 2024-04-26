@@ -133,11 +133,14 @@ def get_all_payments():
     """
     Reads payment files and returns all existing payment objects.
     """
-    payments = [
-        read_payment(f, attributable=True)
+    try:
+        payments = [
+            read_payment(f, attributable=True)
         for f in os.listdir(PAYMENTS_DIR)
         if not os.path.isdir(os.path.join(PAYMENTS_DIR, f))
-    ]
+        ]
+    except FileNotFoundError:
+        payments = []
     try:
         payments += [
             read_payment(f, attributable=False)
