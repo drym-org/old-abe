@@ -696,7 +696,7 @@ def handle_investment(
     incoming_attribution = calculate_incoming_attribution(
         payment.email, incoming_investment, posterior_valuation
     )
-    if incoming_attribution:
+    if incoming_attribution and incoming_attribution.share > ACCOUNTING_ZERO:
         dilute_attributions(incoming_attribution, attributions)
     return posterior_valuation
 
