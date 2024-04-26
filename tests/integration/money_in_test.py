@@ -5,22 +5,12 @@ from unittest.mock import patch
 from oldabe.money_in import (
     process_payments_and_record_updates,
 )
+from .fixtures import abe_fs
 import os
 
 
 @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
-def test_no_transactions_if_no_payments(mock_git_rev, fs):
-    fs.create_file("./abe/price.txt", contents="10")
-    fs.create_file("./abe/valuation.txt", contents="100000")
-    fs.create_file("./abe/instruments.txt", contents="""
-        old abe,1
-        DIA,5
-        """)
-    fs.create_file("./abe/attributions.txt", contents="""
-       sid,50
-       jair,30
-       ariana,20
-       """)
+def test_no_transactions_if_no_payments(mock_git_rev, abe_fs):
     with open('abe/price.txt') as f:
         assert f.read() == "10"
     process_payments_and_record_updates()
@@ -30,21 +20,9 @@ def test_no_transactions_if_no_payments(mock_git_rev, fs):
 
 @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
 @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
-def test_creates_transactions_on_payment(mock_git_rev, fs):
-    fs.create_file("./abe/price.txt", contents="10")
-    fs.create_file("./abe/valuation.txt", contents="100000")
-    fs.create_file("./abe/instruments.txt", contents="""
-        old abe,1
-        DIA,5
-        """)
-    fs.create_file("./abe/attributions.txt", contents="""
-       sid,50
-       jair,30
-       ariana,20
-       """)
-
-    fs.create_file("./abe/payments/1.txt",
-                   contents="sam,036eaf6,100,dummydate")
+def test_creates_transactions_on_payment(mock_git_rev, abe_fs):
+    abe_fs.create_file("./abe/payments/1.txt",
+                       contents="sam,036eaf6,100,dummydate")
     process_payments_and_record_updates()
     with open('./abe/transactions.txt') as f:
         # TODO: figure out why it's writing 3 decimal places
