@@ -541,17 +541,16 @@ def write_debts(processed_debts):
     debts_file = os.path.join(ABE_ROOT, DEBTS_FILE)
     with open(debts_file, 'w') as f:
         writer = csv.writer(f)
-        with open(debts_file, 'w') as f:
-            for existing_debt in existing_debts:
-                # if the existing debt has been processed, write the processed version
-                # otherwise re-write the existing version
-                if processed_debt := processed_debts_hash.get(existing_debt.key()):
-                    writer.writerow(astuple(processed_debt))
-                    del processed_debts_hash[processed_debt.key()]
-                else:
-                    writer.writerow(astuple(existing_debt))
-            for debt in processed_debts_hash.values():
-                writer.writerow(astuple(debt))
+        for existing_debt in existing_debts:
+            # if the existing debt has been processed, write the processed version
+            # otherwise re-write the existing version
+            if processed_debt := processed_debts_hash.get(existing_debt.key()):
+                writer.writerow(astuple(processed_debt))
+                del processed_debts_hash[processed_debt.key()]
+            else:
+                writer.writerow(astuple(existing_debt))
+        for debt in processed_debts_hash.values():
+            writer.writerow(astuple(debt))
 
 
 def renormalize(attributions, excluded_contributors):
