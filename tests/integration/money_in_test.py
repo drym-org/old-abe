@@ -24,6 +24,7 @@ class TestNoPayments:
 # figure out why this is happening (and whether it's OK)
 # and decide on appropriate handling
 
+
 class TestPaymentAbovePrice:
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
@@ -81,8 +82,76 @@ class TestPaymentBelowPrice:
                 )
 
 
-class UnpayableContributor:
-    def test_records_debt(self):
+class TestNonAttributablePayment:
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_does_not_dilute_attributions(self, mock_git_rev, abe_fs):
+        with localcontext() as context:
+            context.prec = 2
+            amount = 10000
+            abe_fs.create_file("./abe/payments/nonattributable/1.txt",
+                               contents=f"sam,036eaf6,{amount},dummydate")
+            process_payments_and_record_updates()
+            with open('./abe/attributions.txt') as f:
+                assert f.read() == (
+                    "sid,50\n"
+                    "jair,30\n"
+                    "ariana,20\n"
+                )
+
+
+class TestUnpayableContributor:
+
+    def _call(self, abe_fs):
+        with localcontext() as context:
+            context.prec = 2
+            amount = 100
+            abe_fs.create_file("./abe/payments/1.txt",
+                               contents=f"sam,036eaf6,{amount},dummydate")
+            abe_fs.create_file("./abe/unpayable_contributors.txt",
+                               contents=f"ariana")
+            process_payments_and_record_updates()
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_generates_transactions(self, mock_git_rev, abe_fs):
+        self._call(abe_fs)
+        with open('./abe/transactions.txt') as f:
+            assert f.read() == (
+                "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,58,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,35,1.txt,abcd123,1985-10-26 01:24:00\n"
+            )
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_records_debt(self, mock_git_rev, abe_fs):
+        self._call(abe_fs)
+        with open('./abe/debts.txt') as f:
+            assert f.read() == (
+                "ariana,19,0,1.txt,abcd123,1985-10-26 01:24:00\n"
+            )
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_records_advances(self, mock_git_rev, abe_fs):
         pass
-    def test_debt_paid_on_becoming_payable(self):
+
+
+class TestUnpayableContributorBecomesPayable:
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_debt_paid(self, mock_git_rev, abe_fs):
+        pass
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_transactions(self, mock_git_rev, abe_fs):
+        pass
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_advances(self, mock_git_rev, abe_fs):
         pass
