@@ -6,15 +6,15 @@
 
 @section{Intro}
 
-Attribution-Based Economics is a new model of economics designed to recognize and empower value creation in the world and structure the necessary incentives in a scalable way without the need for destructive and wasteful constructions such as the adversarial competition characterizing capitalist economics.
+Attribution-Based Economics is a new model of economics designed to recognize and empower value creation in the world and structure the necessary incentives in a scalable way without the need for destructive and wasteful dynamics such as the adversarial competition characterizing capitalist economics.
 
 Although ABE is a new model, it does not start from scratch. Rather, it builds on the existing millennia-old body of work in economics and finance, translating existing, time-tested concepts and intuitions into the new paradigm in a manner that preserves their essence while also shedding the incidental details of their implementation in a capitalist economic system. This results in economic and financial patterns of great simplicity in ABE when compared with capitalism.
 
-Nevertheless, the composition of simple atoms can lead to great complexity of the whole, and that is precisely the case with ABE as well. Economic systems are incredibly rich, dynamic, and complex. Implementing the ABE financial model for every project would take a lot of effort and care, and would be hard to get right even though the financial components are simpler than their traditional analogues. You could hire a team of accountants to do it, but which open source project can afford such luxury?
+Nevertheless, the composition of simple atoms can lead to great complexity of the whole, and that is precisely the case with ABE as well. Economic systems are incredibly rich, dynamic, and complex. Implementing the ABE financial model for every project would take a lot of effort and care, and would be hard to get right even though the financial components are simpler than their traditional analogues. After all, traditional corporations hire entire teams of accountants to do it! Which open source project can afford such luxury?
 
 That's where Old Abe comes in.
 
-One of the defining properties of ABE is that all accounting is publicly conducted, even if anonymized. This allows us to write software -- aka your friendly accountant, Old Abe -- to automate significant portions of the accounting process, and to avoid any duplication of effort in ensuring that accounting is in line with ABE guidelines. Old Abe itself is owned by no one, developed and scrutinized by all to ensure accuracy, and handles the accounting for all projects in the agreed-upon way.
+One of the defining properties of ABE is that all accounting is publicly conducted, even if anonymized. This allows us to write software -- aka your friendly accountant, Old Abe -- to automate significant portions of the accounting process, and to avoid any duplication of effort in ensuring that accounting is in line with ABE guidelines. Old Abe itself is owned by no one, developed and scrutinized by all to ensure accuracy, and it takes care of the accounting for projects in the agreed-upon way.
 
 @section{Inputs}
 
@@ -53,7 +53,7 @@ We will learn more about each of these, in turn.
 
 @subsection{Work}
 
-Work done could be either labor, capital, or ideas, as defined in the @hyperlink["https://github.com/drym-org/finance/blob/main/finance.md"]{ABE financial model}). Regardless of what kind of work it is, its appraisal takes the form of an "incoming attribution," which is an association of a set of contributors to percentage of value contributed, as judged in related to existing attribution allocations in the project.
+Work done could be either labor, capital, or ideas, as defined in the @hyperlink["https://github.com/drym-org/finance/blob/main/finance.md"]{ABE financial model}. Regardless of what kind of work it is, its appraisal takes the form of an "incoming attribution," which is an association of a set of contributors to percentage of value contributed, as judged in related to existing attribution allocations in the project.
 
 Old Abe will account this by "renormalizing" the attributions to total to 100% after incorporating the fresh values.
 
@@ -61,7 +61,7 @@ TODO: flesh out
 
 @subsection{Payment}
 
-Money, money, money!!!
+When a payment comes in, we first pay out any @tech{instruments}. Then, with the remaining amount, we pay project contributors.
 
 TODO: flesh out
 
