@@ -1,6 +1,7 @@
 SHELL=/bin/bash
 
 PACKAGE-NAME=oldabe
+DOCS-PATH=docs
 
 export PYTEST_DISABLE_PLUGIN_AUTOLOAD = 1
 UNIT_TESTS_PATH = tests/unit
@@ -51,7 +52,7 @@ install-docs:
 	raco pkg install --deps search-auto --link $(PWD)/docs
 
 build-docs:
-	scribble --html --dest ./docs/output/ --dest-name index.html ./docs/oldabe.scrbl
+	scribble ++style $(DOCS-PATH)/oldabe.css --htmls --dest $(DOCS-PATH) --dest-name output $(DOCS-PATH)/oldabe.scrbl
 
 docs: build-docs
 	open docs/output/index.html

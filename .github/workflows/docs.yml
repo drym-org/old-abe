@@ -15,12 +15,12 @@ defaults:
 jobs:
   deploy-docs:
     runs-on: ubuntu-latest
-    name: Build and deploy backup docs
+    name: Build and deploy Old Abe documentation
     steps:
       - name: Checkout
         uses: actions/checkout@master
       - name: Install Racket
-        uses: Bogdanp/setup-racket@v1.8.1
+        uses: Bogdanp/setup-racket@v1.10
         with:
           architecture: 'x64'
           distribution: 'full'
@@ -36,4 +36,3 @@ jobs:
           folder: docs/output
           branch: gh-pages
           clean: true
-          clean-exclude: benchmarks
