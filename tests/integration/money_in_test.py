@@ -136,22 +136,85 @@ class TestUnpayableContributor:
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
     def test_records_advances(self, mock_git_rev, abe_fs):
-        pass
+        # advances for payable people
+        # and none for unpayable
+        self._call(abe_fs)
+        with open('./abe/advances.txt') as f:
+            assert f.read() == (
+                "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
+            )
 
 
 class TestUnpayableContributorBecomesPayable:
 
+    def _call(self, abe_fs):
+        with localcontext() as context:
+            context.prec = 2
+            amount = 100
+            abe_fs.create_file('./abe/transactions.txt',
+                               contents=(
+                                   "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                                   "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                                   "sid,58,1.txt,abcd123,1985-10-26 01:24:00\n"
+                                   "jair,35,1.txt,abcd123,1985-10-26 01:24:00\n"
+                               ))
+
+            abe_fs.create_file("./abe/debts.txt",
+                               contents="ariana,19,0,1.txt,abcd123,1985-10-26 01:24:00\n")
+            abe_fs.create_file("./abe/advances.txt",
+                               contents=(
+                                   "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
+                                   "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
+                               ))
+            abe_fs.create_file("./abe/payments/1.txt",
+                               contents=f"sam,036eaf6,{amount},dummydate")
+            abe_fs.create_file("./abe/payments/2.txt",
+                               contents=f"sam,036eaf6,{amount},dummydate")
+            process_payments_and_record_updates()
+
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
     def test_debt_paid(self, mock_git_rev, abe_fs):
-        pass
+        self._call(abe_fs)
+        with open('./abe/debts.txt') as f:
+            assert f.read() == (
+                "ariana,19,19,1.txt,abcd123,1985-10-26 01:24:00\n"
+            )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
     def test_transactions(self, mock_git_rev, abe_fs):
-        pass
+        # here, because the two payment amounts are the same,
+        # it ends up correcting immediately. We might consider
+        # more tests where the second amount is larger, or
+        # where there are more debts
+        self._call(abe_fs)
+        with open('./abe/transactions.txt') as f:
+            assert f.read() == (
+                "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,58,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,35,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,1.0,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.0,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,36,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,20,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,19,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,19,2.txt,abcd123,1985-10-26 01:24:00\n"
+            )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
     def test_advances(self, mock_git_rev, abe_fs):
-        pass
+        self._call(abe_fs)
+        with open('./abe/advances.txt') as f:
+            assert f.read() == (
+                "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,-11,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,-6.8,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,9.0,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,5.4,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,3.6,2.txt,abcd123,1985-10-26 01:24:00\n"
+            )
