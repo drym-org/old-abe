@@ -12,7 +12,8 @@ from .models import (
 )
 from .utils import (
     parse_percentage, serialize_proportion, get_rounding_difference,
-    correct_rounding_error, get_git_revision_short_hash
+    correct_rounding_error, get_git_revision_short_hash,
+    assert_attributions_normalized
 )
 from .constants import (
     ABE_ROOT, PAYMENTS_DIR, PAYOUTS_DIR, TRANSACTIONS_FILE, DEBTS_FILE,
@@ -22,9 +23,7 @@ from .constants import (
 )
 
 
-ROUNDING_TOLERANCE = Decimal("0.000001")
 ACCOUNTING_ZERO = Decimal("0.01")
-
 
 # TODO standardize the parsing from text into python objects
 # e.g. Decimal and DateTime
@@ -69,7 +68,7 @@ def read_attributions(attributions_filename, validate=True):
                 email = email.strip()
                 attributions[email] = parse_percentage(percentage)
     if validate:
-        assert _get_attributions_total(attributions) == Decimal("1")
+        assert_attributions_normalized(attributions)
     return attributions
 
 
@@ -208,10 +207,6 @@ def calculate_incoming_attribution(
         return None
 
 
-def _get_attributions_total(attributions):
-    return sum(attributions.values())
-
-
 def normalize(attributions):
     total_share = sum(share for _, share in attributions.items())
     target_proportion = Decimal("1") / total_share
@@ -221,13 +216,14 @@ def normalize(attributions):
 
 def write_attributions(attributions):
     # don't write attributions if they aren't normalized
-    assert _get_attributions_total(attributions) == Decimal("1")
+    assert_attributions_normalized(attributions)
     # format for output as percentages
     attributions = [
         (email, serialize_proportion(share))
         for email, share in attributions.items()
     ]
-    with open(ATTRIBUTIONS_FILE, 'w') as f:
+    attributions_file = os.path.join(ABE_ROOT, ATTRIBUTIONS_FILE)
+    with open(attributions_file, 'w') as f:
         writer = csv.writer(f)
         for row in attributions:
             writer.writerow(row)
