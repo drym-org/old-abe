@@ -1,6 +1,6 @@
 import os
 
-ABE_ROOT = 'abe'
+ABE_ROOT = './abe'
 PAYOUTS_DIR = os.path.join(ABE_ROOT, 'payouts')
 PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
 NONATTRIBUTABLE_PAYMENTS_DIR = os.path.join(
