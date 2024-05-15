@@ -44,8 +44,7 @@ def read_payment(payment_file, attributable=True):
 
 
 def read_price():
-    price_file = os.path.join(ABE_ROOT, PRICE_FILE)
-    with open(price_file) as f:
+    with open(PRICE_FILE) as f:
         price = f.readline()
         price = Decimal(re.sub("[^0-9.]", "", price))
         return price
@@ -54,8 +53,7 @@ def read_price():
 # note that commas are used as a decimal separator in some languages
 # (e.g. Spain Spanish), so that would need to be handled at some point
 def read_valuation():
-    valuation_file = os.path.join(ABE_ROOT, VALUATION_FILE)
-    with open(valuation_file) as f:
+    with open(VALUATION_FILE) as f:
         valuation = f.readline()
         valuation = Decimal(re.sub("[^0-9.]", "", valuation))
         return valuation
@@ -108,9 +106,8 @@ def find_unprocessed_payments():
     Return type: list of Payment objects
     """
     recorded_payments = set()
-    transactions_file = os.path.join(ABE_ROOT, TRANSACTIONS_FILE)
     try:
-        with open(transactions_file) as f:
+        with open(TRANSACTIONS_FILE) as f:
             for (
                 _email,
                 _amount,
@@ -144,9 +141,8 @@ def get_existing_itemized_payments():
     Reads itemized payment files and returns all itemized payment objects.
     """
     itemized_payments = []
-    itemized_payments_file = os.path.join(ABE_ROOT, ITEMIZED_PAYMENTS_FILE)
     try:
-        with open(itemized_payments_file) as f:
+        with open(ITEMIZED_PAYMENTS_FILE) as f:
             for (
                 email,
                 fee_amount,
@@ -231,32 +227,28 @@ def write_attributions(attributions):
         (email, serialize_proportion(share))
         for email, share in attributions.items()
     ]
-    attributions_file = os.path.join(ABE_ROOT, ATTRIBUTIONS_FILE)
-    with open(attributions_file, 'w') as f:
+    with open(ATTRIBUTIONS_FILE, 'w') as f:
         writer = csv.writer(f)
         for row in attributions:
             writer.writerow(row)
 
 
 def write_append_transactions(transactions):
-    transactions_file = os.path.join(ABE_ROOT, TRANSACTIONS_FILE)
-    with open(transactions_file, 'a') as f:
+    with open(TRANSACTIONS_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in transactions:
             writer.writerow(astuple(row))
 
 
 def write_append_itemized_payments(itemized_payments):
-    itemized_payments_file = os.path.join(ABE_ROOT, ITEMIZED_PAYMENTS_FILE)
-    with open(itemized_payments_file, 'a') as f:
+    with open(ITEMIZED_PAYMENTS_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in itemized_payments:
             writer.writerow(astuple(row))
 
 
 def write_append_advances(advances):
-    advances_file = os.path.join(ABE_ROOT, ADVANCES_FILE)
-    with open(advances_file, 'a') as f:
+    with open(ADVANCES_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in advances:
             writer.writerow(astuple(row))
@@ -264,8 +256,7 @@ def write_append_advances(advances):
 
 def write_valuation(valuation):
     rounded_valuation = f"{valuation:.2f}"
-    valuation_file = os.path.join(ABE_ROOT, VALUATION_FILE)
-    with open(valuation_file, 'w') as f:
+    with open(VALUATION_FILE, 'w') as f:
         writer = csv.writer(f)
         writer.writerow((rounded_valuation,))
 
@@ -305,10 +296,9 @@ def inflate_valuation(valuation, amount):
 
 
 def read_debts():
-    debts_file = os.path.join(ABE_ROOT, DEBTS_FILE)
     debts = []
     try:
-        with open(debts_file) as f:
+        with open(DEBTS_FILE) as f:
             for (
                 email,
                 amount,
@@ -325,10 +315,9 @@ def read_debts():
 
 
 def read_advances(attributions):
-    advances_file = os.path.join(ABE_ROOT, ADVANCES_FILE)
     advances = defaultdict(list)
     try:
-        with open(advances_file) as f:
+        with open(ADVANCES_FILE) as f:
             for (
                 email,
                 amount,
@@ -395,10 +384,9 @@ def get_unpayable_contributors():
     Read the unpayable_contributors file to get the list of contributors who
     are unpayable.
     """
-    unpayable_contributors_file = os.path.join(ABE_ROOT, UNPAYABLE_CONTRIBUTORS_FILE)
     contributors = []
     try:
-        with open(unpayable_contributors_file) as f:
+        with open(UNPAYABLE_CONTRIBUTORS_FILE) as f:
             for contributor in f:
                 contributor = contributor.strip()
                 if contributor:
@@ -436,8 +424,7 @@ def write_debts(processed_debts):
     """
     existing_debts = read_debts()
     processed_debts_hash = {debt.key(): debt for debt in processed_debts}
-    debts_file = os.path.join(ABE_ROOT, DEBTS_FILE)
-    with open(debts_file, 'w') as f:
+    with open(DEBTS_FILE, 'w') as f:
         writer = csv.writer(f)
         for existing_debt in existing_debts:
             # if the existing debt has been processed, write the processed version
