@@ -7,12 +7,9 @@ import os
 import re
 from collections import defaultdict
 from decimal import Decimal, getcontext
-
-ABE_ROOT = 'abe'
-PAYOUTS_DIR = os.path.join(ABE_ROOT, 'payouts')
-TRANSACTIONS_FILE = os.path.join(ABE_ROOT, 'transactions.txt')
-DEBTS_FILE = os.path.join(ABE_ROOT, 'debts.txt')
-ADVANCES_FILE = os.path.join(ABE_ROOT, 'advances.txt')
+from .constants import (
+    ABE_ROOT, PAYOUTS_DIR, TRANSACTIONS_FILE, DEBTS_FILE, ADVANCES_FILE
+)
 
 
 def read_transaction_amounts():
