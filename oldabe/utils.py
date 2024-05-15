@@ -2,6 +2,7 @@ from decimal import Decimal
 import re
 import subprocess
 
+ROUNDING_TOLERANCE = Decimal("0.000001")
 
 def parse_percentage(value):
     """
@@ -82,3 +83,11 @@ def get_git_revision_short_hash() -> str:
         .decode('ascii')
         .strip()
     )
+
+
+def assert_attributions_normalized(attributions):
+    assert _get_attributions_total(attributions) == Decimal("1")
+
+
+def _get_attributions_total(attributions):
+    return sum(attributions.values())
