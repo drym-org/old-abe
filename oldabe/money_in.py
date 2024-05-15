@@ -10,7 +10,7 @@ import subprocess
 from .models import (
     Advance, Attribution, Debt, Payment, ItemizedPayment, Transaction
 )
-from .utils. import (
+from .utils import (
     parse_percentage, serialize_proportion, get_rounding_difference,
     correct_rounding_error, get_git_revision_short_hash
 )
