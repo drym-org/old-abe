@@ -4,12 +4,11 @@ from oldabe.money_in import (
     total_amount_paid_to_project,
     calculate_incoming_attribution,
     generate_transactions,
-    ROUNDING_TOLERANCE,
     renormalize,
     inflate_valuation,
     process_payments,
 )
-from oldabe.utils import correct_rounding_error
+from oldabe.accounting_utils import correct_rounding_error
 from oldabe.models import Attribution, Payment
 import pytest
 from unittest.mock import patch
