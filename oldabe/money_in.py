@@ -10,78 +10,24 @@ import subprocess
 from .models import (
     Advance, Attribution, Debt, Payment, ItemizedPayment, Transaction
 )
-
-ABE_ROOT = './abe'
-# ABE_ROOT = '.'
-PAYMENTS_DIR = os.path.join(ABE_ROOT, 'payments')
-NONATTRIBUTABLE_PAYMENTS_DIR = os.path.join(
-    ABE_ROOT, 'payments', 'nonattributable'
+from .parsing import parse_percentage, serialize_proportion
+from .git import get_git_revision_short_hash
+from .accounting_utils import (
+    get_rounding_difference, correct_rounding_error,
+    assert_attributions_normalized
 )
-UNPAYABLE_CONTRIBUTORS_FILE = 'unpayable_contributors.txt'
-TRANSACTIONS_FILE = 'transactions.txt'
-DEBTS_FILE = 'debts.txt'
-ADVANCES_FILE = 'advances.txt'
-ITEMIZED_PAYMENTS_FILE = 'itemized_payments.txt'
-PRICE_FILE = 'price.txt'
-VALUATION_FILE = 'valuation.txt'
-ATTRIBUTIONS_FILE = 'attributions.txt'
-INSTRUMENTS_FILE = 'instruments.txt'
+from .constants import (
+    ABE_ROOT, PAYMENTS_DIR, PAYOUTS_DIR, TRANSACTIONS_FILE, DEBTS_FILE,
+    ADVANCES_FILE, NONATTRIBUTABLE_PAYMENTS_DIR, UNPAYABLE_CONTRIBUTORS_FILE,
+    ITEMIZED_PAYMENTS_FILE, PRICE_FILE, VALUATION_FILE, ATTRIBUTIONS_FILE,
+    INSTRUMENTS_FILE
+)
 
-ROUNDING_TOLERANCE = Decimal("0.000001")
+
 ACCOUNTING_ZERO = Decimal("0.01")
 
-
-# TODO - move to utils
-def parse_percentage(value):
-    """
-    Translates values expressed in percentage format (75.234) into
-    their decimal equivalents (0.75234). This effectively divides
-    the value by 100 without losing precision.
-    """
-    value = re.sub("[^0-9.]", "", value)
-    value = "00" + value
-    if "." not in value:
-        value = value + ".0"
-    value = re.sub(
-        r"(?P<pre>\d{2})\.(?P<post>\d+)", r".\g<pre>\g<post>", value
-    )
-    value = Decimal(value)
-    return value
-
-
-# TODO - move to utils
-def serialize_proportion(value):
-    """
-    Translates values expressed in decimal format (0.75234) into
-    their percentage equivalents (75.234). This effectively multiplies
-    the value by 100 without losing precision.
-    """
-    # otherwise, decimal gets translated '2E-7.0'
-    value = format(value, "f")
-    if "." in value:
-        value = value + "00"
-    else:
-        value = value + ".00"
-    value = re.sub(
-        r"(?P<pre>\d)\.(?P<post>\d{2})(?P<rest>\d*)",
-        # match a number followed by a decimal point
-        # followed by at least two digits
-        r"\g<pre>\g<post>.\g<rest>",
-        # move the decimal point two places to the right
-        value,
-    )
-    # strip leading insignificant zeroes
-    value = value.lstrip("0")
-    # ensure there's a single leading zero if it is
-    # a decimal value less than 1
-    value = re.sub(r"^\.", r"0.", value)
-    if "." in value:
-        # strip trailing insignificant zeroes
-        value = value.rstrip("0")
-        # remove decimal point if whole number
-        value = re.sub(r"\.$", r"", value)
-    return value
-
+# TODO standardize the parsing from text into python objects
+# e.g. Decimal and DateTime
 
 def read_payment(payment_file, attributable=True):
     """
@@ -98,8 +44,7 @@ def read_payment(payment_file, attributable=True):
 
 
 def read_price():
-    price_file = os.path.join(ABE_ROOT, PRICE_FILE)
-    with open(price_file) as f:
+    with open(PRICE_FILE) as f:
         price = f.readline()
         price = Decimal(re.sub("[^0-9.]", "", price))
         return price
@@ -108,8 +53,7 @@ def read_price():
 # note that commas are used as a decimal separator in some languages
 # (e.g. Spain Spanish), so that would need to be handled at some point
 def read_valuation():
-    valuation_file = os.path.join(ABE_ROOT, VALUATION_FILE)
-    with open(valuation_file) as f:
+    with open(VALUATION_FILE) as f:
         valuation = f.readline()
         valuation = Decimal(re.sub("[^0-9.]", "", valuation))
         return valuation
@@ -125,7 +69,7 @@ def read_attributions(attributions_filename, validate=True):
                 email = email.strip()
                 attributions[email] = parse_percentage(percentage)
     if validate:
-        assert _get_attributions_total(attributions) == Decimal("1")
+        assert_attributions_normalized(attributions)
     return attributions
 
 
@@ -162,9 +106,8 @@ def find_unprocessed_payments():
     Return type: list of Payment objects
     """
     recorded_payments = set()
-    transactions_file = os.path.join(ABE_ROOT, TRANSACTIONS_FILE)
     try:
-        with open(transactions_file) as f:
+        with open(TRANSACTIONS_FILE) as f:
             for (
                 _email,
                 _amount,
@@ -176,8 +119,6 @@ def find_unprocessed_payments():
     except FileNotFoundError:
         pass
     all_payments = get_all_payments()
-    print("all payments")
-    print(all_payments)
     return [p for p in all_payments if p.file not in recorded_payments]
 
 
@@ -196,11 +137,12 @@ def generate_transactions(amount, attributions, payment_file, commit_hash):
 
 
 def get_existing_itemized_payments():
-    # TODO
+    """
+    Reads itemized payment files and returns all itemized payment objects.
+    """
     itemized_payments = []
-    itemized_payments_file = os.path.join(ABE_ROOT, ITEMIZED_PAYMENTS_FILE)
     try:
-        with open(itemized_payments_file) as f:
+        with open(ITEMIZED_PAYMENTS_FILE) as f:
             for (
                 email,
                 fee_amount,
@@ -266,23 +208,6 @@ def calculate_incoming_attribution(
         return None
 
 
-def _get_attributions_total(attributions):
-    return sum(attributions.values())
-
-
-# TODO - move to utils
-def get_rounding_difference(attributions):
-    """
-    Get the difference of the total of the attributions from 1, which is
-    expected to occur due to finite precision. If the difference exceeds the
-    expected error tolerance, an error is signaled.
-    """
-    total = _get_attributions_total(attributions)
-    difference = total - Decimal("1")
-    assert abs(difference) <= ROUNDING_TOLERANCE
-    return difference
-
-
 def normalize(attributions):
     total_share = sum(share for _, share in attributions.items())
     target_proportion = Decimal("1") / total_share
@@ -290,20 +215,9 @@ def normalize(attributions):
         attributions[email] *= target_proportion
 
 
-# TODO - move to utils
-def correct_rounding_error(attributions, incoming_attribution):
-    """Due to finite precision, the Decimal module will round up or down
-    on the last decimal place. This could result in the aggregate value not
-    quite totaling to 1. This corrects that total by either adding or
-    subtracting the difference from the incoming attribution (by convention).
-    """
-    difference = get_rounding_difference(attributions)
-    attributions[incoming_attribution.email] -= difference
-
-
 def write_attributions(attributions):
     # don't write attributions if they aren't normalized
-    assert _get_attributions_total(attributions) == Decimal("1")
+    assert_attributions_normalized(attributions)
     # format for output as percentages
     attributions = [
         (email, serialize_proportion(share))
@@ -317,45 +231,29 @@ def write_attributions(attributions):
 
 
 def write_append_transactions(transactions):
-    transactions_file = os.path.join(ABE_ROOT, TRANSACTIONS_FILE)
-    with open(transactions_file, 'a') as f:
+    with open(TRANSACTIONS_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in transactions:
             writer.writerow(astuple(row))
 
 
 def write_append_itemized_payments(itemized_payments):
-    itemized_payments_file = os.path.join(ABE_ROOT, ITEMIZED_PAYMENTS_FILE)
-    with open(itemized_payments_file, 'a') as f:
+    with open(ITEMIZED_PAYMENTS_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in itemized_payments:
             writer.writerow(astuple(row))
 
 
 def write_append_advances(advances):
-    advances_file = os.path.join(ABE_ROOT, ADVANCES_FILE)
-    with open(advances_file, 'a') as f:
+    with open(ADVANCES_FILE, 'a') as f:
         writer = csv.writer(f)
         for row in advances:
             writer.writerow(astuple(row))
 
 
-# [[ OLD NOTE - still relevant?? ]]
-# TODO - when we write debts
-# 1) read all from the file and transform into a hash, where the key is a 
-#   unique identifier constructed from the email + payment file and the value
-#   is a debt object
-# 2) take the newly created/modified debt objects (all in one list) and iterate
-#   through - searching the full hash for each new debt object - modify if it
-#   was found, and add to the hash if not found
-# 3) convert the hash into a list, ordered by created_at field, then write to
-#   the debts file (completely replacing existing contents)
-
-
 def write_valuation(valuation):
     rounded_valuation = f"{valuation:.2f}"
-    valuation_file = os.path.join(ABE_ROOT, VALUATION_FILE)
-    with open(valuation_file, 'w') as f:
+    with open(VALUATION_FILE, 'w') as f:
         writer = csv.writer(f)
         writer.writerow((rounded_valuation,))
 
@@ -394,23 +292,10 @@ def inflate_valuation(valuation, amount):
     return valuation + amount
 
 
-# TODO - move to utils
-# and standardize the parsing from text into python objects
-# e.g. Decimal and DateTime
-def get_git_revision_short_hash() -> str:
-    """From https://stackoverflow.com/a/21901260"""
-    return (
-        subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])
-        .decode('ascii')
-        .strip()
-    )
-
-
 def read_debts():
-    debts_file = os.path.join(ABE_ROOT, DEBTS_FILE)
     debts = []
     try:
-        with open(debts_file) as f:
+        with open(DEBTS_FILE) as f:
             for (
                 email,
                 amount,
@@ -427,10 +312,9 @@ def read_debts():
 
 
 def read_advances(attributions):
-    advances_file = os.path.join(ABE_ROOT, ADVANCES_FILE)
     advances = defaultdict(list)
     try:
-        with open(advances_file) as f:
+        with open(ADVANCES_FILE) as f:
             for (
                 email,
                 amount,
@@ -497,10 +381,9 @@ def get_unpayable_contributors():
     Read the unpayable_contributors file to get the list of contributors who
     are unpayable.
     """
-    unpayable_contributors_file = os.path.join(ABE_ROOT, UNPAYABLE_CONTRIBUTORS_FILE)
     contributors = []
     try:
-        with open(unpayable_contributors_file) as f:
+        with open(UNPAYABLE_CONTRIBUTORS_FILE) as f:
             for contributor in f:
                 contributor = contributor.strip()
                 if contributor:
@@ -538,8 +421,7 @@ def write_debts(processed_debts):
     """
     existing_debts = read_debts()
     processed_debts_hash = {debt.key(): debt for debt in processed_debts}
-    debts_file = os.path.join(ABE_ROOT, DEBTS_FILE)
-    with open(debts_file, 'w') as f:
+    with open(DEBTS_FILE, 'w') as f:
         writer = csv.writer(f)
         for existing_debt in existing_debts:
             # if the existing debt has been processed, write the processed version
@@ -601,25 +483,19 @@ def distribute_payment(payment, attributions):
     # 2. pay them off in chronological order (maybe partially)
     # 3. (if leftover) identify unpayable people in the relevant attributions file
     # 4. record debt for each of them according to their attribution
-    print("Listing directory files...")
-    print(os.listdir(ABE_ROOT))
     commit_hash = get_git_revision_short_hash()
     unpayable_contributors = get_unpayable_contributors()
     payable_debts = get_payable_debts(unpayable_contributors, attributions)
     updated_debts, debt_transactions = pay_debts(payable_debts, payment)
     # The "available" amount is what is left over after paying off debts
-    print(f"new payment amount is {payment.amount}")
-    print(f"sum of debt transactions is {sum(t.amount for t in debt_transactions)}")
     available_amount = payment.amount - sum(t.amount for t in debt_transactions)
 
     fresh_debts = []
     equity_transactions = []
     negative_advances = []
     fresh_advances = []
-    print(f"available amount is {available_amount}")
     if available_amount > ACCOUNTING_ZERO:
         amounts_owed = get_amounts_owed(available_amount, attributions)
-        print(f"total of amounts owed is {sum(v for v in amounts_owed.values())}")
         fresh_debts = create_debts(amounts_owed,
                                    unpayable_contributors,
                                    payment.file)
@@ -629,12 +505,10 @@ def distribute_payment(payment, attributions):
         amounts_payable = {email: amount
                            for email, amount in amounts_owed.items()
                            if email not in unpayable_contributors}
-        print(f"total of amounts payable is {sum(v for v in amounts_payable.values())}")
 
         # use the amount owed to each contributor to draw down any advances
         # they may already have and then decrement their amount payable accordingly
         advance_totals = get_sum_of_advances_by_contributor(attributions)
-        print(f"advance totals is {advance_totals}")
         for email, advance_total in advance_totals.items():
             amount_payable = amounts_payable.get(email, 0)
             drawdown_amount = min(advance_total, amount_payable)
@@ -649,7 +523,6 @@ def distribute_payment(payment, attributions):
         # note that these are drawn down amounts and therefore have negative amounts
         # and that's why we take the absolute value here
         redistribution_pot += sum(abs(a.amount) for a in negative_advances)
-        print(f"redistribution_pot is {redistribution_pot}")
 
         # redistribute the pot over all payable contributors - produce fresh advances and add to amounts payable
         if redistribution_pot > ACCOUNTING_ZERO:
@@ -666,8 +539,6 @@ def distribute_payment(payment, attributions):
                                                  commit_hash=commit_hash)
             equity_transactions.append(new_equity_transaction)
 
-    print(f"sum of equity transactions is {sum(t.amount for t in equity_transactions)}")
-    print(f"sum of debt transactions is {sum(t.amount for t in debt_transactions)}")
     debts = updated_debts + fresh_debts
     transactions = equity_transactions + debt_transactions
     advances = negative_advances + fresh_advances
@@ -724,23 +595,16 @@ def process_payments(instruments, attributions):
     new_transactions = []
     new_itemized_payments = []
     unprocessed_payments = find_unprocessed_payments()
-    print("Unprocessed payments", unprocessed_payments)
     for payment in unprocessed_payments:
         # first, process instruments (i.e. pay fees)
         debts, transactions, advances = distribute_payment(payment, instruments)
-        print(f"payment amount BEFORE deducting fees is {payment.amount}")
         new_transactions += transactions
         new_debts += debts
         new_advances += advances
         fees_paid_out = sum(t.amount for t in transactions)
-        print(f"fees paid out are {fees_paid_out}")
-        print(f"total transaction amounts {sum(t.amount for t in transactions)}")
-        print(f"total debt amounts {sum(d.amount for d in debts)}")
-        print(f"total advance amounts {sum(a.amount for a in advances)}")
         # deduct the amount paid out to instruments before
         # processing it for attributions
         payment.amount -= fees_paid_out
-        print(f"payment amount AFTER deducting fees is {payment.amount}")
         new_itemized_payments.append(
             _create_itemized_payment(payment, fees_paid_out)
         )
@@ -766,7 +630,6 @@ def process_payments_and_record_updates():
     """
     instruments = read_attributions(INSTRUMENTS_FILE, validate=False)
     attributions = read_attributions(ATTRIBUTIONS_FILE)
-    print("Attributions are:", attributions)
 
     (
         debts,
@@ -776,7 +639,6 @@ def process_payments_and_record_updates():
         advances,
     ) = process_payments(instruments, attributions)
 
-    print("Transactions are:", transactions)
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no
     # changes are made.
