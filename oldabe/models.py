@@ -1,6 +1,18 @@
 from datetime import datetime
 from dataclasses import dataclass, field
 from decimal import Decimal
+import re
+
+
+def row_to_model(row, model):
+    for field_, value in row.items():
+        field_type = getattr(model, field_).annotation
+        if field_type == Decimal:
+            row[field_] = Decimal(re.sub("[^0-9.]", "", value))
+        elif field_type == datetime:
+            row[field_] = datetime.fromisoformat(value)
+
+    return model(**row)
 
 
 @dataclass
@@ -74,3 +86,11 @@ class Attribution:
     email: str = None
     share: Decimal = 0
     dilutable: bool = True
+
+
+@dataclass
+class Payout:
+    name: str = None
+    email: str = None
+    amount: Decimal = 0
+    date: datetime = field(default_factory=datetime.utcnow)
