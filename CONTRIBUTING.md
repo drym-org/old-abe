@@ -6,18 +6,48 @@ You could do this in a virtual environment or at the system / user level if you 
 $ make build
 ```
 
+You may also need to run:
+
+```
+$ make build-for-test
+```
+
+Together, these should ensure that you have all development dependencies so that the rest of the `make` targets should work.
+
 # Running Tests
+
+## Unit Tests
 
 ```
 $ make test
 ```
 
-## Debugging
+## Integration Tests
+
+```
+$ pytest tests/integration
+```
+
+NOTE: We do have a `make` target for this:
+
+```
+$ make test-integration
+```
+
+But this does not work even though it runs a command identical to the above, due to some weird dependency issue with pytest. For now, just use the earlier command in the shell directly.
+
+# Debugging
 
 To debug a test execution using a step debugger, put this in the body of the test you'd like to debug:
 
 ```
 import pudb; pudb.set_trace()
+```
+
+or simply,
+
+```
+import pudb; pu.db
 ```
 
 Now, when you run `make test` (for example), it will put you in the debugger, allowing you to step through the execution of the code. Here are some things you can do:
@@ -31,8 +61,6 @@ Now, when you run `make test` (for example), it will put you in the debugger, al
 * `C-x` - REPL to evaluate expressions to see their value (`C-x` again returns)
 
 There's more handy stuff that you can do like setting breakpoints and visiting other modules. Press `?` to see all the options.
-
-*Note*: the official docs for `pudb` say that we could also use `pu.db()` instead of `pudb.set_trace()`, but this doesn't seem to work.
 
 # Linting
 

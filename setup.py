@@ -1,18 +1,20 @@
 from setuptools import setup
 
-requirements = ['click']
+requirements = []
 
 test_requirements = [
     'pytest',
     'pytest-pudb',
     'pytest-sugar',
     'pytest-tldr',
+    'pyfakefs',
+    'time_machine',
     'tox',
     'tox-gh-actions',
     'coveralls',
 ]
 
-dev_requirements = ['flake8', 'bump2version', 'sphinx', 'pre-commit', 'black']
+dev_requirements = ['flake8', 'black']
 
 setup_requirements = ['pytest-runner']
 
