@@ -148,13 +148,10 @@ def combined_message(balances_message, debts_message, advances_message):
     return "\r\n".join(line.strip() for line in message.split('\n')).strip()
 
 
-def main():
-    # set decimal precision at 10 to ensure
-    # that it is the same everywhere
-    # and large enough to represent a sufficiently
-    # large number of contributors
-    getcontext().prec = 10
-
+def compile_outstanding_balances():
+    """ Read all accounting records and determine the total outstanding
+    balances, debts, and advances for each contributor.
+    """
     owed = read_transaction_amounts()
     paid = read_payout_amounts()
     balances = compute_balances(owed, paid)
@@ -163,7 +160,16 @@ def main():
     debts_message = prepare_debts_message(outstanding_debts)
     advances = read_advance_amounts()
     advances_message = prepare_advances_message(advances)
-    print(combined_message(balances_message, debts_message, advances_message))
+    return combined_message(balances_message, debts_message, advances_message)
+
+
+def main():
+    # set decimal precision at 10 to ensure
+    # that it is the same everywhere
+    # and large enough to represent a sufficiently
+    # large number of contributors
+    getcontext().prec = 10
+    print(compile_outstanding_balances())
 
 
 if __name__ == "__main__":
