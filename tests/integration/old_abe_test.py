@@ -6,18 +6,28 @@ from unittest.mock import patch
 from oldabe.money_in import (
     process_payments_and_record_updates,
 )
+from oldabe.money_out import (
+    compile_outstanding_balances,
+)
 from .fixtures import abe_fs
 import os
 
 
 class TestNoPayments:
+
     @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
     def test_no_transactions_generated(self, mock_git_rev, abe_fs):
-        with open('abe/price.txt') as f:
-            assert f.read() == "10"
         process_payments_and_record_updates()
         with open('./abe/transactions.txt') as f:
             assert f.read() == ""
+
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
+        process_payments_and_record_updates()
+        message = compile_outstanding_balances()
+        assert "There are no outstanding (payable) balances." in message
+        assert "There are no outstanding (unpayable) debts." in message
+        assert "There are no advances." in message
 
 # TODO: in some cases even though the value is e.g. 1,
 # it's writing out 3 decimal places, like 1.000. We should
@@ -26,6 +36,7 @@ class TestNoPayments:
 
 
 class TestPaymentAbovePrice:
+
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
     def test_generates_transactions(self, mock_git_rev, abe_fs):
@@ -61,8 +72,25 @@ class TestPaymentAbovePrice:
                     "sam,8.5\n"
                 )
 
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
+        with localcontext() as context:
+            context.prec = 2
+            amount = 100
+            abe_fs.create_file("./abe/payments/1.txt",
+                               contents=f"sam,036eaf6,{amount},dummydate")
+            process_payments_and_record_updates()
+
+            message = compile_outstanding_balances()
+
+            assert ("| Name | Balance |\r\n"
+                    "| ---- | --- |\r\n"
+                    "old abe | 1.00\r\n") in message
+
 
 class TestPaymentBelowPrice:
+
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
     def test_generates_transactions(self, mock_git_rev, abe_fs):
@@ -81,14 +109,30 @@ class TestPaymentBelowPrice:
                     "ariana,0.19,1.txt,abcd123,1985-10-26 01:24:00\n"
                 )
 
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
+        with localcontext() as context:
+            context.prec = 2
+            amount = 1
+            abe_fs.create_file("./abe/payments/1.txt",
+                               contents=f"sam,036eaf6,{amount},dummydate")
+            process_payments_and_record_updates()
+            message = compile_outstanding_balances()
+
+            assert ("| Name | Balance |\r\n"
+                    "| ---- | --- |\r\n"
+                    "old abe | 0.01\r\n") in message
+
 
 class TestNonAttributablePayment:
+
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
     def test_does_not_dilute_attributions(self, mock_git_rev, abe_fs):
         with localcontext() as context:
             context.prec = 2
-            amount = 10000
+            amount = 100
             abe_fs.create_file("./abe/payments/nonattributable/1.txt",
                                contents=f"sam,036eaf6,{amount},dummydate")
             process_payments_and_record_updates()
@@ -98,6 +142,39 @@ class TestNonAttributablePayment:
                     "jair,30\n"
                     "ariana,20\n"
                 )
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_generates_transactions(self, mock_git_rev, abe_fs):
+        with localcontext() as context:
+            context.prec = 2
+            amount = 100
+            abe_fs.create_file("./abe/payments/1.txt",
+                               contents=f"sam,036eaf6,{amount},dummydate")
+            process_payments_and_record_updates()
+            with open('./abe/transactions.txt') as f:
+                assert f.read() == (
+                    "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                    "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                    "sid,47,1.txt,abcd123,1985-10-26 01:24:00\n"
+                    "jair,28,1.txt,abcd123,1985-10-26 01:24:00\n"
+                    "ariana,19,1.txt,abcd123,1985-10-26 01:24:00\n"
+                )
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
+        with localcontext() as context:
+            context.prec = 2
+            amount = 100
+            abe_fs.create_file("./abe/payments/nonattributable/1.txt",
+                               contents=f"sam,036eaf6,{amount},dummydate")
+            process_payments_and_record_updates()
+            message = compile_outstanding_balances()
+
+            assert ("| Name | Balance |\r\n"
+                    "| ---- | --- |\r\n"
+                    "old abe | 1.00\r\n") in message
 
 
 class TestUnpayableContributor:
@@ -144,6 +221,15 @@ class TestUnpayableContributor:
                 "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
                 "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
+        self._call(abe_fs)
+        message = compile_outstanding_balances()
+        assert ("| Name | Debt |\r\n"
+                "| ---- | --- |\r\n"
+                "ariana | 19.00\r\n") in message
 
 
 class TestUnpayableContributorBecomesPayable:
@@ -218,3 +304,12 @@ class TestUnpayableContributorBecomesPayable:
                 "jair,5.4,2.txt,abcd123,1985-10-26 01:24:00\n"
                 "ariana,3.6,2.txt,abcd123,1985-10-26 01:24:00\n"
             )
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.money_in.get_git_revision_short_hash', return_value='abcd123')
+    def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
+        self._call(abe_fs)
+        message = compile_outstanding_balances()
+        assert ("| Name | Debt |\r\n"
+                "| ---- | --- |\r\n"
+                "ariana | 0.00\r\n") in message
