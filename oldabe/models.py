@@ -1,26 +1,42 @@
-from datetime import datetime
 from dataclasses import dataclass, field
+from datetime import datetime
 from decimal import Decimal
+
+from oldabe.git import get_git_revision_short_hash
+from oldabe.parsing import parse_percentage
+
+
+# Wrapping so that tests can mock it
+def default_commit_hash():
+    return get_git_revision_short_hash()
 
 
 @dataclass
 class Transaction:
-    email: str = None
-    amount: Decimal = 0
-    payment_file: str = None
-    commit_hash: str = None
+    email: str
+    amount: Decimal
+    payment_file: str
+    commit_hash: str = field(default_factory=lambda: default_commit_hash())
+    created_at: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class Payout:
+    name: str
+    email: str
+    amount: Decimal
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 
 @dataclass
 class Debt:
-    email: str = None
-    amount: Decimal = None
+    email: str
+    amount: Decimal
     # amount_paid is a running tally of how much of this debt has been paid
     # in future will link to Transaction objects instead
-    amount_paid: Decimal = 0
-    payment_file: str = None
-    commit_hash: str = None
+    amount_paid: Decimal
+    payment_file: str
+    commit_hash: str = field(default_factory=lambda: default_commit_hash())
     created_at: datetime = field(default_factory=datetime.utcnow)
 
     def key(self):
@@ -32,6 +48,12 @@ class Debt:
     def amount_remaining(self):
         return self.amount - self.amount_paid
 
+# These are not recorded (yet?), they just represent an intention to record a payment
+@dataclass
+class DebtPayment:
+    debt: Debt
+    amount: Decimal
+
 
 # Individual advances can have a positive or negative amount (to
 # indicate an actual advance payment, or a drawn down advance).
@@ -39,19 +61,22 @@ class Debt:
 # sum all of their existing Advance objects.
 @dataclass
 class Advance:
-    email: str = None
-    amount: Decimal = 0
-    payment_file: str = None
-    commit_hash: str = None
+    email: str
+    amount: Decimal
+    payment_file: str
+    commit_hash: str = field(default_factory=lambda: default_commit_hash())
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 
 @dataclass
 class Payment:
-    email: str = None
-    amount: Decimal = 0
+    email: str
+    name: str
+    amount: Decimal
+    # Should move this, but it will invalidate existing files
+    created_at: datetime = field(default_factory=datetime.utcnow)
     attributable: bool = True
-    file: str = None
+    file: str = ''
 
 
 # ItemizedPayment acts as a proxy for a Payment object that keeps track
@@ -60,17 +85,18 @@ class Payment:
 # avoid mutating Payment records.
 @dataclass
 class ItemizedPayment:
-    email: str = None
-    fee_amount: Decimal = 0  # instruments
-    project_amount: Decimal = 0  # attributions
-    attributable: bool = True
-    payment_file: str = (
-        None  # acts like a foreign key to original payment object
-    )
+    email: str
+    fee_amount: Decimal # instruments
+    project_amount: Decimal # attributions
+    attributable: bool
+    payment_file: str # acts like a foreign key to original payment object
 
 
 @dataclass
 class Attribution:
-    email: str = None
-    share: Decimal = 0
-    dilutable: bool = True
+    email: str
+    share: str
+
+    @property
+    def decimal_share(self):
+        return parse_percentage(self.share)
