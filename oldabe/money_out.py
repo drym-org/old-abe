@@ -1,46 +1,10 @@
 #!/usr/bin/env python
 
-from .models import Transaction, Debt, Advance
-from datetime import datetime
-import csv
-import os
-import re
 from collections import defaultdict
 from decimal import Decimal, getcontext
-from .constants import (
-    ABE_ROOT, PAYOUTS_DIR, TRANSACTIONS_FILE, DEBTS_FILE, ADVANCES_FILE
-)
 
-
-def read_transaction_amounts():
-    balances = defaultdict(int)
-    with open(TRANSACTIONS_FILE) as f:
-        for row in csv.reader(f):
-            t = Transaction(*row)
-            t.amount = Decimal(t.amount)
-            t.created_at = datetime.fromisoformat(t.created_at)
-            balances[t.email] += t.amount
-    return balances
-
-
-def read_payout(payout_file):
-    with open(os.path.join(PAYOUTS_DIR, payout_file)) as f:
-        for row in csv.reader(f):
-            name, _email, amount, _date = row
-            amount = Decimal(re.sub("[^0-9.]", "", amount))
-            return name, amount
-
-
-def read_payout_amounts():
-    balances = defaultdict(int)
-    try:
-        payout_files = os.listdir(PAYOUTS_DIR)
-    except FileNotFoundError:
-        payout_files = []
-    for payout_file in payout_files:
-        name, amount = read_payout(payout_file)
-        balances[name] += amount
-    return balances
+from .repos import AdvancesRepo, DebtsRepo, PayoutsRepo, TransactionsRepo
+from .tally import Tally
 
 
 def compute_balances(owed: dict, paid: dict):
@@ -49,6 +13,7 @@ def compute_balances(owed: dict, paid: dict):
     """
     balances = defaultdict(int)
     for email in owed.keys():
+        # TODO: We are not testing alreayd paid
         balance = owed[email] - paid[email]
         if balance > Decimal("0"):
             balances[email] = balance
@@ -60,7 +25,8 @@ def prepare_balances_message(balances: dict):
         return "There are no outstanding (payable) balances."
     balances_table = ""
     for name, balance in balances.items():
-        balances_table += f"{name} | {balance:.2f}\n"
+        if balance > 0:
+            balances_table += f"{name} | {balance:.2f}\n"
     message = f"""
     The current outstanding (payable) balances are:
 
@@ -71,18 +37,6 @@ def prepare_balances_message(balances: dict):
     **Total** = {sum(balances.values()):.2f}
     """
     return "\r\n".join(line.strip() for line in message.split('\n')).strip()
-
-
-def read_outstanding_debt_amounts():
-    outstanding_debts = defaultdict(int)
-    with open(DEBTS_FILE) as f:
-        for row in csv.reader(f):
-            d = Debt(*row)
-            d.amount = Decimal(d.amount)
-            d.amount_paid = Decimal(d.amount_paid)
-            outstanding_amount = d.amount - d.amount_paid
-            outstanding_debts[d.email] += outstanding_amount
-    return outstanding_debts
 
 
 def prepare_debts_message(outstanding_debts: dict):
@@ -101,16 +55,6 @@ def prepare_debts_message(outstanding_debts: dict):
     **Total** = {sum(outstanding_debts.values()):.2f}
     """
     return "\r\n".join(line.strip() for line in message.split('\n')).strip()
-
-
-def read_advance_amounts():
-    advances = defaultdict(int)
-    with open(ADVANCES_FILE) as f:
-        for row in csv.reader(f):
-            a = Advance(*row)
-            a.amount = Decimal(a.amount)
-            advances[a.email] += a.amount
-    return advances
 
 
 def prepare_advances_message(advances: dict):
@@ -152,14 +96,18 @@ def compile_outstanding_balances():
     """ Read all accounting records and determine the total outstanding
     balances, debts, and advances for each contributor.
     """
-    owed = read_transaction_amounts()
-    paid = read_payout_amounts()
-    balances = compute_balances(owed, paid)
+    # owed = read_owed_amounts()
+    owed = Tally((t.email, t.amount) for t in TransactionsRepo())
+    paid = Tally((p.email, p.amount) for p in PayoutsRepo())
+    balances = owed - paid
     balances_message = prepare_balances_message(balances)
-    outstanding_debts = read_outstanding_debt_amounts()
+
+    outstanding_debts = Tally((d.email, d.amount_remaining()) for d in DebtsRepo())
     debts_message = prepare_debts_message(outstanding_debts)
-    advances = read_advance_amounts()
+
+    advances = Tally((a.email, a.amount) for a in AdvancesRepo())
     advances_message = prepare_advances_message(advances)
+
     return combined_message(balances_message, debts_message, advances_message)
 
 

@@ -26,6 +26,7 @@ def correct_rounding_error(attributions, incoming_attribution):
 
 
 def assert_attributions_normalized(attributions):
+    print(_get_attributions_total(attributions))
     assert _get_attributions_total(attributions) == Decimal("1")
 
 
