@@ -12,6 +12,7 @@ jobs:
             matrix:
                 py:
                     - "3.9"
+                    - "pypy3.9"
                 os:
                     - "ubuntu-latest"
                 architecture:
