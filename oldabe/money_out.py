@@ -58,7 +58,8 @@ def prepare_debts_message(outstanding_debts: dict):
 
 
 def prepare_advances_message(advances: dict):
-    """A temporary message reporting aggregate advances, for testing purposes."""
+    """A temporary message reporting aggregate advances, for testing
+    purposes."""
     if not advances:
         return "There are no advances."
     advances_table = ""

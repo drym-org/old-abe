@@ -3,7 +3,7 @@
 import csv
 import dataclasses
 import re
-from dataclasses import astuple, replace
+from dataclasses import astuple
 from decimal import Decimal, getcontext
 from itertools import accumulate
 from typing import Iterable, List, Set, Tuple
@@ -176,7 +176,8 @@ def distribute_payment(
 
     # 1. check payable outstanding debts
     # 2. pay them off in chronological order (maybe partially)
-    # 3. (if leftover) identify unpayable people in the relevant distribution file
+    # 3. (if leftover) identify unpayable people in the relevant
+    #    distribution file
     # 4. record debt for each of them according to their attribution
 
     unpayable_contributors = set(UnpayableContributorsRepo())
@@ -200,7 +201,8 @@ def distribute_payment(
     #
     # Create fresh debts for anyone we can't pay
     #
-    # TODO: Make it clearer that some people get debts and the others get N advances (maybe zero)
+    # TODO: Make it clearer that some people get debts and the others
+    # get N advances (maybe zero)
 
     fresh_debts = create_debts(
         available_amount, distribution, payable_contributors, payment
