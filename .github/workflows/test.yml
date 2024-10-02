@@ -16,7 +16,7 @@ jobs:
                 os:
                     - "macos-latest"
                 architecture:
-                    - x64
+                    - ARM64
         name: "Python: ${{ matrix.py }}-${{ matrix.architecture }} on ${{ matrix.os }}"
         runs-on: ${{ matrix.os }}
         steps:
