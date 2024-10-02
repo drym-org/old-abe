@@ -30,5 +30,6 @@ setup(
     test_suite='tests',
     install_requires=requirements,
     setup_requires=setup_requirements,
+    tests_require=test_requirements,
     extras_require={'dev': dev_requirements, 'test': test_requirements},
 )
