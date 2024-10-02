@@ -12,7 +12,6 @@ jobs:
             matrix:
                 py:
                     - "3.11"
-                    - "pypy3.11"
                 os:
                     - "macos-latest"
                 architecture:
