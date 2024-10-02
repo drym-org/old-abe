@@ -1,6 +1,13 @@
 #lang scribble/manual
 
+@require[racket/runtime-path]
+
 @title{Old Abe: The Accountant for All of your ABE Needs}
+
+@(define-runtime-path logo-path "assets/img/logo.png")
+@(if (file-exists? logo-path)
+     (image logo-path #:scale 1.0)
+     (printf "[WARNING] No ~a file found!~%" logo-path))
 
 @table-of-contents[]
 
@@ -25,6 +32,8 @@ Old Abe considers precisely three inputs in doing all of its accounting, and it 
 
 @item{Attributions -- an association of contributor to percentage of value allocated from the value represented by the project as a whole.}
 
+@item{Instruments -- an association of an instrument to percentage of value allocated from the value represented by the project as a whole.}
+
 @item{Price -- a generic "fair market value" provided by the project to its users (Like many concepts, this concept named price has a distinct role in ABE from its traditional role in capitalism).}
 
 @item{Valuation -- the assessed present value of the project as a whole.}
@@ -34,81 +43,24 @@ All of these are determined through the process of Dialectical Inheritance Attri
 
 @section{Accounting Flows}
 
-There are several actions ("accountable actions") pertaining to a project that trigger accounting by Old Abe. These are:
+Current accounting flows are a mix of manual and automated actions. Old Abe is not directly connected to any financial systems, so its primary role is to run the accounting logic, keep track of any project investors, and tell the maintainer how much to pay project contributors. It is up to the maintainer to record incoming payments (@code{abe/payments/}) and outgoing payouts (@code{abe/payouts/}).
 
 @itemlist[
 #:style 'ordered
 
-@item{Work is done for the project.}
+@item{Recording a Payment - triggers a GitHub Action that runs the accounting logic (details below) and produces a report of all Outstanding Balances as a GitHub Issue. The maintainer can refer to the Issue to find out how much to pay.}
 
-@item{A financial contribution is made to the project.}
-
-@item{An appointed project representative fulfills a payout to a contributor.}
-
-@item{A "fiat" change is made to one of the inputs, i.e. either attributions, price or valuation, which is typically a resolution by DIA.}
+@item{Recording a Payout - triggers a GitHub Action that simply updates the Outstanding Balances issue to reflect the updated amounts owed.}
 
 ]
 
-We will learn more about each of these, in turn.
-
-@subsection{Work}
-
-Work done could be either labor, capital, or ideas, as defined in the @hyperlink["https://github.com/drym-org/finance/blob/main/finance.md"]{ABE financial model}. Regardless of what kind of work it is, its appraisal takes the form of an "incoming attribution," which is an association of a set of contributors to percentage of value contributed, as judged in related to existing attribution allocations in the project.
-
-Old Abe will account this by "renormalizing" the attributions to total to 100% after incorporating the fresh values.
-
-TODO: flesh out
-
 @subsection{Payment}
 
-When a payment comes in, we first pay out any @tech{instruments}. Then, with the remaining amount, we pay project contributors.
+When someone makes a payment to a project, Old Abe allocates portions of that payment to project contributors and creates a report that tells maintainers how much money the project owes to each individual contributor. We'll get deep into the weeds of how it does that in a moment. If the incoming payment represents an investment (that is, it brings the payer's total amount paid above the project price), the payer is considered a project contributor. The system adds them to the attributions file with a share equal to their investment (or increases their pre-existing attributive share). The project valuation is increased by the investment amount and all existing attributive shares are diluted so that percentage shares still add up 100%.
 
-TODO: flesh out
+Now, let's talk about how Old Abe allocates an incoming payment.
 
-@subsection{Payout}
+First, we pay off any processing fees (found in @code{instruments.txt}). These fees have fixed percentages that apply to every incoming payment and do not get diluted by investments. They are somewhat analogous to credit card fees. They go towards the Old Abe system itself and to those who have contributed to the DIA process for this project.
 
-TODO: flesh out
+Next, we divide the remainder among the contributors in the attributions file. Ideally, this is as simple as dividing the amount according to each contributor's attributive share. However, sometimes certain contributors are temporarily unpayable (e.g. they might not have provided their payment information yet, etc.). In that case, we record the amount owed to that contributor as a "debt" so that the project can pay them later. To avoid having money sitting around in maintainers' accounts, we divide any amount left over among payable contributors, according to attributive share. Any amount we pay someone in excess of what we owed them originally, we record as an "advance." The idea here is that when someone eventually becomes payable, we can prioritize paying off the debt we owe them by allocating money to them first whenever a new payment comes in. Anyone who has been accumulating advances will receive a little less than their attributive share until their total advance amount has been "drawn down" and the scales have been balanced between debts and advances.
 
-@subsection{Fiat Change in Inputs}
-
-TODO: flesh out, including backpropagation
-
-@section{Modules}
-
-The accounting flows mentioned earlier correspond to distinct modules that handle them.
-
-@subsection{Money In}
-
-This module handles incoming payments.
-
-First it finds all payments that have not already been processed, that
-is, which do not appear in the transactions file.
-
-For each of these payments, it consults the current attributions for
-the project, and does three things.
-
-First, it figures out how much each person in the attributions file is
-owed from this fresh payment, generating a transaction for each
-stakeholder.
-
-Second, it determines how much of the incoming payment can be
-considered an "investment" by comparing the project price with the
-total amount paid by this payer up to this point -- the excess, if
-any, is investment.
-
-Third, it increases the current valuation by the investment amount
-determined, and, at the same time, "dilutes" the attributions by
-making the payer an attributive stakeholder with a share proportionate
-to their incoming investment amount (or if the payer is already a
-stakeholder, increases their existing share) in relation to the
-valuation.
-
-@subsection{Money Out}
-
-This module determines outstanding balances owed.
-
-First, it reads all generated transactions from payments that have come in to
-determine the amount owed to each contributor.  Then, it looks at all recorded
-payouts to see the total amounts that have already been paid out.  It then
-reports the difference of these values, by contributor, as the balance still
-owed.
