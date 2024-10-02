@@ -48,6 +48,7 @@ class Debt:
     def amount_remaining(self):
         return self.amount - self.amount_paid
 
+
 # These are not recorded (yet?), they just represent an intention to record a payment
 @dataclass
 class DebtPayment:
@@ -86,10 +87,10 @@ class Payment:
 @dataclass
 class ItemizedPayment:
     email: str
-    fee_amount: Decimal # instruments
-    project_amount: Decimal # attributions
+    fee_amount: Decimal  # instruments
+    project_amount: Decimal  # attributions
     attributable: bool
-    payment_file: str # acts like a foreign key to original payment object
+    payment_file: str  # acts like a foreign key to original payment object
 
 
 @dataclass

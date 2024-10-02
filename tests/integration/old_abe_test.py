@@ -28,6 +28,7 @@ class TestNoPayments:
         assert "There are no outstanding (unpayable) debts." in message
         assert "There are no advances." in message
 
+
 # TODO: in some cases even though the value is e.g. 1,
 # it's writing out 3 decimal places, like 1.000. We should
 # figure out why this is happening (and whether it's OK)
@@ -42,8 +43,10 @@ class TestPaymentAbovePrice:
         with localcontext() as context:
             context.prec = 2
             amount = 100
-            abe_fs.create_file("./abe/payments/1.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
+            abe_fs.create_file(
+                "./abe/payments/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
             process_payments_and_record_updates()
             with open('./abe/transactions.txt') as f:
                 assert f.read() == (
@@ -60,15 +63,14 @@ class TestPaymentAbovePrice:
         with localcontext() as context:
             context.prec = 2
             amount = 10000
-            abe_fs.create_file("./abe/payments/1.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
+            abe_fs.create_file(
+                "./abe/payments/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
             process_payments_and_record_updates()
             with open('./abe/attributions.txt') as f:
                 assert f.read() == (
-                    "sid,46\n"
-                    "jair,28\n"
-                    "ariana,18\n"
-                    "sam,8.5\n"
+                    "sid,46\n" "jair,28\n" "ariana,18\n" "sam,8.5\n"
                 )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -77,15 +79,19 @@ class TestPaymentAbovePrice:
         with localcontext() as context:
             context.prec = 2
             amount = 100
-            abe_fs.create_file("./abe/payments/1.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
+            abe_fs.create_file(
+                "./abe/payments/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
             process_payments_and_record_updates()
 
             message = compile_outstanding_balances()
 
-            assert ("| Name | Balance |\r\n"
-                    "| ---- | --- |\r\n"
-                    "old abe | 1.00\r\n") in message
+            assert (
+                "| Name | Balance |\r\n"
+                "| ---- | --- |\r\n"
+                "old abe | 1.00\r\n"
+            ) in message
 
 
 class TestPaymentBelowPrice:
@@ -96,8 +102,10 @@ class TestPaymentBelowPrice:
         with localcontext() as context:
             context.prec = 2
             amount = 1
-            abe_fs.create_file("./abe/payments/1.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
+            abe_fs.create_file(
+                "./abe/payments/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
             process_payments_and_record_updates()
             with open('./abe/transactions.txt') as f:
                 assert f.read() == (
@@ -114,14 +122,18 @@ class TestPaymentBelowPrice:
         with localcontext() as context:
             context.prec = 2
             amount = 1
-            abe_fs.create_file("./abe/payments/1.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
+            abe_fs.create_file(
+                "./abe/payments/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
             process_payments_and_record_updates()
             message = compile_outstanding_balances()
 
-            assert ("| Name | Balance |\r\n"
-                    "| ---- | --- |\r\n"
-                    "old abe | 0.01\r\n") in message
+            assert (
+                "| Name | Balance |\r\n"
+                "| ---- | --- |\r\n"
+                "old abe | 0.01\r\n"
+            ) in message
 
 
 class TestNonAttributablePayment:
@@ -132,15 +144,13 @@ class TestNonAttributablePayment:
         with localcontext() as context:
             context.prec = 2
             amount = 100
-            abe_fs.create_file("./abe/payments/nonattributable/1.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
+            abe_fs.create_file(
+                "./abe/payments/nonattributable/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
             process_payments_and_record_updates()
             with open('./abe/attributions.txt') as f:
-                assert f.read() == (
-                    "sid,50\n"
-                    "jair,30\n"
-                    "ariana,20\n"
-                )
+                assert f.read() == ("sid,50\n" "jair,30\n" "ariana,20\n")
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
@@ -148,8 +158,10 @@ class TestNonAttributablePayment:
         with localcontext() as context:
             context.prec = 2
             amount = 100
-            abe_fs.create_file("./abe/payments/1.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
+            abe_fs.create_file(
+                "./abe/payments/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
             process_payments_and_record_updates()
             with open('./abe/transactions.txt') as f:
                 assert f.read() == (
@@ -166,14 +178,18 @@ class TestNonAttributablePayment:
         with localcontext() as context:
             context.prec = 2
             amount = 100
-            abe_fs.create_file("./abe/payments/nonattributable/1.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
+            abe_fs.create_file(
+                "./abe/payments/nonattributable/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
             process_payments_and_record_updates()
             message = compile_outstanding_balances()
 
-            assert ("| Name | Balance |\r\n"
-                    "| ---- | --- |\r\n"
-                    "old abe | 1.00\r\n") in message
+            assert (
+                "| Name | Balance |\r\n"
+                "| ---- | --- |\r\n"
+                "old abe | 1.00\r\n"
+            ) in message
 
 
 class TestUnpayableContributor:
@@ -182,10 +198,13 @@ class TestUnpayableContributor:
         with localcontext() as context:
             context.prec = 2
             amount = 100
-            abe_fs.create_file("./abe/payments/1.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
-            abe_fs.create_file("./abe/unpayable_contributors.txt",
-                               contents=f"ariana")
+            abe_fs.create_file(
+                "./abe/payments/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
+            abe_fs.create_file(
+                "./abe/unpayable_contributors.txt", contents=f"ariana"
+            )
             process_payments_and_record_updates()
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -226,9 +245,9 @@ class TestUnpayableContributor:
     def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
         self._call(abe_fs)
         message = compile_outstanding_balances()
-        assert ("| Name | Debt |\r\n"
-                "| ---- | --- |\r\n"
-                "ariana | 19.00\r\n") in message
+        assert (
+            "| Name | Debt |\r\n" "| ---- | --- |\r\n" "ariana | 19.00\r\n"
+        ) in message
 
 
 class TestUnpayableContributorBecomesPayable:
@@ -237,25 +256,35 @@ class TestUnpayableContributorBecomesPayable:
         with localcontext() as context:
             context.prec = 2
             amount = 100
-            abe_fs.create_file('./abe/transactions.txt',
-                               contents=(
-                                   "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                                   "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                                   "sid,58,1.txt,abcd123,1985-10-26 01:24:00\n"
-                                   "jair,35,1.txt,abcd123,1985-10-26 01:24:00\n"
-                               ))
+            abe_fs.create_file(
+                './abe/transactions.txt',
+                contents=(
+                    "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                    "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                    "sid,58,1.txt,abcd123,1985-10-26 01:24:00\n"
+                    "jair,35,1.txt,abcd123,1985-10-26 01:24:00\n"
+                ),
+            )
 
-            abe_fs.create_file("./abe/debts.txt",
-                               contents="ariana,19,0,1.txt,abcd123,1985-10-26 01:24:00\n")
-            abe_fs.create_file("./abe/advances.txt",
-                               contents=(
-                                   "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
-                                   "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
-                               ))
-            abe_fs.create_file("./abe/payments/1.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
-            abe_fs.create_file("./abe/payments/2.txt",
-                               contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00")
+            abe_fs.create_file(
+                "./abe/debts.txt",
+                contents="ariana,19,0,1.txt,abcd123,1985-10-26 01:24:00\n",
+            )
+            abe_fs.create_file(
+                "./abe/advances.txt",
+                contents=(
+                    "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
+                    "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
+                ),
+            )
+            abe_fs.create_file(
+                "./abe/payments/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
+            abe_fs.create_file(
+                "./abe/payments/2.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
             process_payments_and_record_updates()
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -308,6 +337,6 @@ class TestUnpayableContributorBecomesPayable:
     def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
         self._call(abe_fs)
         message = compile_outstanding_balances()
-        assert ("| Name | Debt |\r\n"
-                "| ---- | --- |\r\n"
-                "ariana | 0.00\r\n") in message
+        assert (
+            "| Name | Debt |\r\n" "| ---- | --- |\r\n" "ariana | 0.00\r\n"
+        ) in message

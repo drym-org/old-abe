@@ -58,8 +58,7 @@ def prepare_debts_message(outstanding_debts: dict):
 
 
 def prepare_advances_message(advances: dict):
-    """ A temporary message reporting aggregate advances, for testing purposes.
-    """
+    """A temporary message reporting aggregate advances, for testing purposes."""
     if not advances:
         return "There are no advances."
     advances_table = ""
@@ -93,7 +92,7 @@ def combined_message(balances_message, debts_message, advances_message):
 
 
 def compile_outstanding_balances():
-    """ Read all accounting records and determine the total outstanding
+    """Read all accounting records and determine the total outstanding
     balances, debts, and advances for each contributor.
     """
     # owed = read_owed_amounts()
@@ -102,7 +101,9 @@ def compile_outstanding_balances():
     balances = owed - paid
     balances_message = prepare_balances_message(balances)
 
-    outstanding_debts = Tally((d.email, d.amount_remaining()) for d in DebtsRepo())
+    outstanding_debts = Tally(
+        (d.email, d.amount_remaining()) for d in DebtsRepo()
+    )
     debts_message = prepare_debts_message(outstanding_debts)
 
     advances = Tally((a.email, a.amount) for a in AdvancesRepo())

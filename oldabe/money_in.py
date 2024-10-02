@@ -8,17 +8,38 @@ from decimal import Decimal, getcontext
 from itertools import accumulate
 from typing import Iterable, List, Set, Tuple
 
-from .accounting_utils import (assert_attributions_normalized,
-                               correct_rounding_error)
-from .constants import (ACCOUNTING_ZERO, ATTRIBUTIONS_FILE, DEBTS_FILE,
-                        PRICE_FILE, VALUATION_FILE)
+from .accounting_utils import (
+    assert_attributions_normalized,
+    correct_rounding_error,
+)
+from .constants import (
+    ACCOUNTING_ZERO,
+    ATTRIBUTIONS_FILE,
+    DEBTS_FILE,
+    PRICE_FILE,
+    VALUATION_FILE,
+)
 from .distribution import Distribution
-from .models import (Advance, Attribution, Debt, DebtPayment, ItemizedPayment,
-                     Payment, Transaction)
+from .models import (
+    Advance,
+    Attribution,
+    Debt,
+    DebtPayment,
+    ItemizedPayment,
+    Payment,
+    Transaction,
+)
 from .parsing import serialize_proportion
-from .repos import (AdvancesRepo, AllPaymentsRepo, AttributionsRepo, DebtsRepo,
-                    InstrumentsRepo, ItemizedPaymentsRepo, TransactionsRepo,
-                    UnpayableContributorsRepo)
+from .repos import (
+    AdvancesRepo,
+    AllPaymentsRepo,
+    AttributionsRepo,
+    DebtsRepo,
+    InstrumentsRepo,
+    ItemizedPaymentsRepo,
+    TransactionsRepo,
+    UnpayableContributorsRepo,
+)
 from .tally import Tally
 
 

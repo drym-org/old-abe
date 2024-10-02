@@ -1,6 +1,7 @@
 from decimal import Decimal
 import re
 
+
 def parse_percentage(value):
     """
     Translates values expressed in percentage format (75.234) into
