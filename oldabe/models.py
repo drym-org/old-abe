@@ -49,7 +49,8 @@ class Debt:
         return self.amount - self.amount_paid
 
 
-# These are not recorded (yet?), they just represent an intention to record a payment
+# These are not recorded (yet?), they just represent an intention
+# to record a payment
 @dataclass
 class DebtPayment:
     debt: Debt
