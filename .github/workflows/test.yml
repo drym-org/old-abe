@@ -46,7 +46,7 @@ jobs:
             - name: Install dependencies
               run: make build-for-test
             - name: Report coverage
-              - run: >
+              run: >
                 coverage run --source $(PACKAGE-NAME) -m pytest;
 	            coveralls
     lint:
