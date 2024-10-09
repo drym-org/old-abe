@@ -140,13 +140,13 @@ debug: test-debug
 tldr: test-tldr
 
 coverage: clean-test
-	coverage run --source $(PACKAGE-NAME) setup.py test --addopts $(UNIT_TESTS_PATH)
+	coverage run --source $(PACKAGE-NAME) -m pytest
 	coverage report -m
 	coverage html
 	open coverage_html_report/index.html
 
 cover-coveralls: clean-test
-	coverage run --source $(PACKAGE-NAME) setup.py test --addopts $(UNIT_TESTS_PATH)
+	coverage run --source $(PACKAGE-NAME) -m pytest
 	coveralls
 
 sdist: clean

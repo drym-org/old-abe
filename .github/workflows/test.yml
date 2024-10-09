@@ -46,7 +46,11 @@ jobs:
             - name: Install dependencies
               run: make build-for-test
             - name: Report coverage
-              run: make cover-coveralls
+              run:
+                   coverage run --source oldabe -m pytest
+                   coverage report -m
+                   coverage html
+                   open coverage_html_report/index.html
     lint:
         runs-on: ubuntu-latest
         name: Lint the package
