@@ -45,6 +45,8 @@ jobs:
                   architecture: x64
             - name: Install dependencies
               run: make build-for-test
+            - name: Build coverage report
+              run: coverage run --source oldabe -m pytest
     lint:
         runs-on: ubuntu-latest
         name: Lint the package
