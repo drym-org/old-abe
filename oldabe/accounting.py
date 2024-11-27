@@ -26,6 +26,8 @@ def correct_rounding_error(attributions, incoming_attribution):
 
 
 def assert_attributions_normalized(attributions):
+    """ A complete set of attributions must be normalized, i.e. must add up to
+    1. This raises an error if the provided attributions are not normalized."""
     print(_get_attributions_total(attributions))
     assert _get_attributions_total(attributions) == Decimal("1")
 

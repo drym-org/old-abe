@@ -3,8 +3,8 @@
 from collections import defaultdict
 from decimal import Decimal, getcontext
 
-from .repos import AdvancesRepo, DebtsRepo, PayoutsRepo, TransactionsRepo
-from .tally import Tally
+from ..repos import AdvancesRepo, DebtsRepo, PayoutsRepo, TransactionsRepo
+from ..tally import Tally
 
 
 def compute_balances(owed: dict, paid: dict):

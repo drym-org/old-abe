@@ -36,6 +36,7 @@ def fix_types(row: List[str], Model: type) -> List[Any]:
 
     def _cast(field, value):
         if field.type is Decimal:
+            # TODO: should this use parse_percentage?
             return Decimal(re.sub("[^0-9.]", "", value))
         elif field.type is datetime:
             return datetime.fromisoformat(value)

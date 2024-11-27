@@ -6,8 +6,8 @@ from unittest.mock import patch
 import pytest
 import time_machine
 
-from oldabe.money_in import process_payments_and_record_updates
-from oldabe.money_out import compile_outstanding_balances
+from oldabe.money_in.money_in import process_payments_and_record_updates
+from oldabe.money_out.money_out import compile_outstanding_balances
 
 from .fixtures import abe_fs
 
