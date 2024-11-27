@@ -5,7 +5,10 @@ from ..models import Advance
 from ..constants import ACCOUNTING_ZERO
 
 
-def draw_down_advances(available_amount, distribution, unpayable_contributors, payment):
+def draw_down_advances(
+    available_amount, distribution, unpayable_contributors, payment
+):
+    """Draw down contributor's existing advances first, before paying them."""
     advance_totals = Tally((a.email, a.amount) for a in AdvancesRepo())
 
     negative_advances = [
@@ -26,7 +29,14 @@ def draw_down_advances(available_amount, distribution, unpayable_contributors, p
     return negative_advances
 
 
-def advance_payments(fresh_debts, negative_advances, distribution, unpayable_contributors, payment):
+def advance_payments(
+    fresh_debts,
+    negative_advances,
+    distribution,
+    unpayable_contributors,
+    payment,
+):
+    """Advance payable contributors any extra money."""
     redistribution_pot = Decimal(
         # amount we will not pay because we created debts instead
         sum(d.amount for d in fresh_debts)

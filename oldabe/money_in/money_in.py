@@ -84,13 +84,21 @@ def distribute_payment(
     # Draw dawn contributor's existing advances first, before paying them
     #
 
-    negative_advances = draw_down_advances(available_amount, distribution, unpayable_contributors, payment)
+    negative_advances = draw_down_advances(
+        available_amount, distribution, unpayable_contributors, payment
+    )
 
     #
     # Advance payable contributors any extra money
     #
 
-    fresh_advances = advance_payments(fresh_debts, negative_advances, distribution, unpayable_contributors, payment)
+    fresh_advances = advance_payments(
+        fresh_debts,
+        negative_advances,
+        distribution,
+        unpayable_contributors,
+        payment,
+    )
 
     #
     # Create equity transactions for the total amounts of outgoing money
