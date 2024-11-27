@@ -1,4 +1,4 @@
-from money_in import process_payments_and_record_updates
+from . import process_payments_and_record_updates
 from decimal import getcontext
 
 
