@@ -25,7 +25,7 @@ One of the defining properties of ABE is that all accounting is publicly conduct
 
 @section{Inputs}
 
-Old Abe considers precisely three inputs in doing all of its accounting, and it will be useful to keep these in mind as we learn more:
+Old Abe considers precisely four inputs in doing all of its accounting, and it will be useful to keep these in mind as we learn more:
 
 @itemlist[
 #:style 'ordered
@@ -56,7 +56,7 @@ Current accounting flows are a mix of manual and automated actions. Old Abe is n
 
 @subsection{Payment}
 
-When someone makes a payment to a project, Old Abe allocates portions of that payment to project contributors and creates a report that tells maintainers how much money the project owes to each individual contributor. We'll get deep into the weeds of how it does that in a moment. If the incoming payment represents an investment (that is, it brings the payer's total amount paid above the project price), the payer is considered a project contributor. The system adds them to the attributions file with a share equal to their investment (or increases their pre-existing attributive share). The project valuation is increased by the investment amount and all existing attributive shares are diluted so that percentage shares still add up 100%.
+When someone makes a payment to a project, Old Abe allocates portions of that payment to project contributors and creates a report that tells maintainers how much money the project owes to each individual contributor. We'll get deep into the weeds of how it does that in a moment. If the incoming payment represents an investment (that is, it brings the payer's total amount paid above the project price), the payer is considered a project contributor. The system adds them to the attributions file with a share equal to their investment (or increases their pre-existing attributive share). The project valuation is increased by the investment amount and all existing attributive shares are diluted so that percentage shares still add up to 100%.
 
 Now, let's talk about how Old Abe allocates an incoming payment.
 
