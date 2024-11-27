@@ -1,5 +1,5 @@
-from collections import defaultdict
 from decimal import Decimal
+from collections import defaultdict
 from operator import sub
 
 
@@ -7,7 +7,7 @@ class Tally(defaultdict[str, Decimal]):
     """
     A dictionary for keeping the tally of an amount
 
-    Inspired by collections.Counter, but instead of a count of ocurrences it
+    Inspired by collections.Counter, but instead of a count of occurrences it
     keeps the sum of an amount.
     """
 

@@ -1,6 +1,6 @@
 import pytest
 from decimal import Decimal
-from oldabe.accounting_utils import (
+from oldabe.accounting import (
     get_rounding_difference,
     correct_rounding_error,
     ROUNDING_TOLERANCE,
