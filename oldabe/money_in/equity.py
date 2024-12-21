@@ -32,9 +32,10 @@ def calculate_incoming_investment(payment, price, new_itemized_payments):
     If the payment brings the aggregate amount paid by the payee
     above the price, then that excess is treated as investment.
     """
+    prior_itemized_payments = ItemizedPaymentsRepo()
     total_attributable_payments = sum(
         p.project_amount
-        for p in [*ItemizedPaymentsRepo(), *new_itemized_payments]
+        for p in [*prior_itemized_payments, *new_itemized_payments]
         if p.attributable and p.email == payment.email
     )
 
@@ -56,7 +57,7 @@ def calculate_incoming_attribution(
         share = incoming_investment / posterior_valuation
         return Attribution(email, share)
     else:
-        return None
+        return Attribution(email, Decimal('0'))
 
 
 def dilute_attributions(incoming_attribution, attributions):
