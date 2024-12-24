@@ -6,7 +6,7 @@ from ..constants import ACCOUNTING_ZERO
 
 
 def draw_down_advances(
-    available_amount, distribution, unpayable_contributors, payment
+    available_amount, distribution, unpayable_contributors, payment_file
 ):
     """Draw down contributor's existing advances first, before paying them."""
     advance_totals = Tally((a.email, a.amount) for a in AdvancesRepo())
@@ -17,14 +17,14 @@ def draw_down_advances(
             amount=-min(
                 payable_amount, advance_totals[email]
             ),  # Note the negative sign
-            payment_file=payment.file,
+            payment_file=payment_file,
         )
         for email, payable_amount in distribution.without(
             unpayable_contributors
         )
         .distribute(available_amount)
         .items()
-        if advance_totals[email] > ACCOUNTING_ZERO
+        if email in advance_totals and advance_totals[email] > ACCOUNTING_ZERO
     ]
     return negative_advances
 
@@ -34,7 +34,7 @@ def advance_payments(
     negative_advances,
     distribution,
     unpayable_contributors,
-    payment,
+    payment_file,
 ):
     """Advance payable contributors any extra money."""
     redistribution_pot = Decimal(
@@ -50,7 +50,7 @@ def advance_payments(
             Advance(
                 email=email,
                 amount=amount,
-                payment_file=payment.file,
+                payment_file=payment_file,
             )
             for email, amount in distribution.without(unpayable_contributors)
             .distribute(redistribution_pot)

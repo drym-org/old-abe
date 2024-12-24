@@ -85,7 +85,7 @@ def distribute_payment(
     #
 
     negative_advances = draw_down_advances(
-        available_amount, distribution, unpayable_contributors, payment
+        available_amount, distribution, unpayable_contributors, payment.file
     )
 
     #
@@ -97,7 +97,7 @@ def distribute_payment(
         negative_advances,
         distribution,
         unpayable_contributors,
-        payment,
+        payment.file,
     )
 
     #
