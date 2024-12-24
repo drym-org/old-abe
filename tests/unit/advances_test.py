@@ -8,13 +8,7 @@ from oldabe.distribution import Distribution
 from oldabe.models import Advance
 from oldabe.money_in.advances import draw_down_advances, advance_payments
 
-from .fixtures import normalized_attributions  # noqa
-
-# test that correct negative advances are created (or not created) for
-# a single user. check advance amount for accuracy and make sure is negative.
-
-# call: draw_down_advances(available_amount, distribution, unpayable_contributors, payment_file)
-# return: negative_advances
+from .fixtures import normalized_attributions, fresh_debts, negative_advances  # noqa
 
 
 class TestDrawDownAdvances:
@@ -31,8 +25,6 @@ class TestDrawDownAdvances:
             email='a@b.com',
             amount=Decimal('-20.0'),
             payment_file='payment-10.txt',
-            commit_hash='abcd123',
-            created_at=datetime(1985, 10, 26, 1, 24)
         )
         distribution = Distribution(normalized_attributions)
         negative_advances = draw_down_advances(100, distribution, [], 'payment-10.txt')
@@ -46,8 +38,6 @@ class TestDrawDownAdvances:
             email='a@b.com',
             amount=Decimal('-10.0'),
             payment_file='payment-10.txt',
-            commit_hash='abcd123',
-            created_at=datetime(1985, 10, 26, 1, 24)
         )
         distribution = Distribution(normalized_attributions)
         negative_advances = draw_down_advances(100, distribution, [], 'payment-10.txt')
@@ -60,21 +50,35 @@ class TestDrawDownAdvances:
         assert negative_advances == []
 
 
-# call: advance_payments(
-#     fresh_debts,
-#     negative_advances,
-#     distribution,
-#     unpayable_contributors,
-#     payment_file,
-# )
-# return: fresh_advances
-
 class TestAdvancePayments:
-    def test_empty_redistribution_pot(self):
-        pass
+    def test_empty_redistribution_pot(self, normalized_attributions):
+        distribution = Distribution(normalized_attributions)
+        fresh_advances = advance_payments([], [], distribution, [], 'payment-10.txt')
+        assert fresh_advances == []
 
-    def test_fresh_debts_and_neg_advances_present(self):
-        pass
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    def test_fresh_debts_and_neg_advances_present(self, normalized_attributions, fresh_debts, negative_advances):
+        expected_advance_a = Advance(
+            email='a@b.com',
+            amount=Decimal('20.0'),
+            payment_file='payment-10.txt',
+        )
+        expected_advance_b = Advance(
+            email='b@c.com',
+            amount=Decimal('80.0'),
+            payment_file='payment-10.txt',
+        )
+        distribution = Distribution(normalized_attributions)
+        fresh_advances = advance_payments(fresh_debts, negative_advances, distribution, [], 'payment-10.txt')
+        assert fresh_advances == [expected_advance_a, expected_advance_b]
 
-    def test_unpayable_contributor_present(self):
-        pass
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    def test_unpayable_contributor_present(self, normalized_attributions, fresh_debts, negative_advances):
+        expected_advance_b = Advance(
+            email='b@c.com',
+            amount=Decimal('100.0'),
+            payment_file='payment-10.txt',
+        )
+        distribution = Distribution(normalized_attributions)
+        fresh_advances = advance_payments(fresh_debts, negative_advances, distribution, ['a@b.com'], 'payment-10.txt')
+        assert fresh_advances == [expected_advance_b]
