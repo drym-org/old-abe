@@ -1,5 +1,5 @@
 from decimal import Decimal
-from oldabe.models import ItemizedPayment
+from oldabe.models import ItemizedPayment, Debt, Advance
 import pytest
 
 
@@ -70,4 +70,19 @@ def new_itemized_payments():
         ItemizedPayment(
             'c@d.com', Decimal('10'), Decimal('90'), False, 'payment-6.txt'
         ),
+    ]
+
+
+@pytest.fixture
+def fresh_debts():
+    return [
+        Debt('a@b.com', Decimal('10'), Decimal('0'), 'payment-10.txt'),
+        Debt('a@b.com', Decimal('40'), Decimal('0'), 'payment-10.txt'),
+    ]
+
+@pytest.fixture
+def negative_advances():
+    return [
+        Advance('a@b.com', Decimal('-20'), 'payment-10.txt'),
+        Advance('a@b.com', Decimal('-30'), 'payment-10.txt'),
     ]
