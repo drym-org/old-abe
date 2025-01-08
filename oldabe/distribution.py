@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import Set
 
 
-class Distribution(dict[str | None, Decimal]):
+class Distribution(dict["str | None", Decimal]):
     """
     A dictionary of shareholders to proportions
 

@@ -232,7 +232,7 @@ def process_payments_and_record_updates():
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no
     # changes are made.
-    write_debts(new_debts, debt_payments)
+    write_debts(DebtsRepo(), new_debts, debt_payments)
     TransactionsRepo().extend(transactions)
     write_attributions(attributions)
     write_valuation(posterior_valuation)
