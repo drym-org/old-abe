@@ -71,6 +71,14 @@ def pay_outstanding_debts(
 
 
 def update_debts(existing_debts, new_debts, debt_payments):
+    """
+    1. Build a hash of all the processed debts, generating an id for each
+       (based on email and payment file).
+    2. read the existing debts file, row by row.
+    3. if the debt in the row is in the "processed" hash, then write the
+       processed version instead of the input version and remove it from the
+       hash, otherwise write the input version.
+    """
     total_debt_payments = Tally(
         (dp.debt.key(), dp.amount) for dp in debt_payments
     )
@@ -87,21 +95,9 @@ def update_debts(existing_debts, new_debts, debt_payments):
     ]
 
 
-def write_debts(existing_debts, new_debts, debt_payments):
-    """
-    1. Build a hash of all the processed debts, generating an id for each
-       (based on email and payment file).
-    2. read the existing debts file, row by row.
-    3. if the debt in the row is in the "processed" hash, then write the
-       processed version instead of the input version and remove it from the
-       hash, otherwise write the input version.
-    4. write the debts that remain in the processed hash.
-    """
-    replacement = update_debts(
-        existing_debts, new_debts, debt_payments
-    )
-
+def write_debts(debts):
+    """ Write the debts that remain in the processed hash. """
     with open(DEBTS_FILE, "w") as f:
         writer = csv.writer(f)
-        for debt in replacement:
+        for debt in debts:
             writer.writerow(astuple(debt))
