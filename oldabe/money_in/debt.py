@@ -25,9 +25,7 @@ def create_debts(
             payment_file=payment.file,
         )
         for email, amount in distribution.distribute(available_amount).items()
-        if (
-            email not in payable_contributors and amount > Decimal(0)
-        )
+        if (email not in payable_contributors and amount > Decimal(0))
     ]
 
 
@@ -56,17 +54,14 @@ def pay_outstanding_debts(
     ]
 
     return [
-        DebtPayment(
-            debt=d,
-            amount=amount
-        )
+        DebtPayment(debt=d, amount=amount)
         for d, already_paid in zip(payable_debts, cummulative_debt)
         if (
             amount := min(
-                d.amount_remaining(),
-                available_amount - already_paid
+                d.amount_remaining(), available_amount - already_paid
             )
-        ) > Decimal(0)
+        )
+        > Decimal(0)
     ]
 
 
@@ -96,7 +91,7 @@ def update_debts(existing_debts, new_debts, debt_payments):
 
 
 def write_debts(debts):
-    """ Write the debts that remain in the processed hash. """
+    """Write the debts that remain in the processed hash."""
     with open(DEBTS_FILE, "w") as f:
         writer = csv.writer(f)
         for debt in debts:

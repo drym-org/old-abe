@@ -80,6 +80,7 @@ def fresh_debts():
         Debt('a@b.com', Decimal('40'), Decimal('0'), 'payment-10.txt'),
     ]
 
+
 @pytest.fixture
 def negative_advances():
     return [

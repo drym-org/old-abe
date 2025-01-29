@@ -243,7 +243,11 @@ class TestMultiplePayments:
             process_payments_and_record_updates()
             with open('./abe/attributions.txt') as f:
                 assert f.read() == (
-                    "sid,42\n" "jair,26\n" "ariana,17\n" "sam,7.8\n" "sri,7.8\n"
+                    "sid,42\n"
+                    "jair,26\n"
+                    "ariana,17\n"
+                    "sam,7.8\n"
+                    "sri,7.8\n"
                 )
 
     # TODO: implement me

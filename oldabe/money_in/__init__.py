@@ -30,7 +30,12 @@ from ..repos import (
 from .price import read_price
 from .equity import write_attributions
 from .valuation import read_valuation, write_valuation
-from .debt import pay_outstanding_debts, create_debts, update_debts, write_debts
+from .debt import (
+    pay_outstanding_debts,
+    create_debts,
+    update_debts,
+    write_debts,
+)
 from .advances import draw_down_advances, advance_payments
 from .equity import handle_investment
 

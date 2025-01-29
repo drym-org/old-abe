@@ -6,15 +6,22 @@ import time_machine
 
 from oldabe.models import Debt, DebtPayment, Payment
 from oldabe.distribution import Distribution
-from oldabe.money_in.debt import pay_outstanding_debts, create_debts, update_debts
+from oldabe.money_in.debt import (
+    pay_outstanding_debts,
+    create_debts,
+    update_debts,
+)
+
 
 class TestCreateDebts:
     @time_machine.travel(datetime.now(), tick=False)
     def test_debt_for_unpayable_contributor(self):
-        distribution = Distribution({
-            "payable@example.com": 70,
-            "unpayable@example.com": 30,
-        })
+        distribution = Distribution(
+            {
+                "payable@example.com": 70,
+                "unpayable@example.com": 30,
+            }
+        )
         payment = Payment(
             email="fake@test.com",
             name="Fake",
@@ -29,18 +36,22 @@ class TestCreateDebts:
             payment=payment,
         )
 
-        assert debts == [Debt(
-            email="unpayable@example.com",
-            amount=Decimal("30.00"),
-            amount_paid=Decimal(0),
-            payment_file=payment.file,
-        )]
+        assert debts == [
+            Debt(
+                email="unpayable@example.com",
+                amount=Decimal("30.00"),
+                amount_paid=Decimal(0),
+                payment_file=payment.file,
+            )
+        ]
 
     def test_no_unpayable_contibutors(self):
-        distribution = Distribution({
-            "payable@example.com": 70,
-            "payable2@example.com": 30,
-        })
+        distribution = Distribution(
+            {
+                "payable@example.com": 70,
+                "payable2@example.com": 30,
+            }
+        )
         payment = Payment(
             email="fake@test.com",
             name="Fake",
@@ -51,20 +62,21 @@ class TestCreateDebts:
         debts = create_debts(
             available_amount=payment.amount,
             distribution=distribution,
-            payable_contributors=set([
-                "payable@example.com",
-                "payable2@example.com"
-            ]),
+            payable_contributors=set(
+                ["payable@example.com", "payable2@example.com"]
+            ),
             payment=payment,
         )
 
         assert debts == []
 
     def test_no_available_amount(self):
-        distribution = Distribution({
-            "payable@example.com": 70,
-            "unpayable@example.com": 30,
-        })
+        distribution = Distribution(
+            {
+                "payable@example.com": 70,
+                "unpayable@example.com": 30,
+            }
+        )
         payment = Payment(
             email="fake@test.com",
             name="Fake",
@@ -81,19 +93,20 @@ class TestCreateDebts:
 
         assert debts == []
 
+
 class TestPayOutstandingDebts:
     def test_pay_one(self):
         single_debt = Debt(
             email="payable@example.com",
             amount=Decimal(10),
             amount_paid=Decimal(0),
-            payment_file="fake-file"
+            payment_file="fake-file",
         )
 
         debt_payments = pay_outstanding_debts(
             available_amount=Decimal(single_debt.amount),
             all_debts=[single_debt],
-            payable_contributors=set([single_debt.email])
+            payable_contributors=set([single_debt.email]),
         )
 
         assert debt_payments == [
@@ -106,25 +119,24 @@ class TestPayOutstandingDebts:
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
             Debt(
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
         ]
 
         debt_payments = pay_outstanding_debts(
             available_amount=Decimal(20),
             all_debts=debts,
-            payable_contributors=set(["payable@example.com"])
+            payable_contributors=set(["payable@example.com"]),
         )
 
         assert debt_payments == [
-            DebtPayment(amount=d.amount, debt=d)
-            for d in debts
+            DebtPayment(amount=d.amount, debt=d) for d in debts
         ]
 
     def test_pay_partial(self):
@@ -133,20 +145,20 @@ class TestPayOutstandingDebts:
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
             Debt(
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
         ]
 
         debt_payments = pay_outstanding_debts(
             available_amount=Decimal(15),
             all_debts=debts,
-            payable_contributors=set(["payable@example.com"])
+            payable_contributors=set(["payable@example.com"]),
         )
 
         assert debt_payments == [
@@ -160,26 +172,26 @@ class TestPayOutstandingDebts:
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
             Debt(
                 email="unpayable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
             Debt(
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
         ]
 
         debt_payments = pay_outstanding_debts(
             available_amount=Decimal(20),
             all_debts=debts,
-            payable_contributors=set(["payable@example.com"])
+            payable_contributors=set(["payable@example.com"]),
         )
 
         assert debt_payments == [
@@ -192,7 +204,7 @@ class TestPayOutstandingDebts:
         debt_payments = pay_outstanding_debts(
             available_amount=Decimal(20),
             all_debts=[],
-            payable_contributors=set(["payable@example.com"])
+            payable_contributors=set(["payable@example.com"]),
         )
 
         assert debt_payments == []
@@ -203,23 +215,24 @@ class TestPayOutstandingDebts:
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
             Debt(
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
         ]
 
         debt_payments = pay_outstanding_debts(
             available_amount=Decimal(0),
             all_debts=debts,
-            payable_contributors=set(["payable@example.com"])
+            payable_contributors=set(["payable@example.com"]),
         )
 
         assert debt_payments == []
+
 
 class TestUpdateDebts:
     def test_add_debts(self):
@@ -228,7 +241,7 @@ class TestUpdateDebts:
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
         ]
         new_debts = [
@@ -236,14 +249,14 @@ class TestUpdateDebts:
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
         ]
 
         updated_debts = update_debts(
             existing_debts=existing_debts,
             new_debts=new_debts,
-            debt_payments=[]
+            debt_payments=[],
         )
 
         assert updated_debts == existing_debts + new_debts
@@ -254,13 +267,13 @@ class TestUpdateDebts:
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
             Debt(
                 email="payable@example.com",
                 amount=Decimal(5),
                 amount_paid=Decimal(0),
-                payment_file="fake-file-ii"
+                payment_file="fake-file-ii",
             ),
         ]
         debt_payments = [
@@ -273,12 +286,14 @@ class TestUpdateDebts:
         updated_debts = update_debts(
             existing_debts=existing_debts,
             new_debts=[],
-            debt_payments=debt_payments
+            debt_payments=debt_payments,
         )
 
         assert updated_debts == [
-            dataclasses.replace(existing_debts[0], amount_paid=debt_payments[0].amount),
-            existing_debts[1]
+            dataclasses.replace(
+                existing_debts[0], amount_paid=debt_payments[0].amount
+            ),
+            existing_debts[1],
         ]
 
     def test_pay_debts_already_partially_paid(self):
@@ -287,13 +302,13 @@ class TestUpdateDebts:
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(5),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
             Debt(
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file-ii"
+                payment_file="fake-file-ii",
             ),
         ]
         debt_payments = [
@@ -306,12 +321,12 @@ class TestUpdateDebts:
         updated_debts = update_debts(
             existing_debts=existing_debts,
             new_debts=[],
-            debt_payments=debt_payments
+            debt_payments=debt_payments,
         )
 
         assert updated_debts == [
             dataclasses.replace(existing_debts[0], amount_paid=Decimal(7)),
-            existing_debts[1]
+            existing_debts[1],
         ]
 
     def test_apply_multiple_payments(self):
@@ -320,13 +335,13 @@ class TestUpdateDebts:
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(5),
-                payment_file="fake-file"
+                payment_file="fake-file",
             ),
             Debt(
                 email="payable@example.com",
                 amount=Decimal(10),
                 amount_paid=Decimal(0),
-                payment_file="fake-file-ii"
+                payment_file="fake-file-ii",
             ),
         ]
         debt_payments = [
@@ -339,10 +354,10 @@ class TestUpdateDebts:
         updated_debts = update_debts(
             existing_debts=existing_debts,
             new_debts=[],
-            debt_payments=debt_payments
+            debt_payments=debt_payments,
         )
 
         assert updated_debts == [
             dataclasses.replace(existing_debts[0], amount_paid=Decimal(7)),
-            existing_debts[1]
+            existing_debts[1],
         ]
