@@ -226,8 +226,8 @@ def process_payments_and_record_updates():
     and attributions files. Record updated transactions, valuation, and
     renormalized attributions only after all payments have been processed.
     """
-    instruments = {a.email: a.decimal_share for a in InstrumentsRepo()}
-    attributions = {a.email: a.decimal_share for a in AttributionsRepo()}
+    instruments = {a.email: a.share for a in InstrumentsRepo()}
+    attributions = {a.email: a.share for a in AttributionsRepo()}
 
     assert_attributions_normalized(attributions)
 

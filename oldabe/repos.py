@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Generic, Iterable, Iterator, List, Type, TypeVar
+from .parsing import parse_percentage
 
 from oldabe.constants import (
     ADVANCES_FILE,
@@ -36,7 +37,6 @@ def fix_types(row: List[str], Model: type) -> List[Any]:
 
     def _cast(field, value):
         if field.type is Decimal:
-            # TODO: should this use parse_percentage?
             return Decimal(re.sub("[^0-9.]", "", value))
         elif field.type is datetime:
             return datetime.fromisoformat(value)
@@ -136,10 +136,22 @@ class AttributionsRepo(FileRepo[Attribution]):
     filename = ATTRIBUTIONS_FILE
     Model = Attribution
 
+    def __iter__(self):
+        yield from (
+            dataclasses.replace(obj, share=parse_percentage(str(obj.share)))
+            for obj in super().__iter__()
+        )
+
 
 class InstrumentsRepo(FileRepo[Attribution]):
     filename = INSTRUMENTS_FILE
     Model = Attribution
+
+    def __iter__(self):
+        yield from (
+            dataclasses.replace(obj, share=parse_percentage(str(obj.share)))
+            for obj in super().__iter__()
+        )
 
 
 class AttributablePaymentsRepo(DirRepo[Payment]):

@@ -97,8 +97,4 @@ class ItemizedPayment:
 @dataclass
 class Attribution:
     email: str
-    share: str
-
-    @property
-    def decimal_share(self):
-        return parse_percentage(self.share)
+    share: Decimal

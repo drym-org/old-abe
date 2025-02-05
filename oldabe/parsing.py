@@ -2,6 +2,8 @@ from decimal import Decimal
 import re
 
 
+# TODO: rename to safe_divide_by_100
+# and maybe accept a decimal arg instead of string
 def parse_percentage(value):
     """
     Translates values expressed in percentage format (75.234) into
@@ -19,6 +21,8 @@ def parse_percentage(value):
     return value
 
 
+# TODO: rename to safe_multiply_by_100
+# and maybe accept a decimal arg instead of string
 def serialize_proportion(value):
     """
     Translates values expressed in decimal format (0.75234) into
