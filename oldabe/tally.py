@@ -3,6 +3,7 @@ from collections import defaultdict
 from operator import sub
 
 
+# TODO: needs tests
 class Tally(defaultdict[str, Decimal]):
     """
     A dictionary for keeping the tally of an amount

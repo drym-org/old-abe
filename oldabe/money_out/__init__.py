@@ -7,19 +7,6 @@ from ..repos import AdvancesRepo, DebtsRepo, PayoutsRepo, TransactionsRepo
 from ..tally import Tally
 
 
-def compute_balances(owed: dict, paid: dict):
-    """
-    Compute the balance owed to each contributor.
-    """
-    balances = defaultdict(int)
-    for email in owed.keys():
-        # TODO: We are not testing alreayd paid
-        balance = owed[email] - paid[email]
-        if balance > Decimal("0"):
-            balances[email] = balance
-    return balances
-
-
 def prepare_balances_message(balances: dict):
     if not balances:
         return "There are no outstanding (payable) balances."
