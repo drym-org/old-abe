@@ -75,6 +75,22 @@ class TestPaymentAbovePrice:
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
+    def test_small_payment_dilutes_attributions(self, mock_git_rev, abe_fs):
+        with localcontext() as context:
+            context.prec = 2
+            amount = 1000
+            abe_fs.create_file(
+                "./abe/payments/1.txt",
+                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+            )
+            process_payments_and_record_updates()
+            with open('./abe/attributions.txt') as f:
+                assert f.read() == (
+                    "sid,46\n" "jair,28\n" "ariana,18\n" "sam,0.85\n"
+                )
+
+    @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
+    @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
         with localcontext() as context:
             context.prec = 2
