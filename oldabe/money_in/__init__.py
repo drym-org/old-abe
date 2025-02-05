@@ -78,8 +78,8 @@ def distribute_payment(
     #
     # Create fresh debts for anyone we can't pay
     #
-    # TODO: Make it clearer that some people get debts and the others
-    # get N advances (maybe zero)
+    # TODO: Organize so it's clearer that some people get debts and the others
+    # get N advances (maybe zero) --- and these are mutually exclusive
 
     fresh_debts = create_debts(
         available_amount, distribution, payable_contributors, payment
