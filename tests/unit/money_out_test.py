@@ -1,5 +1,4 @@
 from oldabe.money_out import (
-    compute_balances,
     prepare_balances_message,
     prepare_debts_message,
 )
