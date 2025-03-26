@@ -26,6 +26,7 @@ class Payout:
     email: str
     amount: Decimal
     created_at: datetime = field(default_factory=datetime.utcnow)
+    memo: str = field(default="")
 
 
 @dataclass
