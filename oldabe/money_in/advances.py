@@ -6,10 +6,14 @@ from ..constants import ACCOUNTING_ZERO
 
 
 def draw_down_advances(
-    available_amount, distribution, unpayable_contributors, payment_file
+    available_amount,
+    distribution,
+    unpayable_contributors,
+    payment_file,
+    prior_advances,
 ):
     """Draw down contributor's existing advances first, before paying them."""
-    advance_totals = Tally((a.email, a.amount) for a in AdvancesRepo())
+    advance_totals = Tally((a.email, a.amount) for a in prior_advances)
 
     negative_advances = [
         Advance(

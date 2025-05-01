@@ -89,8 +89,13 @@ def distribute_payment(
     # Draw dawn contributor's existing advances first, before paying them
     #
 
+    prior_advances = AdvancesRepo()
     negative_advances = draw_down_advances(
-        available_amount, distribution, unpayable_contributors, payment.file
+        available_amount,
+        distribution,
+        unpayable_contributors,
+        payment.file,
+        prior_advances,
     )
 
     #

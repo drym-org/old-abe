@@ -18,19 +18,16 @@ from .fixtures import (
 class TestDrawDownAdvances:
     def test_no_advances_exist(self, normalized_attributions):
         distribution = Distribution(normalized_attributions)
+        prior_advances = []
         negative_advances = draw_down_advances(
-            100, distribution, [], 'payment-10.txt'
+            100, distribution, [], 'payment-10.txt', prior_advances
         )
         assert negative_advances == []
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
-    @patch(
-        'oldabe.money_in.advances.Tally',
-        return_value={'a@b.com': Decimal(100)},
-    )
     def test_existing_advance_greater_than_payment_amount(
-        self, mock_tally, mock_git_rev, normalized_attributions
+        self, mock_git_rev, normalized_attributions
     ):
         expected_advance = Advance(
             email='a@b.com',
@@ -38,18 +35,27 @@ class TestDrawDownAdvances:
             payment_file='payment-10.txt',
         )
         distribution = Distribution(normalized_attributions)
+        prior_advances = [
+            Advance(
+                email='a@b.com',
+                amount=Decimal(80),
+                payment_file='payment-9.txt',
+            ),
+            Advance(
+                email='a@b.com',
+                amount=Decimal(20),
+                payment_file='payment-9.txt',
+            ),
+        ]
         negative_advances = draw_down_advances(
-            100, distribution, [], 'payment-10.txt'
+            100, distribution, [], 'payment-10.txt', prior_advances
         )
         assert negative_advances == [expected_advance]
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
-    @patch(
-        'oldabe.money_in.advances.Tally', return_value={'a@b.com': Decimal(10)}
-    )
     def test_existing_advance_less_than_payment_amount(
-        self, mock_tally, mock_git_rev, normalized_attributions
+        self, mock_git_rev, normalized_attributions
     ):
         expected_advance = Advance(
             email='a@b.com',
@@ -57,20 +63,29 @@ class TestDrawDownAdvances:
             payment_file='payment-10.txt',
         )
         distribution = Distribution(normalized_attributions)
+        prior_advances = [
+            Advance(
+                email='a@b.com',
+                amount=Decimal(10),
+                payment_file='payment-9.txt',
+            )
+        ]
         negative_advances = draw_down_advances(
-            100, distribution, [], 'payment-10.txt'
+            100, distribution, [], 'payment-10.txt', prior_advances
         )
         assert negative_advances == [expected_advance]
 
-    @patch(
-        'oldabe.money_in.advances.Tally', return_value={'a@b.com': Decimal(10)}
-    )
-    def test_contributor_is_unpayable(
-        self, mock_tally, normalized_attributions
-    ):
+    def test_contributor_is_unpayable(self, normalized_attributions):
         distribution = Distribution(normalized_attributions)
+        prior_advances = [
+            Advance(
+                email='a@b.com',
+                amount=Decimal(10),
+                payment_file='payment-9.txt',
+            )
+        ]
         negative_advances = draw_down_advances(
-            100, distribution, ['a@b.com'], 'payment-10.txt'
+            100, distribution, ['a@b.com'], 'payment-10.txt', prior_advances
         )
         assert negative_advances == []
 
