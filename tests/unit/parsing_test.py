@@ -1,4 +1,3 @@
-import pytest
 from decimal import Decimal
 from oldabe.parsing import (
     parse_percentage,

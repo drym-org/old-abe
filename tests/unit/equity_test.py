@@ -1,6 +1,5 @@
 from decimal import Decimal
 import pytest
-from unittest.mock import patch
 from oldabe.models import Payment, ItemizedPayment, Attribution
 from oldabe.money_in.equity import (
     calculate_incoming_investment,

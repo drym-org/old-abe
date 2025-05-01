@@ -2,7 +2,6 @@ from oldabe.money_out import (
     prepare_balances_message,
     prepare_debts_message,
 )
-from collections import defaultdict
 import pytest
 
 
