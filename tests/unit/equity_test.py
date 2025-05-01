@@ -29,10 +29,8 @@ class TestCalculateIncomingInvestment:
             (Decimal("120"), Decimal("20"), Decimal("100"), Decimal("20")),
         ],
     )
-    @patch('oldabe.money_in.equity.ItemizedPaymentsRepo')
     def test_matrix(
         self,
-        prior_itemized_payments,
         prior_contribution,
         incoming_amount,
         price,
@@ -41,14 +39,14 @@ class TestCalculateIncomingInvestment:
         email = 'dummy@abe.org'
         payment = Payment(email, email, incoming_amount)
         # this is the total amount paid _including_ the incoming amount
-        prior_itemized_payments.return_value = [
+        prior_itemized_payments = [
             ItemizedPayment(email, 0, prior_contribution, True, 'dummy.file')
         ]
         new_itemized_payments = [
             ItemizedPayment(email, 0, incoming_amount, True, 'dummy.file')
         ]
         result = calculate_incoming_investment(
-            payment, price, new_itemized_payments
+            payment, price, new_itemized_payments, prior_itemized_payments
         )
         assert result == expected_investment
 

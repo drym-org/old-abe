@@ -27,12 +27,13 @@ def write_attributions(attributions):
             writer.writerow(row)
 
 
-def calculate_incoming_investment(payment, price, new_itemized_payments):
+def calculate_incoming_investment(
+    payment, price, new_itemized_payments, prior_itemized_payments
+):
     """
     If the payment brings the aggregate amount paid by the payee
     above the price, then that excess is treated as investment.
     """
-    prior_itemized_payments = ItemizedPaymentsRepo()
     total_attributable_payments = sum(
         p.project_amount
         for p in [*prior_itemized_payments, *new_itemized_payments]
@@ -96,8 +97,9 @@ def handle_investment(
     attributed a share commensurate with their investment, diluting the
     attributions.
     """
+    prior_itemized_payments = ItemizedPaymentsRepo()
     incoming_investment = calculate_incoming_investment(
-        payment, price, new_itemized_payments
+        payment, price, new_itemized_payments, prior_itemized_payments
     )
     # inflate valuation by the amount of the fresh investment
     posterior_valuation = prior_valuation + incoming_investment
