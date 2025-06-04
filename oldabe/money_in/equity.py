@@ -1,12 +1,12 @@
 from decimal import Decimal
 from ..constants import (
     ATTRIBUTIONS_FILE,
-    ACCOUNTING_ZERO,
 )
 from ..parsing import serialize_proportion
 from ..accounting import (
     assert_attributions_normalized,
     correct_rounding_error,
+    ROUNDING_TOLERANCE,
 )
 from ..repos import ItemizedPaymentsRepo
 from ..models import Attribution
@@ -107,6 +107,6 @@ def handle_investment(
     incoming_attribution = calculate_incoming_attribution(
         payment.email, incoming_investment, posterior_valuation
     )
-    if incoming_attribution and incoming_attribution.share > ACCOUNTING_ZERO:
+    if incoming_attribution and incoming_attribution.share > ROUNDING_TOLERANCE:
         dilute_attributions(incoming_attribution, attributions)
     return posterior_valuation
