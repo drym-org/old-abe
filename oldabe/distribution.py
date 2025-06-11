@@ -2,6 +2,11 @@ from decimal import Decimal
 from typing import Set
 
 
+def fraction_to_decimal(f):
+    """ Convert a Fraction to a Decimal. """
+    return Decimal(f.numerator) / Decimal(f.denominator)
+
+
 class Distribution(dict["str | None", Decimal]):
     """
     A dictionary of shareholders to proportions
@@ -18,7 +23,7 @@ class Distribution(dict["str | None", Decimal]):
 
         return Distribution(
             {
-                shareholder: share * (Decimal("1") / total)
+                shareholder: share / total
                 for shareholder, share in self.items()
             }
         )
@@ -42,7 +47,7 @@ class Distribution(dict["str | None", Decimal]):
         Distribute an amount amongst shareholders
         """
         return {
-            shareholder: amount * share
+            shareholder: amount * fraction_to_decimal(share)
             for shareholder, share in self._normalized().items()
             if shareholder is not None
         }

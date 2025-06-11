@@ -70,24 +70,22 @@ class TestPaymentAbovePrice:
             process_payments_and_record_updates()
             with open('./abe/attributions.txt') as f:
                 assert f.read() == (
-                    "sid,46\n" "jair,28\n" "ariana,18\n" "sam,8.5\n"
+                    "sid,503/1100\n" "jair,1509/5500\n" "ariana,503/2750\n" "sam,47/550\n"
                 )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_small_payment_dilutes_attributions(self, mock_git_rev, abe_fs):
-        with localcontext() as context:
-            context.prec = 2
-            amount = 1000
-            abe_fs.create_file(
-                "./abe/payments/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        amount = 1000
+        abe_fs.create_file(
+            "./abe/payments/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        process_payments_and_record_updates()
+        with open('./abe/attributions.txt') as f:
+            assert f.read() == (
+                "sid,5000/10093\n" "jair,3000/10093\n" "ariana,2000/10093\n" "sam,93/10093\n"
             )
-            process_payments_and_record_updates()
-            with open('./abe/attributions.txt') as f:
-                assert f.read() == (
-                    "sid,46\n" "jair,28\n" "ariana,18\n" "sam,0.85\n"
-                )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
@@ -125,8 +123,8 @@ class TestPaymentBelowPrice:
             process_payments_and_record_updates()
             with open('./abe/transactions.txt') as f:
                 assert f.read() == (
-                    "old abe,0.010,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "DIA,0.050,1.txt,abcd123,1985-10-26 01:24:00\n"
+                    "old abe,0.01,1.txt,abcd123,1985-10-26 01:24:00\n"
+                    "DIA,0.05,1.txt,abcd123,1985-10-26 01:24:00\n"
                     "sid,0.47,1.txt,abcd123,1985-10-26 01:24:00\n"
                     "jair,0.28,1.txt,abcd123,1985-10-26 01:24:00\n"
                     "ariana,0.19,1.txt,abcd123,1985-10-26 01:24:00\n"
@@ -166,7 +164,7 @@ class TestNonAttributablePayment:
             )
             process_payments_and_record_updates()
             with open('./abe/attributions.txt') as f:
-                assert f.read() == ("sid,50\n" "jair,30\n" "ariana,20\n")
+                assert f.read() == ("sid,1/2\n" "jair,3/10\n" "ariana,1/5\n")
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')

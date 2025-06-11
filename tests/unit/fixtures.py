@@ -1,4 +1,5 @@
 from decimal import Decimal
+from fractions import Fraction
 from oldabe.models import ItemizedPayment, Debt, Advance
 import pytest
 
@@ -6,32 +7,32 @@ import pytest
 @pytest.fixture
 def instruments():
     return {
-        'old_abe': Decimal("0.01"),
-        'dia': Decimal("0.05"),
+        'old_abe': Fraction(1,100),
+        'dia': Fraction(5,100),
     }
 
 
 @pytest.fixture
 def normalized_attributions():
     return {
-        'a@b.com': Decimal("0.2"),
-        'b@c.com': Decimal("0.8"),
+        'a@b.com': Fraction(1,5),
+        'b@c.com': Fraction(4,5),
     }
 
 
 @pytest.fixture
 def excess_attributions():
     return {
-        'a@b.com': Decimal("0.2"),
-        'b@c.com': Decimal("0.9"),
+        'a@b.com': Fraction(1,5),
+        'b@c.com': Fraction(9,10),
     }
 
 
 @pytest.fixture
 def shortfall_attributions():
     return {
-        'a@b.com': Decimal("0.2"),
-        'b@c.com': Decimal("0.7"),
+        'a@b.com': Fraction(1,5),
+        'b@c.com': Fraction(7,10),
     }
 
 
@@ -42,7 +43,7 @@ def empty_attributions():
 
 @pytest.fixture
 def single_contributor_attributions():
-    return {'a@b.com': Decimal("1")}
+    return {'a@b.com': Fraction(1,1)}
 
 
 @pytest.fixture

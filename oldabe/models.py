@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
+from fractions import Fraction
 
 from oldabe.git import get_git_revision_short_hash
-from oldabe.parsing import parse_percentage
 
 
 # Wrapping so that tests can mock it
@@ -98,4 +98,4 @@ class ItemizedPayment:
 @dataclass
 class Attribution:
     email: str
-    share: Decimal
+    share: Fraction

@@ -1,12 +1,10 @@
-from decimal import Decimal
+from fractions import Fraction
 from ..constants import (
     ATTRIBUTIONS_FILE,
 )
 from ..parsing import serialize_proportion
 from ..accounting import (
     assert_attributions_normalized,
-    correct_rounding_error,
-    ROUNDING_TOLERANCE,
 )
 from ..repos import ItemizedPaymentsRepo
 from ..models import Attribution
@@ -16,14 +14,9 @@ import csv
 def write_attributions(attributions):
     # don't write attributions if they aren't normalized
     assert_attributions_normalized(attributions)
-    # format for output as percentages
-    attributions = [
-        (email, serialize_proportion(share))
-        for email, share in attributions.items()
-    ]
     with open(ATTRIBUTIONS_FILE, "w") as f:
         writer = csv.writer(f)
-        for row in attributions:
+        for row in attributions.items():
             writer.writerow(row)
 
 
@@ -47,6 +40,11 @@ def calculate_incoming_investment(
     return max(0, incoming_investment)
 
 
+def decimal_to_fraction(d):
+    """ Convert a Decimal to a Fraction. """
+    return Fraction(*d.as_integer_ratio())
+
+
 def calculate_incoming_attribution(
     email, incoming_investment, posterior_valuation
 ):
@@ -54,11 +52,13 @@ def calculate_incoming_attribution(
     If there is an incoming investment, find out what proportion it
     represents of the overall (posterior) valuation of the project.
     """
+    # do we still need this check now that we're using fractions?
     if incoming_investment > 0:
-        share = incoming_investment / posterior_valuation
+        share = (decimal_to_fraction(incoming_investment) /
+                 decimal_to_fraction(posterior_valuation))
         return Attribution(email, share)
     else:
-        return Attribution(email, Decimal('0'))
+        return Attribution(email, Fraction(0))
 
 
 def dilute_attributions(incoming_attribution, attributions):
@@ -73,7 +73,7 @@ def dilute_attributions(incoming_attribution, attributions):
     "renormalized."  This effectively dilutes the attributions by the magnitude
     of the incoming attribution.
     """
-    target_proportion = Decimal("1") - incoming_attribution.share
+    target_proportion = 1 - incoming_attribution.share
     for email in attributions:
         # renormalize to reflect dilution
         attributions[email] *= target_proportion
@@ -83,8 +83,6 @@ def dilute_attributions(incoming_attribution, attributions):
     attributions[incoming_attribution.email] = (
         existing_attribution if existing_attribution else 0
     ) + incoming_attribution.share
-
-    correct_rounding_error(attributions, incoming_attribution)
 
 
 def handle_investment(
@@ -107,6 +105,6 @@ def handle_investment(
     incoming_attribution = calculate_incoming_attribution(
         payment.email, incoming_investment, posterior_valuation
     )
-    if incoming_attribution and incoming_attribution.share > ROUNDING_TOLERANCE:
+    if incoming_attribution and incoming_attribution.share > 0:
         dilute_attributions(incoming_attribution, attributions)
     return posterior_valuation

@@ -1,4 +1,5 @@
 from decimal import Decimal
+from fractions import Fraction
 import pytest
 from oldabe.models import Payment, ItemizedPayment, Attribution
 from oldabe.money_in.equity import (
@@ -78,9 +79,9 @@ class TestDiluteAttributions:
     @pytest.mark.parametrize(
         "incoming_attribution, expected_attribution",
         [
-            (Decimal("0"), Decimal('0.2')),
-            (Decimal("0.1"), Decimal('0.28')),
-            (Decimal("0.5"), Decimal('0.60')),
+            (Fraction(0), Fraction(1,5)),
+            (Fraction(1,10), Fraction(28,100)),
+            (Fraction(1,2), Fraction(3,5)),
         ],
     )
     def test_matrix(

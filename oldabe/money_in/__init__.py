@@ -179,7 +179,7 @@ def process_payments(instruments, attributions):
                 # The missing percentage in the instruments file
                 # should not be distributed to anyone (shareholder: None)
                 # TODO: Move to process_payments_and_record_updates
-                {**instruments, None: Decimal(1) - sum(instruments.values())}
+                {**instruments, None: 1 - sum(instruments.values())}
             ),
         )
         new_transactions += transactions
