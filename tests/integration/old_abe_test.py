@@ -210,7 +210,6 @@ class TestUnpayableContributor:
 
     def _call(self, abe_fs):
         with localcontext() as context:
-            context.prec = 2
             amount = 100
             abe_fs.create_file(
                 "./abe/payments/1.txt",
@@ -229,8 +228,8 @@ class TestUnpayableContributor:
             assert f.read() == (
                 "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
                 "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,58,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,35,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,58.75,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,35.25,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -239,7 +238,7 @@ class TestUnpayableContributor:
         self._call(abe_fs)
         with open('./abe/debts.txt') as f:
             assert f.read() == (
-                "ariana,19,0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,18.80,0,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -250,8 +249,8 @@ class TestUnpayableContributor:
         self._call(abe_fs)
         with open('./abe/advances.txt') as f:
             assert f.read() == (
-                "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,11.75,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,7.05,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -260,7 +259,7 @@ class TestUnpayableContributor:
         self._call(abe_fs)
         message = compile_outstanding_balances()
         assert (
-            "| Name | Debt |\r\n" "| ---- | --- |\r\n" "ariana | 19.00\r\n"
+            "| Name | Debt |\r\n" "| ---- | --- |\r\n" "ariana | 18.80\r\n"
         ) in message
 
 
