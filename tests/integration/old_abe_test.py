@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from decimal import localcontext
 from unittest.mock import patch
 
 import pytest
@@ -40,38 +39,34 @@ class TestPaymentAbovePrice:
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_generates_transactions(self, mock_git_rev, abe_fs):
-        with localcontext() as context:
-            context.prec = 2
-            amount = 100
-            abe_fs.create_file(
-                "./abe/payments/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        amount = 100
+        abe_fs.create_file(
+            "./abe/payments/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        process_payments_and_record_updates()
+        with open('./abe/transactions.txt') as f:
+            assert f.read() == (
+                "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,47,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,28,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,19,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
-            process_payments_and_record_updates()
-            with open('./abe/transactions.txt') as f:
-                assert f.read() == (
-                    "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "sid,47,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "jair,28,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "ariana,19,1.txt,abcd123,1985-10-26 01:24:00\n"
-                )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_dilutes_attributions(self, mock_git_rev, abe_fs):
-        with localcontext() as context:
-            context.prec = 2
-            amount = 10000
-            abe_fs.create_file(
-                "./abe/payments/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        amount = 10000
+        abe_fs.create_file(
+            "./abe/payments/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        process_payments_and_record_updates()
+        with open('./abe/attributions.txt') as f:
+            assert f.read() == (
+                "sid,503/1100\n" "jair,1509/5500\n" "ariana,503/2750\n" "sam,47/550\n"
             )
-            process_payments_and_record_updates()
-            with open('./abe/attributions.txt') as f:
-                assert f.read() == (
-                    "sid,503/1100\n" "jair,1509/5500\n" "ariana,503/2750\n" "sam,47/550\n"
-                )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
@@ -90,22 +85,20 @@ class TestPaymentAbovePrice:
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
-        with localcontext() as context:
-            context.prec = 2
-            amount = 100
-            abe_fs.create_file(
-                "./abe/payments/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
-            )
-            process_payments_and_record_updates()
+        amount = 100
+        abe_fs.create_file(
+            "./abe/payments/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        process_payments_and_record_updates()
 
-            message = compile_outstanding_balances()
+        message = compile_outstanding_balances()
 
-            assert (
-                "| Name | Balance |\r\n"
-                "| ---- | --- |\r\n"
-                "old abe | 1.00\r\n"
-            ) in message
+        assert (
+            "| Name | Balance |\r\n"
+            "| ---- | --- |\r\n"
+            "old abe | 1.00\r\n"
+        ) in message
 
 
 class TestPaymentBelowPrice:
@@ -113,41 +106,37 @@ class TestPaymentBelowPrice:
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_generates_transactions(self, mock_git_rev, abe_fs):
-        with localcontext() as context:
-            context.prec = 2
-            amount = 1
-            abe_fs.create_file(
-                "./abe/payments/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        amount = 1
+        abe_fs.create_file(
+            "./abe/payments/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        process_payments_and_record_updates()
+        with open('./abe/transactions.txt') as f:
+            assert f.read() == (
+                "old abe,0.01,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,0.05,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,0.47,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,0.28,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,0.19,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
-            process_payments_and_record_updates()
-            with open('./abe/transactions.txt') as f:
-                assert f.read() == (
-                    "old abe,0.01,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "DIA,0.05,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "sid,0.47,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "jair,0.28,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "ariana,0.19,1.txt,abcd123,1985-10-26 01:24:00\n"
-                )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
-        with localcontext() as context:
-            context.prec = 2
-            amount = 1
-            abe_fs.create_file(
-                "./abe/payments/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
-            )
-            process_payments_and_record_updates()
-            message = compile_outstanding_balances()
+        amount = 1
+        abe_fs.create_file(
+            "./abe/payments/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        process_payments_and_record_updates()
+        message = compile_outstanding_balances()
 
-            assert (
-                "| Name | Balance |\r\n"
-                "| ---- | --- |\r\n"
-                "old abe | 0.01\r\n"
-            ) in message
+        assert (
+            "| Name | Balance |\r\n"
+            "| ---- | --- |\r\n"
+            "old abe | 0.01\r\n"
+        ) in message
 
 
 class TestNonAttributablePayment:
@@ -155,70 +144,63 @@ class TestNonAttributablePayment:
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_does_not_dilute_attributions(self, mock_git_rev, abe_fs):
-        with localcontext() as context:
-            context.prec = 2
-            amount = 100
-            abe_fs.create_file(
-                "./abe/payments/nonattributable/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
-            )
-            process_payments_and_record_updates()
-            with open('./abe/attributions.txt') as f:
-                assert f.read() == ("sid,1/2\n" "jair,3/10\n" "ariana,1/5\n")
+        amount = 100
+        abe_fs.create_file(
+            "./abe/payments/nonattributable/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        process_payments_and_record_updates()
+        with open('./abe/attributions.txt') as f:
+            assert f.read() == ("sid,1/2\n" "jair,3/10\n" "ariana,1/5\n")
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_generates_transactions(self, mock_git_rev, abe_fs):
-        with localcontext() as context:
-            context.prec = 2
-            amount = 100
-            abe_fs.create_file(
-                "./abe/payments/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        amount = 100
+        abe_fs.create_file(
+            "./abe/payments/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        process_payments_and_record_updates()
+        with open('./abe/transactions.txt') as f:
+            assert f.read() == (
+                "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,47,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,28,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,19,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
-            process_payments_and_record_updates()
-            with open('./abe/transactions.txt') as f:
-                assert f.read() == (
-                    "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "sid,47,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "jair,28,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "ariana,19,1.txt,abcd123,1985-10-26 01:24:00\n"
-                )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
-        with localcontext() as context:
-            context.prec = 2
-            amount = 100
-            abe_fs.create_file(
-                "./abe/payments/nonattributable/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
-            )
-            process_payments_and_record_updates()
-            message = compile_outstanding_balances()
+        amount = 100
+        abe_fs.create_file(
+            "./abe/payments/nonattributable/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        process_payments_and_record_updates()
+        message = compile_outstanding_balances()
 
-            assert (
-                "| Name | Balance |\r\n"
-                "| ---- | --- |\r\n"
-                "old abe | 1.00\r\n"
-            ) in message
+        assert (
+            "| Name | Balance |\r\n"
+            "| ---- | --- |\r\n"
+            "old abe | 1.00\r\n"
+        ) in message
 
 
 class TestUnpayableContributor:
 
     def _call(self, abe_fs):
-        with localcontext() as context:
-            amount = 100
-            abe_fs.create_file(
-                "./abe/payments/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
-            )
-            abe_fs.create_file(
-                "./abe/unpayable_contributors.txt", contents=f"ariana"
-            )
-            process_payments_and_record_updates()
+        amount = 100
+        abe_fs.create_file(
+            "./abe/payments/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        abe_fs.create_file(
+            "./abe/unpayable_contributors.txt", contents=f"ariana"
+        )
+        process_payments_and_record_updates()
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
@@ -266,39 +248,36 @@ class TestUnpayableContributor:
 class TestUnpayableContributorBecomesPayable:
 
     def _call(self, abe_fs):
-        with localcontext() as context:
-            context.prec = 2
-            amount = 100
-            abe_fs.create_file(
-                './abe/transactions.txt',
-                contents=(
-                    "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "sid,58,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "jair,35,1.txt,abcd123,1985-10-26 01:24:00\n"
-                ),
-            )
-
-            abe_fs.create_file(
-                "./abe/debts.txt",
-                contents="ariana,19,0,1.txt,abcd123,1985-10-26 01:24:00\n",
-            )
-            abe_fs.create_file(
-                "./abe/advances.txt",
-                contents=(
-                    "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
-                    "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
-                ),
-            )
-            abe_fs.create_file(
-                "./abe/payments/1.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
-            )
-            abe_fs.create_file(
-                "./abe/payments/2.txt",
-                contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
-            )
-            process_payments_and_record_updates()
+        amount = 100
+        abe_fs.create_file(
+            './abe/transactions.txt',
+            contents=(
+                "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,58,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,35,1.txt,abcd123,1985-10-26 01:24:00\n"
+            ),
+        )
+        abe_fs.create_file(
+            "./abe/debts.txt",
+            contents="ariana,19,0,1.txt,abcd123,1985-10-26 01:24:00\n",
+        )
+        abe_fs.create_file(
+            "./abe/advances.txt",
+            contents=(
+                "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
+            ),
+        )
+        abe_fs.create_file(
+            "./abe/payments/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        abe_fs.create_file(
+            "./abe/payments/2.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        process_payments_and_record_updates()
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')

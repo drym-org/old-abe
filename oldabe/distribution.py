@@ -1,4 +1,5 @@
 from decimal import Decimal
+from fractions import Fraction
 from typing import Set
 
 
@@ -7,7 +8,7 @@ def fraction_to_decimal(f):
     return Decimal(f.numerator) / Decimal(f.denominator)
 
 
-class Distribution(dict["str | None", Decimal]):
+class Distribution(dict["str | None", Fraction]):
     """
     A dictionary of shareholders to proportions
 
@@ -46,8 +47,14 @@ class Distribution(dict["str | None", Decimal]):
         """
         Distribute an amount amongst shareholders
         """
-        return {
-            shareholder: amount * fraction_to_decimal(share)
+        amounts = {
+            shareholder: round(amount * fraction_to_decimal(share), 2)
             for shareholder, share in self._normalized().items()
-            if shareholder is not None
         }
+        total = sum(amounts.values())
+        difference = total - amount
+        if difference != 0:
+            _, recipient = sorted((-amount, shareholder) for shareholder, amount in amounts.items())[0]
+            amounts[recipient] -= difference
+        return {shareholder: amount for shareholder, amount in amounts.items() if shareholder is not None}
+
