@@ -29,6 +29,8 @@ def create_debts(
     ]
 
 
+# TODO: should we generate separate transactions for money paid
+# for debt vs as a normal payout?
 def pay_outstanding_debts(
     available_amount: Decimal,
     all_debts: Iterable[Debt],

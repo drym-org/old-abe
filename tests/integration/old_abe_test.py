@@ -47,11 +47,11 @@ class TestPaymentAbovePrice:
         process_payments_and_record_updates()
         with open('./abe/transactions.txt') as f:
             assert f.read() == (
-                "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,47,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,28,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "ariana,19,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,1.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,47.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,28.20,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,18.80,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -65,7 +65,7 @@ class TestPaymentAbovePrice:
         process_payments_and_record_updates()
         with open('./abe/attributions.txt') as f:
             assert f.read() == (
-                "sid,503/1100\n" "jair,1509/5500\n" "ariana,503/2750\n" "sam,47/550\n"
+                "sid,5000/10939\n" "jair,3000/10939\n" "ariana,2000/10939\n" "sam,939/10939\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -164,11 +164,11 @@ class TestNonAttributablePayment:
         process_payments_and_record_updates()
         with open('./abe/transactions.txt') as f:
             assert f.read() == (
-                "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,47,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,28,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "ariana,19,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,1.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,47.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,28.20,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,18.80,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -208,8 +208,8 @@ class TestUnpayableContributor:
         self._call(abe_fs)
         with open('./abe/transactions.txt') as f:
             assert f.read() == (
-                "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,1.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.00,1.txt,abcd123,1985-10-26 01:24:00\n"
                 "sid,58.75,1.txt,abcd123,1985-10-26 01:24:00\n"
                 "jair,35.25,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
@@ -250,28 +250,28 @@ class TestUnpayableContributorBecomesPayable:
     def _call(self, abe_fs):
         amount = 100
         abe_fs.create_file(
+            "./abe/payments/1.txt",
+            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
+        )
+        abe_fs.create_file(
             './abe/transactions.txt',
             contents=(
-                "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,58,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,35,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,1.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,58.75,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,35.25,1.txt,abcd123,1985-10-26 01:24:00\n"
             ),
         )
         abe_fs.create_file(
             "./abe/debts.txt",
-            contents="ariana,19,0,1.txt,abcd123,1985-10-26 01:24:00\n",
+            contents="ariana,18.80,0,1.txt,abcd123,1985-10-26 01:24:00\n",
         )
         abe_fs.create_file(
             "./abe/advances.txt",
             contents=(
-                "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,11.75,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,7.05,1.txt,abcd123,1985-10-26 01:24:00\n"
             ),
-        )
-        abe_fs.create_file(
-            "./abe/payments/1.txt",
-            contents=f"sam,036eaf6,{amount},1987-06-30 06:25:00",
         )
         abe_fs.create_file(
             "./abe/payments/2.txt",
@@ -285,7 +285,7 @@ class TestUnpayableContributorBecomesPayable:
         self._call(abe_fs)
         with open('./abe/debts.txt') as f:
             assert f.read() == (
-                "ariana,19,19,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,18.80,18.80,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -298,15 +298,15 @@ class TestUnpayableContributorBecomesPayable:
         self._call(abe_fs)
         with open('./abe/transactions.txt') as f:
             assert f.read() == (
-                "old abe,1.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "DIA,5.0,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,58,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,35,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "old abe,1.0,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "DIA,5.0,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,36,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,20,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "ariana,38,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,1.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.00,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,58.75,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,35.25,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,1.00,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,5.00,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,35.25,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,21.15,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,37.60,2.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -315,13 +315,13 @@ class TestUnpayableContributorBecomesPayable:
         self._call(abe_fs)
         with open('./abe/advances.txt') as f:
             assert f.read() == (
-                "sid,11,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,6.8,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,-11,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,-6.8,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,9.0,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,5.4,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "ariana,3.6,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,11.75,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,7.05,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,-11.75,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,-7.05,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,9.40,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,5.64,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,3.76,2.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
