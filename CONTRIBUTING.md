@@ -36,6 +36,12 @@ $ make test-integration
 
 But this does not work even though it runs a command identical to the above, due to some weird dependency issue with pytest. For now, just use the earlier command in the shell directly.
 
+## Running a Specific Test
+
+```
+pytest -vv tests/integration/old_abe_test.py::TestPaymentAbovePrice::test_generates_transactions
+```
+
 # Debugging
 
 To debug a test execution using a step debugger, put this in the body of the test you'd like to debug:
