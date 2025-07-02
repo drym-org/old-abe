@@ -23,7 +23,7 @@ class Tally(defaultdict[str, Decimal]):
 
     def combine(self, combinator, other):
         result = Tally()
-        for key in dict(**self, **other).keys():
+        for key in dict.fromkeys([*self.keys(), *other.keys()]):
             result[key] = combinator(self[key], other[key])
         return result
 
