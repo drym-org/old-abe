@@ -41,7 +41,7 @@ def calculate_incoming_investment(
 
 
 def decimal_to_fraction(d):
-    """ Convert a Decimal to a Fraction. """
+    """Convert a Decimal to a Fraction."""
     return Fraction(*d.as_integer_ratio())
 
 
@@ -54,8 +54,9 @@ def calculate_incoming_attribution(
     """
     # do we still need this check now that we're using fractions?
     if incoming_investment > 0:
-        share = (decimal_to_fraction(incoming_investment) /
-                 decimal_to_fraction(posterior_valuation))
+        share = decimal_to_fraction(incoming_investment) / decimal_to_fraction(
+            posterior_valuation
+        )
         return Attribution(email, share)
     else:
         return Attribution(email, Fraction(0))

@@ -7,32 +7,32 @@ import pytest
 @pytest.fixture
 def instruments():
     return {
-        'old_abe': Fraction(1,100),
-        'dia': Fraction(5,100),
+        'old_abe': Fraction(1, 100),
+        'dia': Fraction(5, 100),
     }
 
 
 @pytest.fixture
 def normalized_attributions():
     return {
-        'a@b.com': Fraction(1,5),
-        'b@c.com': Fraction(4,5),
+        'a@b.com': Fraction(1, 5),
+        'b@c.com': Fraction(4, 5),
     }
 
 
 @pytest.fixture
 def excess_attributions():
     return {
-        'a@b.com': Fraction(1,5),
-        'b@c.com': Fraction(9,10),
+        'a@b.com': Fraction(1, 5),
+        'b@c.com': Fraction(9, 10),
     }
 
 
 @pytest.fixture
 def shortfall_attributions():
     return {
-        'a@b.com': Fraction(1,5),
-        'b@c.com': Fraction(7,10),
+        'a@b.com': Fraction(1, 5),
+        'b@c.com': Fraction(7, 10),
     }
 
 
@@ -43,7 +43,7 @@ def empty_attributions():
 
 @pytest.fixture
 def single_contributor_attributions():
-    return {'a@b.com': Fraction(1,1)}
+    return {'a@b.com': Fraction(1, 1)}
 
 
 @pytest.fixture

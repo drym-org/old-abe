@@ -4,7 +4,7 @@ from typing import Set
 
 
 def fraction_to_decimal(f):
-    """ Convert a Fraction to a Decimal. """
+    """Convert a Fraction to a Decimal."""
     return Decimal(f.numerator) / Decimal(f.denominator)
 
 
@@ -23,10 +23,7 @@ class Distribution(dict["str | None", Fraction]):
         total = sum(self.values())
 
         return Distribution(
-            {
-                shareholder: share / total
-                for shareholder, share in self.items()
-            }
+            {shareholder: share / total for shareholder, share in self.items()}
         )
 
     def without(self, exclude: Set[str]) -> "Distribution":
@@ -54,7 +51,13 @@ class Distribution(dict["str | None", Fraction]):
         total = sum(amounts.values())
         difference = total - amount
         if difference != 0:
-            _, recipient = sorted((-amount, shareholder) for shareholder, amount in amounts.items())[0]
+            _, recipient = sorted(
+                (-amount, shareholder)
+                for shareholder, amount in amounts.items()
+            )[0]
             amounts[recipient] -= difference
-        return {shareholder: amount for shareholder, amount in amounts.items() if shareholder is not None}
-
+        return {
+            shareholder: amount
+            for shareholder, amount in amounts.items()
+            if shareholder is not None
+        }

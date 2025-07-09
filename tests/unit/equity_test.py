@@ -79,9 +79,9 @@ class TestDiluteAttributions:
     @pytest.mark.parametrize(
         "incoming_attribution, expected_attribution",
         [
-            (Fraction(0), Fraction(1,5)),
-            (Fraction(1,10), Fraction(28,100)),
-            (Fraction(1,2), Fraction(3,5)),
+            (Fraction(0), Fraction(1, 5)),
+            (Fraction(1, 10), Fraction(28, 100)),
+            (Fraction(1, 2), Fraction(3, 5)),
         ],
     )
     def test_matrix(

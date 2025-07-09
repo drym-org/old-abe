@@ -19,8 +19,8 @@ class TestCreateDebts:
     def test_debt_for_unpayable_contributor(self):
         distribution = Distribution(
             {
-                "payable@example.com": Fraction(7,10),
-                "unpayable@example.com": Fraction(3,10),
+                "payable@example.com": Fraction(7, 10),
+                "unpayable@example.com": Fraction(3, 10),
             }
         )
         payment = Payment(
@@ -49,8 +49,8 @@ class TestCreateDebts:
     def test_no_unpayable_contibutors(self):
         distribution = Distribution(
             {
-                "payable@example.com": Fraction(7,10),
-                "payable2@example.com": Fraction(3,10),
+                "payable@example.com": Fraction(7, 10),
+                "payable2@example.com": Fraction(3, 10),
             }
         )
         payment = Payment(
@@ -74,8 +74,8 @@ class TestCreateDebts:
     def test_no_available_amount(self):
         distribution = Distribution(
             {
-                "payable@example.com": Fraction(7,10),
-                "unpayable@example.com": Fraction(3,10),
+                "payable@example.com": Fraction(7, 10),
+                "unpayable@example.com": Fraction(3, 10),
             }
         )
         payment = Payment(

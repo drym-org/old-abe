@@ -65,7 +65,10 @@ class TestPaymentAbovePrice:
         process_payments_and_record_updates()
         with open('./abe/attributions.txt') as f:
             assert f.read() == (
-                "sid,5000/10939\n" "jair,3000/10939\n" "ariana,2000/10939\n" "sam,939/10939\n"
+                "sid,5000/10939\n"
+                "jair,3000/10939\n"
+                "ariana,2000/10939\n"
+                "sam,939/10939\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -79,7 +82,10 @@ class TestPaymentAbovePrice:
         process_payments_and_record_updates()
         with open('./abe/attributions.txt') as f:
             assert f.read() == (
-                "sid,5000/10093\n" "jair,3000/10093\n" "ariana,2000/10093\n" "sam,93/10093\n"
+                "sid,5000/10093\n"
+                "jair,3000/10093\n"
+                "ariana,2000/10093\n"
+                "sam,93/10093\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -95,9 +101,7 @@ class TestPaymentAbovePrice:
         message = compile_outstanding_balances()
 
         assert (
-            "| Name | Balance |\r\n"
-            "| ---- | --- |\r\n"
-            "old abe | 1.00\r\n"
+            "| Name | Balance |\r\n" "| ---- | --- |\r\n" "old abe | 1.00\r\n"
         ) in message
 
 
@@ -133,9 +137,7 @@ class TestPaymentBelowPrice:
         message = compile_outstanding_balances()
 
         assert (
-            "| Name | Balance |\r\n"
-            "| ---- | --- |\r\n"
-            "old abe | 0.01\r\n"
+            "| Name | Balance |\r\n" "| ---- | --- |\r\n" "old abe | 0.01\r\n"
         ) in message
 
 
@@ -183,9 +185,7 @@ class TestNonAttributablePayment:
         message = compile_outstanding_balances()
 
         assert (
-            "| Name | Balance |\r\n"
-            "| ---- | --- |\r\n"
-            "old abe | 1.00\r\n"
+            "| Name | Balance |\r\n" "| ---- | --- |\r\n" "old abe | 1.00\r\n"
         ) in message
 
 
