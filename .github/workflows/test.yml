@@ -30,7 +30,9 @@ jobs:
             - name: Run tests
               run: pytest
     coverage:
+        needs: test
         runs-on: ubuntu-latest
+        continue-on-error: false
         name: Report coverage
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
