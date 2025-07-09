@@ -11,7 +11,7 @@ jobs:
         strategy:
             matrix:
                 py:
-                    - "3.11"
+                    - "3.13"
                 os:
                     - "ubuntu-latest"
                 architecture:
@@ -59,7 +59,7 @@ jobs:
             - name: Setup python
               uses: actions/setup-python@v4
               with:
-                  python-version: 3.11
+                  python-version: 3.13
                   architecture: x64
             - name: Install dependencies
               run: make build
