@@ -23,12 +23,12 @@ These files should be empty at first. Their contents will be described below.
 
 2. Use the process of Dialectical Inheritance Attribution (DIA) to come up with values to populate your attributions, price, and valuation files, according to the constitutional documents at [drym-org/foundation](https://github.com/drym-org/foundation)
 
-3. Attributions should be expressed on separate lines containing email (or hashed identifier), and percentage amount, in csv format:
+3. Attributions should be expressed on separate lines containing email (or hashed identifier), and fractional amount (the fractions must total to ``1``, exactly), in csv format:
 
 ```
-john@doe.com,24%
-jane@doe.com,73%
-abe@doe.com,2%
+john@doe.com,5/12
+jane@doe.com,1/3
+abe@doe.com,1/4
 ```
 
 4. Price and valuation should each be expressed as a simple amount in their respective text files.
