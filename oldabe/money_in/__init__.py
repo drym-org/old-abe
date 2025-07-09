@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from decimal import Decimal
 from typing import List, Tuple
 
 from ..accounting import (

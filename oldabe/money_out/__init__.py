@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-from collections import defaultdict
-from decimal import Decimal, getcontext
-
 from ..repos import AdvancesRepo, DebtsRepo, PayoutsRepo, TransactionsRepo
 from ..tally import Tally
 

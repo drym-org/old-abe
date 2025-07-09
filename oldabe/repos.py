@@ -5,7 +5,6 @@ import re
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Generic, Iterable, Iterator, List, Type, TypeVar
-from .parsing import parse_percentage
 from fractions import Fraction
 
 from oldabe.constants import (

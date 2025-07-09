@@ -2,7 +2,6 @@ from fractions import Fraction
 from ..constants import (
     ATTRIBUTIONS_FILE,
 )
-from ..parsing import serialize_proportion
 from ..accounting import (
     assert_attributions_normalized,
 )

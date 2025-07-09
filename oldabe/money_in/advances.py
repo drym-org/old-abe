@@ -1,6 +1,5 @@
 from decimal import Decimal
 from ..tally import Tally
-from ..repos import AdvancesRepo
 from ..models import Advance
 from ..constants import ACCOUNTING_ZERO
 
