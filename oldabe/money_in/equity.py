@@ -29,9 +29,9 @@ def prepare_attributions_message(attributions: dict):
     def share_to_percentage(share):
         pct = round(float(share)*100, 2)
         if pct < 0.01:
-            "< 0.01%"
+            return "< 0.01%"
         else:
-            f"{pct:.2f}%"
+            return f"{pct:.2f}%"
 
     attributions_table = ""
     for name, share in attributions.items():
