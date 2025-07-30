@@ -1,6 +1,7 @@
 from fractions import Fraction
 from ..constants import (
     ATTRIBUTIONS_FILE,
+    ATTRIBUTIONS_READABLE_FILE,
 )
 from ..accounting import (
     assert_attributions_normalized,
@@ -17,6 +18,33 @@ def write_attributions(attributions):
         writer = csv.writer(f)
         for row in attributions.items():
             writer.writerow(row)
+    with open(ATTRIBUTIONS_READABLE_FILE, "w") as f:
+        msg = prepare_attributions_message(attributions)
+        f.write(msg)
+
+
+def prepare_attributions_message(attributions: dict):
+    """ Prepare a human-readable, MarkDown-formatted version of attributions as
+    percentages instead of fractions. """
+    def share_to_percentage(share):
+        pct = round(float(share)*100, 2)
+        if pct < 0.01:
+            "< 0.01%"
+        else:
+            f"{pct:.2f}%"
+
+    attributions_table = ""
+    for name, share in attributions.items():
+        attributions_table += f"{name} | {share_to_percentage(share)}\n"
+    message = f"""
+    # Contributors
+
+    | Name | Share |
+    | ---- | ----- |
+    {attributions_table}
+
+    """
+    return "\r\n".join(line.strip() for line in message.split('\n')).strip()
 
 
 def calculate_incoming_investment(
