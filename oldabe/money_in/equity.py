@@ -34,7 +34,10 @@ def prepare_attributions_message(attributions: dict):
             return f"{pct:.2f}%"
 
     attributions_table = ""
-    for name, share in attributions.items():
+    sorted_attributions = sorted(attributions.items(),
+                                 key=lambda x: x[1],
+                                 reverse=True)
+    for name, share in sorted_attributions:
         attributions_table += f"{name} | {share_to_percentage(share)}\n"
     message = f"""
     # Contributors
