@@ -26,7 +26,7 @@ echo "... done."
 echo "Committing updated accounting records back to repo..."
 git config --global user.email "abe@drym.org"
 git config --global user.name "Old Abe"
-git add abe/transactions.txt abe/attributions.txt abe/valuation.txt abe/itemized_payments.txt abe/advances.txt abe/debts.txt
+git add abe/transactions.txt abe/attributions.txt abe/attributions.md abe/valuation.txt abe/itemized_payments.txt abe/advances.txt abe/debts.txt
 
 git commit -m "Updated accounting records"
 git fetch
