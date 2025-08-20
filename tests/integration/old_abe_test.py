@@ -70,6 +70,17 @@ class TestPaymentAbovePrice:
                 "ariana,2000/10939\n"
                 "sam,939/10939\n"
             )
+        with open('./abe/attributions.md') as f:
+            assert f.read() == (
+                "# Contributors\n"
+                "\n"
+                "| Name | Share |\n"
+                "| ---- | ----- |\n"
+                "sid | 45.71%\n"
+                "jair | 27.42%\n"
+                "ariana | 18.28%\n"
+                "sam | 8.58%"
+            )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
@@ -86,6 +97,17 @@ class TestPaymentAbovePrice:
                 "jair,3000/10093\n"
                 "ariana,2000/10093\n"
                 "sam,93/10093\n"
+            )
+        with open('./abe/attributions.md') as f:
+            assert f.read() == (
+                "# Contributors\n"
+                "\n"
+                "| Name | Share |\n"
+                "| ---- | ----- |\n"
+                "sid | 49.54%\n"
+                "jair | 29.72%\n"
+                "ariana | 19.82%\n"
+                "sam | 0.92%"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -154,6 +176,16 @@ class TestNonAttributablePayment:
         process_payments_and_record_updates()
         with open('./abe/attributions.txt') as f:
             assert f.read() == ("sid,1/2\n" "jair,3/10\n" "ariana,1/5\n")
+        with open('./abe/attributions.md') as f:
+            assert f.read() == (
+                "# Contributors\n"
+                "\n"
+                "| Name | Share |\n"
+                "| ---- | ----- |\n"
+                "sid | 50.00%\n"
+                "jair | 30.00%\n"
+                "ariana | 20.00%"
+            )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
