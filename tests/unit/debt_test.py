@@ -140,6 +140,32 @@ class TestPayOutstandingDebts:
             DebtPayment(amount=d.amount, debt=d) for d in debts
         ]
 
+    def test_debts_are_paid_in_order(self):
+        debts = [
+            Debt(
+                email="payable@example.com",
+                amount=Decimal(10),
+                amount_paid=Decimal(0),
+                payment_file="fake-file",
+            ),
+            Debt(
+                email="payable@example.com",
+                amount=Decimal(10),
+                amount_paid=Decimal(0),
+                payment_file="fake-file",
+            ),
+        ]
+
+        debt_payments = pay_outstanding_debts(
+            available_amount=Decimal(10),
+            all_debts=debts,
+            payable_contributors=set(["payable@example.com"]),
+        )
+
+        assert debt_payments == [
+            DebtPayment(amount=debts[0].amount, debt=debts[0])
+        ]
+
     def test_pay_partial(self):
         debts = [
             Debt(
