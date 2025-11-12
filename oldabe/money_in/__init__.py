@@ -11,7 +11,6 @@ from ..distribution import Distribution
 from ..models import (
     Advance,
     Debt,
-    DebtPayment,
     ItemizedPayment,
     Payment,
     Transaction,
@@ -32,8 +31,6 @@ from .valuation import read_valuation, write_valuation
 from .debt import (
     pay_outstanding_debts,
     create_debts,
-    update_debts,
-    write_debts,
 )
 from .advances import draw_down_advances, advance_payments
 from .equity import handle_investment
@@ -41,7 +38,7 @@ from .equity import handle_investment
 
 def distribute_payment(
     payment: Payment, distribution: Distribution
-) -> Tuple[List[Debt], List[DebtPayment], List[Transaction], List[Advance]]:
+) -> Tuple[List[Debt], List[Transaction], List[Advance]]:
     """
     Generate transactions to contributors from a (new) payment.
 
@@ -68,11 +65,11 @@ def distribute_payment(
     #
 
     debt_payments = pay_outstanding_debts(
-        payment.amount, DebtsRepo(), payable_contributors
+        payment, DebtsRepo(), payable_contributors
     )
 
     # The "available" amount is what is left over after paying off debts
-    available_amount = payment.amount - sum(dp.amount for dp in debt_payments)
+    available_amount = payment.amount - sum(abs(dp.amount) for dp in debt_payments)
 
     #
     # Create fresh debts for anyone we can't pay
@@ -118,7 +115,7 @@ def distribute_payment(
     )
     fresh_advance_totals = Tally((a.email, a.amount) for a in fresh_advances)
     debt_payments_totals = Tally(
-        (dp.debt.email, dp.amount) for dp in debt_payments
+        (dp.email, dp.amount) for dp in debt_payments
     )
 
     transactions = [
@@ -133,17 +130,17 @@ def distribute_payment(
                 # plus new advances from the pot
                 + fresh_advance_totals[email]
                 # plus any payments for old debts
-                + debt_payments_totals[email]
+                + abs(debt_payments_totals[email])
             ),
         )
         for email, equity in distribution.distribute(available_amount).items()
         if email in payable_contributors
     ]
 
-    processed_debts = fresh_debts
+    processed_debts = fresh_debts + debt_payments
     advances = negative_advances + fresh_advances
 
-    return processed_debts, debt_payments, transactions, advances
+    return processed_debts, transactions, advances
 
 
 # TODO: the payments within a commit are not ordered.
@@ -160,7 +157,6 @@ def process_payments(instruments, attributions):
     price = read_price()
     valuation = read_valuation()
     new_debts = []
-    new_debt_payments = []
     new_advances = []
     new_transactions = []
     new_itemized_payments = []
@@ -172,7 +168,7 @@ def process_payments(instruments, attributions):
 
     for payment in unprocessed_payments:
         # first, process instruments (i.e. pay fees)
-        debts, debt_payments, transactions, advances = distribute_payment(
+        debts, transactions, advances = distribute_payment(
             payment,
             Distribution(
                 # The missing percentage in the instruments file
@@ -183,11 +179,20 @@ def process_payments(instruments, attributions):
         )
         new_transactions += transactions
         new_debts += debts
-        new_debt_payments += debt_payments
         new_advances += advances
         fees_paid_out = sum(t.amount for t in transactions)
         # deduct the amount paid out to instruments before
         # processing it for attributions
+        #
+        # TODO: Instead of mutating the payment.amount here, follow the pattern
+        # used in distribute_payment where we maintain a separate available_amount
+        # that changes as we drain the payment for debts, advances, etc.
+        # TODO: avoid mutating the payment object as it's considered to be a
+        # reflection of what's in the database
+        # TODO: is there a way to run distribute_payment just once
+        # with the full payment (might need to unify attributions in a single table)
+        # TODO: instruments vs attributions are not handled quite the same way
+        # where the former adds up to, e.g., 6, vs 100 for the latter
         payment.amount -= fees_paid_out
         new_itemized_payments.append(
             ItemizedPayment(
@@ -201,22 +206,19 @@ def process_payments(instruments, attributions):
         # next, process attributions - using the amount owed to the project
         # (which is the amount leftover after paying instruments/fees)
         if payment.amount > ACCOUNTING_ZERO:
-            debts, debt_payments, transactions, advances = distribute_payment(
+            debts, transactions, advances = distribute_payment(
                 payment, Distribution(attributions)
             )
             new_transactions += transactions
             new_debts += debts
-            new_debt_payments += debt_payments
             new_advances += advances
         if payment.attributable:
             valuation = handle_investment(
                 payment, new_itemized_payments, attributions, price, valuation
             )
 
-    debts = update_debts(DebtsRepo(), new_debts, new_debt_payments)
-
     return (
-        debts,
+        new_debts,
         new_transactions,
         valuation,
         new_itemized_payments,
@@ -246,7 +248,7 @@ def process_payments_and_record_updates():
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no
     # changes are made.
-    write_debts(debts)
+    DebtsRepo().extend(debts)
     write_attributions(attributions)
     write_valuation(posterior_valuation)
     TransactionsRepo().extend(transactions)

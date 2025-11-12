@@ -252,7 +252,7 @@ class TestUnpayableContributor:
         self._call(abe_fs)
         with open('./abe/debts.txt') as f:
             assert f.read() == (
-                "ariana,18.80,0,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,18.80,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -296,8 +296,9 @@ class TestUnpayableContributorBecomesPayable:
         )
         abe_fs.create_file(
             "./abe/debts.txt",
-            contents="ariana,18.80,0,1.txt,abcd123,1985-10-26 01:24:00\n",
+            contents="ariana,18.80,1.txt,abcd123,1985-10-26 01:24:00\n",
         )
+
         abe_fs.create_file(
             "./abe/advances.txt",
             contents=(
@@ -317,7 +318,8 @@ class TestUnpayableContributorBecomesPayable:
         self._call(abe_fs)
         with open('./abe/debts.txt') as f:
             assert f.read() == (
-                "ariana,18.80,18.80,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,18.80,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,-18.80,2.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)

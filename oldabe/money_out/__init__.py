@@ -87,8 +87,9 @@ def compile_outstanding_balances():
     balances_message = prepare_balances_message(balances)
 
     outstanding_debts = Tally(
-        (d.email, d.amount_remaining()) for d in DebtsRepo()
+        (d.email, d.amount) for d in DebtsRepo()
     )
+
     debts_message = prepare_debts_message(outstanding_debts)
 
     advances = Tally((a.email, a.amount) for a in AdvancesRepo())

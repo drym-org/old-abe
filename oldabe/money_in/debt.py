@@ -2,9 +2,8 @@ import csv
 import dataclasses
 from dataclasses import astuple
 from itertools import accumulate
-from ..constants import DEBTS_FILE
 from typing import Iterable, List, Set
-from ..models import Debt, DebtPayment
+from ..models import Debt
 from ..tally import Tally
 from decimal import Decimal
 from ..distribution import Distribution
@@ -21,7 +20,6 @@ def create_debts(
         Debt(
             email=email,
             amount=amount,
-            amount_paid=Decimal(0),
             payment_file=payment.file,
         )
         for email, amount in distribution.distribute(available_amount).items()
@@ -32,69 +30,72 @@ def create_debts(
 # TODO: should we generate separate transactions for money paid
 # for debt vs as a normal payout?
 def pay_outstanding_debts(
-    available_amount: Decimal,
+    payment: Payment,
     all_debts: Iterable[Debt],
     payable_contributors: Set[str],
-) -> List[DebtPayment]:
+) -> List[Debt]:
     """
     Given an available amount return debt payments for as many debts as can
     be covered
     """
-    # TODO: are debts being paid in chronological order? (add test)
+    # We are assuming debts are being processed in chronological order
+    # because they are written in chronological order in the single debts
+    # table in the debts file (i.e., it is a FileRepo), so we don't need
+    # to sort them by date.
+
+    # compute the negative balance, i.e., the total of the negative debts, by user
+    debt_payment_totals_by_user = Tally((d.email, d.amount)
+                                        for d in all_debts
+                                        if d.amount < 0)
+    # go through and remove (or add to a new list) as many of the positive
+    # debts as we can, in order, from the beginning
+    # this gives us our sorted list of unpaid debts
+    # which we can then go through in order and pay off
+    unpaid_debts = []
+    for d in all_debts:
+        if d.amount < 0:
+            continue
+        # this debt is completely unpaid
+        elif debt_payment_totals_by_user[d.email] == 0:
+            unpaid_debts.append(d)
+        # this debt is fully paid
+        elif debt_payment_totals_by_user[d.email] >= d.amount:
+            debt_payment_totals_by_user[d.email] -= d.amount
+        # this debt is partially paid
+        else:
+            # if one debt is only partially paid, then replace it with a new
+            # debt showing the partial balance
+            partial_debt = dataclasses.replace(
+                d, amount=d.amount-debt_payment_totals_by_user[d.email]
+            )
+            debt_payment_totals_by_user[d.email] = 0
+            unpaid_debts.append(partial_debt)
+
+    available_amount = payment.amount
     payable_debts = [
         d
-        for d in all_debts
-        if not d.is_fulfilled() and d.email in payable_contributors
+        for d in unpaid_debts
+        if d.email in payable_contributors
     ]
 
-    cummulative_debt = [
+    accumulated_amount = list(accumulate(
+        (d.amount for d in payable_debts), initial=0
+    ))
+    cumulative_debt = [
         amount
-        for amount in accumulate(
-            (d.amount_remaining() for d in payable_debts), initial=0
-        )
+        for amount in accumulated_amount
         if amount <= available_amount
     ]
 
     return [
-        DebtPayment(debt=d, amount=amount)
-        for d, already_paid in zip(payable_debts, cummulative_debt)
+        Debt(email=d.email,
+             amount=-amount,  # negative debt (i.e., debt payment)
+             payment_file=payment.file)
+        for d, paid_so_far in zip(payable_debts, cumulative_debt)
         if (
             amount := min(
-                d.amount_remaining(), available_amount - already_paid
+                d.amount, available_amount - paid_so_far
             )
         )
         > Decimal(0)
     ]
-
-
-def update_debts(existing_debts, new_debts, debt_payments):
-    """
-    1. Build a hash of all the processed debts, generating an id for each
-       (based on email and payment file).
-    2. read the existing debts file, row by row.
-    3. if the debt in the row is in the "processed" hash, then write the
-       processed version instead of the input version and remove it from the
-       hash, otherwise write the input version.
-    """
-    total_debt_payments = Tally(
-        (dp.debt.key(), dp.amount) for dp in debt_payments
-    )
-    return [
-        (
-            dataclasses.replace(
-                debt,
-                amount_paid=debt.amount_paid + total_debt_payments[debt.key()],
-            )
-            if debt.key() in total_debt_payments
-            else debt
-        )
-        for debt in [*existing_debts, *new_debts]
-    ]
-
-
-def write_debts(debts):
-    """Write the debts that remain in the processed hash."""
-    with open(DEBTS_FILE, "w") as f:
-        writer = csv.writer(f)
-        for debt in debts:
-            writer.writerow(astuple(debt))

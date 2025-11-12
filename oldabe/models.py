@@ -33,9 +33,6 @@ class Payout:
 class Debt:
     email: str
     amount: Decimal
-    # amount_paid is a running tally of how much of this debt has been paid
-    # in future will link to Transaction objects instead
-    amount_paid: Decimal
     payment_file: str
     commit_hash: str = field(default_factory=lambda: default_commit_hash())
     # This created date is just for reference for any admins
@@ -44,23 +41,6 @@ class Debt:
     # to fresh debts would simply append to this debts file, and the chronological
     # order would be implicit.
     created_at: datetime = field(default_factory=datetime.utcnow)
-
-    def key(self):
-        return (self.email, self.payment_file)
-
-    def is_fulfilled(self):
-        return self.amount_paid == self.amount
-
-    def amount_remaining(self):
-        return self.amount - self.amount_paid
-
-
-# These are not recorded (yet?), they just represent an intention
-# to record a payment
-@dataclass
-class DebtPayment:
-    debt: Debt
-    amount: Decimal
 
 
 # Individual advances can have a positive or negative amount (to
