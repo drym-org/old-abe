@@ -38,8 +38,8 @@ class Debt:
     # This created date is just for reference for any admins
     # but we don't need to check it anywhere since all debts for a particular
     # payment are created together, and any subsequent payments giving rise
-    # to fresh debts would simply append to this debts file, and the chronological
-    # order would be implicit.
+    # to fresh debts would simply append to this debts file, and the
+    # chronological order would be implicit.
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 

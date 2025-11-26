@@ -69,7 +69,9 @@ def distribute_payment(
     )
 
     # The "available" amount is what is left over after paying off debts
-    available_amount = payment.amount - sum(abs(dp.amount) for dp in debt_payments)
+    available_amount = payment.amount - sum(
+        abs(dp.amount) for dp in debt_payments
+    )
 
     #
     # Create fresh debts for anyone we can't pay
@@ -114,9 +116,7 @@ def distribute_payment(
         (a.email, a.amount) for a in negative_advances
     )
     fresh_advance_totals = Tally((a.email, a.amount) for a in fresh_advances)
-    debt_payments_totals = Tally(
-        (dp.email, dp.amount) for dp in debt_payments
-    )
+    debt_payments_totals = Tally((dp.email, dp.amount) for dp in debt_payments)
 
     transactions = [
         Transaction(
@@ -185,12 +185,13 @@ def process_payments(instruments, attributions):
         # processing it for attributions
         #
         # TODO: Instead of mutating the payment.amount here, follow the pattern
-        # used in distribute_payment where we maintain a separate available_amount
-        # that changes as we drain the payment for debts, advances, etc.
+        # used in distribute_payment where we maintain a separate
+        # available_amount that changes as we drain the payment for debts,
+        # advances, etc.
         # TODO: avoid mutating the payment object as it's considered to be a
         # reflection of what's in the database
-        # TODO: is there a way to run distribute_payment just once
-        # with the full payment (might need to unify attributions in a single table)
+        # TODO: is there a way to run distribute_payment just once with the
+        # full payment (might need to unify attributions in a single table)
         # TODO: instruments vs attributions are not handled quite the same way
         # where the former adds up to, e.g., 6, vs 100 for the latter
         payment.amount -= fees_paid_out

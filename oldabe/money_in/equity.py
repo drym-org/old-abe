@@ -24,19 +24,20 @@ def write_attributions(attributions):
 
 
 def prepare_attributions_message(attributions: dict):
-    """ Prepare a human-readable, MarkDown-formatted version of attributions as
-    percentages instead of fractions. """
+    """Prepare a human-readable, MarkDown-formatted version of attributions as
+    percentages instead of fractions."""
+
     def share_to_percentage(share):
-        pct = round(float(share)*100, 2)
+        pct = round(float(share) * 100, 2)
         if pct < 0.01:
             return "< 0.01%"
         else:
             return f"{pct:.2f}%"
 
     attributions_table = ""
-    sorted_attributions = sorted(attributions.items(),
-                                 key=lambda x: x[1],
-                                 reverse=True)
+    sorted_attributions = sorted(
+        attributions.items(), key=lambda x: x[1], reverse=True
+    )
     for name, share in sorted_attributions:
         attributions_table += f"{name} | {share_to_percentage(share)}\n"
     message = f"""

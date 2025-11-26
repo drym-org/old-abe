@@ -101,9 +101,9 @@ class TestPayOutstandingDebts:
             amount=Decimal(10),
             payment_file="fake-file",
         )
-        payment = Payment(email="payer@example.com",
-                          name="Sam",
-                          amount=Decimal(100))
+        payment = Payment(
+            email="payer@example.com", name="Sam", amount=Decimal(100)
+        )
 
         debt_payments = pay_outstanding_debts(
             payment=payment,
@@ -112,9 +112,11 @@ class TestPayOutstandingDebts:
         )
 
         assert debt_payments == [
-            Debt(email=single_debt.email,
-                 amount=-single_debt.amount,
-                 payment_file=payment.file)
+            Debt(
+                email=single_debt.email,
+                amount=-single_debt.amount,
+                payment_file=payment.file,
+            )
         ]
 
     # TODO: fix these remaining tests like test_pay_one above
@@ -133,9 +135,9 @@ class TestPayOutstandingDebts:
                 payment_file="fake-file",
             ),
         ]
-        payment = Payment(email="payer@example.com",
-                          name="Sam",
-                          amount=Decimal(20))
+        payment = Payment(
+            email="payer@example.com", name="Sam", amount=Decimal(20)
+        )
 
         debt_payments = pay_outstanding_debts(
             payment=payment,
@@ -144,9 +146,7 @@ class TestPayOutstandingDebts:
         )
 
         assert debt_payments == [
-            Debt(email=d.email,
-                 amount=-d.amount,
-                 payment_file=payment.file)
+            Debt(email=d.email, amount=-d.amount, payment_file=payment.file)
             for d in debts
         ]
 
@@ -166,21 +166,24 @@ class TestPayOutstandingDebts:
             ),
         ]
 
-        payment = Payment(email="payer@example.com",
-                          name="Sam",
-                          amount=Decimal(10))
+        payment = Payment(
+            email="payer@example.com", name="Sam", amount=Decimal(10)
+        )
 
         debt_payments = pay_outstanding_debts(
             payment=payment,
             all_debts=debts,
-            payable_contributors=set(["payable1@example.com",
-                                      "payable2@example.com" ]),
+            payable_contributors=set(
+                ["payable1@example.com", "payable2@example.com"]
+            ),
         )
 
         assert debt_payments == [
-            Debt(email=debts[0].email,
-                 amount=-debts[0].amount,
-                 payment_file=payment.file)
+            Debt(
+                email=debts[0].email,
+                amount=-debts[0].amount,
+                payment_file=payment.file,
+            )
         ]
 
     @time_machine.travel(datetime.now(), tick=False)
@@ -198,24 +201,29 @@ class TestPayOutstandingDebts:
             ),
         ]
 
-        payment = Payment(email="payer@example.com",
-                          name="Sam",
-                          amount=Decimal(15))
+        payment = Payment(
+            email="payer@example.com", name="Sam", amount=Decimal(15)
+        )
 
         debt_payments = pay_outstanding_debts(
             payment=payment,
             all_debts=debts,
-            payable_contributors=set(["payable1@example.com",
-                                      "payable2@example.com" ]),
+            payable_contributors=set(
+                ["payable1@example.com", "payable2@example.com"]
+            ),
         )
 
         assert debt_payments == [
-            Debt(email=debts[0].email,
-                 amount=-Decimal(10),
-                 payment_file=payment.file),
-            Debt(email=debts[1].email,
-                 amount=-Decimal(5),
-                 payment_file=payment.file)
+            Debt(
+                email=debts[0].email,
+                amount=-Decimal(10),
+                payment_file=payment.file,
+            ),
+            Debt(
+                email=debts[1].email,
+                amount=-Decimal(5),
+                payment_file=payment.file,
+            ),
         ]
 
     @time_machine.travel(datetime.now(), tick=False)
@@ -238,9 +246,9 @@ class TestPayOutstandingDebts:
             ),
         ]
 
-        payment = Payment(email="payer@example.com",
-                          name="Sam",
-                          amount=Decimal(20))
+        payment = Payment(
+            email="payer@example.com", name="Sam", amount=Decimal(20)
+        )
 
         debt_payments = pay_outstanding_debts(
             payment=payment,
@@ -249,17 +257,15 @@ class TestPayOutstandingDebts:
         )
 
         assert debt_payments == [
-            Debt(email=d.email,
-                 amount=-d.amount,
-                 payment_file=payment.file)
+            Debt(email=d.email, amount=-d.amount, payment_file=payment.file)
             for d in debts
             if d.email != "unpayable@example.com"
         ]
 
     def test_no_debts(self):
-        payment = Payment(email="payer@example.com",
-                          name="Sam",
-                          amount=Decimal(20))
+        payment = Payment(
+            email="payer@example.com", name="Sam", amount=Decimal(20)
+        )
 
         debt_payments = pay_outstanding_debts(
             payment=payment,
@@ -283,9 +289,9 @@ class TestPayOutstandingDebts:
             ),
         ]
 
-        payment = Payment(email="payer@example.com",
-                          name="Sam",
-                          amount=Decimal(0))
+        payment = Payment(
+            email="payer@example.com", name="Sam", amount=Decimal(0)
+        )
 
         debt_payments = pay_outstanding_debts(
             payment=payment,
