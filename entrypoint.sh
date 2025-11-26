@@ -35,5 +35,14 @@ git push origin `git remote set-head origin -a | cut -d' ' -f4`
 echo "... done."
 
 echo "Running money_out script..."
-echo balances=$(python -m oldabe.money_out.__main__) >> $GITHUB_OUTPUT
+echo balances=$() >> $GITHUB_OUTPUT
 echo "... done."
+
+BALANCES_OUTPUT=$(python -m oldabe.money_out.__main__)
+
+# $? holds the exit status of the last executed command
+if [ $? -eq 0 ]; then
+    echo balances=$BALANCES_OUTPUT >> $GITHUB_OUTPUT
+else
+    exit 1
+fi
