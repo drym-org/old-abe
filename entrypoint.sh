@@ -21,6 +21,15 @@ echo "Running money_in script..."
 python -m oldabe.money_in.__main__
 echo "... done."
 
+# in case of error, if a job is interrupted, money_in
+# may have already run, but money_out may not have
+# We first update the repo just in case, to ensure that
+# money_in doesn't attempt to redo work it's already done
+echo "Ensuring repo is up to date..."
+git fetch
+git rebase origin/`git remote set-head origin -a | cut -d' ' -f4`
+echo "... done."
+
 # Note that running this locally would cause your global
 # git config to be modified
 echo "Committing updated accounting records back to repo..."
