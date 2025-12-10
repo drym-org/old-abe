@@ -80,7 +80,6 @@ def compile_outstanding_balances():
     """Read all accounting records and determine the total outstanding
     balances, debts, and advances for each contributor.
     """
-    # owed = read_owed_amounts()
     owed = Tally((t.email, t.amount) for t in TransactionsRepo())
     paid = Tally((p.email, p.amount) for p in PayoutsRepo())
     balances = owed - paid
