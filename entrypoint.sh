@@ -32,7 +32,7 @@ echo "Running money_in script..."
 python -m oldabe.money_in.__main__
 
 # $? holds the exit status of the last executed command
-if [ $? -neq 0 ]; then
+if [ $? -ne 0 ]; then
     exit 1
 fi
 echo "... done."
