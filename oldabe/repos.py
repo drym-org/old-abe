@@ -37,7 +37,7 @@ def fix_types(row: List[str], Model: type) -> List[Any]:
 
     def _cast(field, value):
         if field.type is Decimal:
-            return Decimal(re.sub("[^0-9.-]", "", value))
+            return Decimal(value)
         elif field.type is Fraction:
             return Fraction(value)
         elif field.type is datetime:
@@ -94,11 +94,11 @@ class DirRepo(Generic[T]):
     def __iter__(self) -> Iterator[T]:
         objs = []
         try:
-            filenames = [
+            filenames = sorted(
                 f
                 for f in os.listdir(self.dirname)
                 if not os.path.isdir(os.path.join(self.dirname, f))
-            ]
+            )
         except FileNotFoundError:
             filenames = []
 
@@ -111,6 +111,7 @@ class DirRepo(Generic[T]):
                 setattr(obj, "file", filename)
                 objs.append(obj)
 
+        sorted(objs, key=lambda obj: obj.created_at)
         yield from objs
 
 
