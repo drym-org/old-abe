@@ -50,6 +50,8 @@ class Distribution(dict["str | None", Fraction]):
         }
         total = sum(amounts.values())
         difference = total - amount
+        # Remove excess "dust" from the largest shareholder, by convention,
+        # as it affects them the least, proportionally
         if difference != 0:
             _, recipient = sorted(
                 (-amount, shareholder)
