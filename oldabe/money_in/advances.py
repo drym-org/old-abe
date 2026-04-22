@@ -24,7 +24,7 @@ def draw_down_advances(
         )
         for email, payable_amount in distribution.without(
             unpayable_contributors
-        )
+        ).without((None, ))
         .distribute(available_amount)
         .items()
         if email in advance_totals and advance_totals[email] > ACCOUNTING_ZERO
@@ -48,6 +48,10 @@ def advance_payments(
         + sum(abs(a.amount) for a in negative_advances)
     )
 
+    print(f"redistribution_pot is {redistribution_pot}")
+
+    print(f"distribution is {distribution}")
+
     fresh_advances = (
         [
             Advance(
@@ -55,7 +59,7 @@ def advance_payments(
                 amount=amount,
                 payment_file=payment_file,
             )
-            for email, amount in distribution.without(unpayable_contributors)
+            for email, amount in distribution.without(unpayable_contributors).without((None,))
             .distribute(redistribution_pot)
             .items()
         ]

@@ -167,9 +167,15 @@ def process_payments(instruments, attributions):
     ]
 
     for payment in unprocessed_payments:
+        # TODO: create two variables, instruments_payment and contributors_payment
+        # Then pass the former to processing instruments, along with the
+        # renormalized instruments distribution.
+        # And likewise, pass the latter to processing contributors, otherwise
+        # keeping the logic the same across the two runs.
+        # Then we can remove the fees_paid_out logic, along with the None contributor
         # first, process instruments (i.e. pay fees)
         debts, transactions, advances = distribute_payment(
-            payment,
+            payment, # TODO: synthesize a new payment object with the amount allocated to instruments
             Distribution(
                 # The missing percentage in the instruments file
                 # should not be distributed to anyone (shareholder: None)

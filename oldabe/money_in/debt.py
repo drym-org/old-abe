@@ -44,7 +44,7 @@ def pay_outstanding_debts(
     # compute the negative balance, i.e., the total of the negative debts,
     # by user
     debt_payment_totals_by_user = Tally(
-        (d.email, d.amount) for d in all_debts if d.amount < 0
+        (d.email, -d.amount) for d in all_debts if d.amount < 0
     )
     # go through and remove (or add to a new list) as many of the positive
     # debts as we can, in order, from the beginning
