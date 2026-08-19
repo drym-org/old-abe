@@ -21,8 +21,7 @@ class TestNoPayments:
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_no_transactions_generated(self, mock_git_rev, abe_fs):
         process_payments_and_record_updates()
-        with open('./abe/transactions.txt') as f:
-            assert f.read() == ""
+        assert not os.path.exists("./abe/transactions.txt")
 
     @patch('oldabe.models.default_commit_hash', return_value='abcd123')
     def test_compiled_outstanding_balances(self, mock_git_rev, abe_fs):
@@ -267,10 +266,10 @@ class TestUnpayableContributor:
         self._call(abe_fs)
         with open('./abe/transactions.txt') as f:
             assert f.read() == (
-                "old abe,1.00,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "DIA,5.00,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,58.75,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,35.25,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,1.23,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,6.16,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,57.88,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,34.73,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -290,8 +289,10 @@ class TestUnpayableContributor:
         self._call(abe_fs)
         with open('./abe/advances.txt') as f:
             assert f.read() == (
-                "sid,11.75,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,7.05,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,0.23,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,1.16,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,10.88,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,6.53,1.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     @time_machine.travel(datetime(1985, 10, 26, 1, 24), tick=False)
@@ -315,10 +316,10 @@ class TestUnpayableContributorBecomesPayable:
         abe_fs.create_file(
             './abe/transactions.txt',
             contents=(
-                "old abe,1.00,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "DIA,5.00,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,58.75,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,35.25,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,1.23,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,6.16,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,57.88,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,34.73,1.txt,abcd123,1985-10-26 01:24:00\n"
             ),
         )
         abe_fs.create_file(
@@ -329,8 +330,10 @@ class TestUnpayableContributorBecomesPayable:
         abe_fs.create_file(
             "./abe/advances.txt",
             contents=(
-                "sid,11.75,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,7.05,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,0.23,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,1.16,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,10.88,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,6.53,1.txt,abcd123,1985-10-26 01:24:00\n"
             ),
         )
         abe_fs.create_file(
@@ -358,15 +361,16 @@ class TestUnpayableContributorBecomesPayable:
         # where there are more debts
         self._call(abe_fs)
         with open('./abe/transactions.txt') as f:
-            assert f.read() == (
-                "old abe,1.00,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "DIA,5.00,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,58.75,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,35.25,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "old abe,1.00,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "DIA,5.00,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,35.25,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,21.15,2.txt,abcd123,1985-10-26 01:24:00\n"
+            contents = f.read()
+            assert contents == (
+                "old abe,1.23,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,6.16,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,57.88,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,34.73,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,0.77,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,3.84,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,36.12,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,21.67,2.txt,abcd123,1985-10-26 01:24:00\n"
                 "ariana,37.60,2.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
@@ -376,13 +380,19 @@ class TestUnpayableContributorBecomesPayable:
         self._call(abe_fs)
         with open('./abe/advances.txt') as f:
             assert f.read() == (
-                "sid,11.75,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,7.05,1.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,-11.75,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,-7.05,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "sid,9.40,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "jair,5.64,2.txt,abcd123,1985-10-26 01:24:00\n"
-                "ariana,3.76,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,0.23,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,1.16,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,10.88,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,6.53,1.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,-0.23,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,-1.16,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,-10.88,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,-6.53,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "old abe,0.19,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "DIA,0.94,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "sid,8.84,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "jair,5.30,2.txt,abcd123,1985-10-26 01:24:00\n"
+                "ariana,3.53,2.txt,abcd123,1985-10-26 01:24:00\n"
             )
 
     # TODO: in some cases (either the advances exceed the payment amount or
@@ -409,32 +419,15 @@ def _print_accounting_files(index):
     with open("./abe/advances.txt") as f:
         print(f"[{index}] Advances are:\n{f.read()}")
 
+# verify if any tests need to be added for ensuring valuation excludes instruments, etc. (see remark below)
+# Also ensure that valuation stuff is working and correctly excludes Old Abe and other instruments
+# commit changes
+# identify next steps
+# ... manual testing - run sandbox with a real payment
 
-# TODO: add a separate test for unpayable instrument (in addition?)
-#       -> note: newer instrument debts are paid before older project debts
-#       -> that may be considered unfair.
-#       -> decide on how to handle this
 # TODO: test all contributors are unpayable (e.g., likely to happen
 #       often with instruments)
-# TODO: should we make instruments total to 100 instead of using None? Yes. How?
-#   Options:
-#    1. Add a None sentinel value as a standard syntax of attribution files
-#      (used only in instruments, not in contributors)
-#    2. Add a new configuration-level file similar to price.txt and valuation.txt
-#       that indicates the percentage breakdown across attributions files
-#    3. What today is deciding when to put None in a distribution and renormalize?
-#       Could use that everywhere.
-#    -> Note: superseded by the plan below:
 
-# Provisional plan for uniform handling of debts and advances instead of
-# separate processing of instruments/contributors:
-#
-# 1. Keep instruments.txt and contributors.txt as separate files
-# 2. Compose a single "attributions" dictionary from these two for process_payment,
-#    i.e., we only do this once rather than in two stages
-# 3. In other cases, for handle_investment (dilution of shares/ inflation of valuation),
-#    we just use contributors in creating the attributions dictionary
-#
 # If there are no payable contributors in either instruments or contributors,
 #  Short term: Reject payment (in practice: don't even record; just put it in pending/ publicly)
 #  Long term: Could consider the project itself (i.e., the trustee) as receiving the money
@@ -533,4 +526,4 @@ class TestAdvancesModeling:
         )
         process_payments_and_record_updates()
 
-        _print_accounting_files(1)
+        # TODO: add assertions

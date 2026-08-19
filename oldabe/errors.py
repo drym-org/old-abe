@@ -1,0 +1,2 @@
+class OldAbeError(Exception):
+    pass

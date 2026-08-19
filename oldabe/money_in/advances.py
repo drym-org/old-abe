@@ -48,10 +48,6 @@ def advance_payments(
         + sum(abs(a.amount) for a in negative_advances)
     )
 
-    print(f"redistribution_pot is {redistribution_pot}")
-
-    print(f"distribution is {distribution}")
-
     fresh_advances = (
         [
             Advance(

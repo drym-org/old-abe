@@ -37,16 +37,13 @@ class TestCalculateIncomingInvestment:
         expected_investment,
     ):
         email = 'dummy@abe.org'
-        payment = Payment(email, email, incoming_amount)
         # this is the total amount paid _including_ the incoming amount
         prior_itemized_payments = [
             ItemizedPayment(email, 0, prior_contribution, True, 'dummy.file')
         ]
-        new_itemized_payments = [
-            ItemizedPayment(email, 0, incoming_amount, True, 'dummy.file')
-        ]
+        itemized = ItemizedPayment(email, 0, incoming_amount, True, 'dummy.file')
         result = calculate_incoming_investment(
-            payment, price, new_itemized_payments, prior_itemized_payments
+            price, itemized, prior_itemized_payments
         )
         assert result == expected_investment
 
@@ -116,13 +113,11 @@ class TestHandleInvestment:
             payment.attributable,
             payment.file,
         )
-        new_itemized_payments = [itemized]
         price = Decimal('10')
         prior_valuation = Decimal('50')
 
-        _valuation = handle_investment(
-            payment,
-            new_itemized_payments,
+        handle_investment(
+            itemized,
             normalized_attributions,
             price,
             prior_valuation,
@@ -143,13 +138,11 @@ class TestHandleInvestment:
             payment.attributable,
             payment.file,
         )
-        new_itemized_payments = [itemized]
         price = Decimal('10')
         prior_valuation = Decimal('50')
 
         valuation = handle_investment(
-            payment,
-            new_itemized_payments,
+            itemized,
             normalized_attributions,
             price,
             prior_valuation,

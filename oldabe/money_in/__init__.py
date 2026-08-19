@@ -2,6 +2,7 @@
 
 from typing import List, Tuple
 
+from ..errors import OldAbeError
 from ..accounting import (
     assert_attributions_normalized,
 )
@@ -26,7 +27,7 @@ from ..repos import (
     UnpayableContributorsRepo,
 )
 from .price import read_price
-from .equity import write_attributions
+from .equity import write_attributions, renormalize
 from .valuation import read_valuation, write_valuation
 from .debt import (
     pay_outstanding_debts,
@@ -143,11 +144,7 @@ def distribute_payment(
     return processed_debts, transactions, advances
 
 
-# TODO: the payments within a commit are not ordered.
-# It may be better to sort them chronologically, so that
-# earlier payments are reflected in attributions before
-# later payments are processed.
-def process_payments(instruments, attributions):
+def process_payment(payment, instruments, contributors):
     """
     Process new payments by paying out instruments and then, from the amount
     left over, paying out attributions.
@@ -156,80 +153,40 @@ def process_payments(instruments, attributions):
     """
     price = read_price()
     valuation = read_valuation()
-    new_debts = []
-    new_advances = []
-    new_transactions = []
-    new_itemized_payments = []
 
-    processed_payment_files = {t.payment_file for t in TransactionsRepo()}
-    unprocessed_payments = [
-        p for p in AllPaymentsRepo() if p.file not in processed_payment_files
-    ]
+    target_proportion = 1 - sum(instruments.values())
+    renormalized_contributors = {**contributors}
+    renormalize(renormalized_contributors, target_proportion)
 
-    for payment in unprocessed_payments:
-        # TODO: create two variables, instruments_payment and contributors_payment
-        # Then pass the former to processing instruments, along with the
-        # renormalized instruments distribution.
-        # And likewise, pass the latter to processing contributors, otherwise
-        # keeping the logic the same across the two runs.
-        # Then we can remove the fees_paid_out logic, along with the None contributor
-        # first, process instruments (i.e. pay fees)
-        debts, transactions, advances = distribute_payment(
-            payment, # TODO: synthesize a new payment object with the amount allocated to instruments
-            Distribution(
-                # The missing percentage in the instruments file
-                # should not be distributed to anyone (shareholder: None)
-                # TODO: Move to process_payments_and_record_updates
-                {**instruments, None: 1 - sum(instruments.values())}
-            ),
+    attributions = {**instruments, **renormalized_contributors}
+
+    debts, transactions, advances = distribute_payment(
+        payment,
+        Distribution(attributions),
+    )
+    # do we need to keep track of fees_paid_out here?
+    fees_paid_out = sum(t.amount for t in transactions if t.email in instruments.keys())
+    itemized_payment = (
+        ItemizedPayment(
+            payment.email,
+            fees_paid_out,
+            payment.amount - fees_paid_out,
+            payment.attributable,
+            payment.file,
         )
-        new_transactions += transactions
-        new_debts += debts
-        new_advances += advances
-        fees_paid_out = sum(t.amount for t in transactions)
-        # deduct the amount paid out to instruments before
-        # processing it for attributions
-        #
-        # TODO: Instead of mutating the payment.amount here, follow the pattern
-        # used in distribute_payment where we maintain a separate
-        # available_amount that changes as we drain the payment for debts,
-        # advances, etc.
-        # TODO: avoid mutating the payment object as it's considered to be a
-        # reflection of what's in the database
-        # TODO: is there a way to run distribute_payment just once with the
-        # full payment (might need to unify attributions in a single table)
-        # TODO: instruments vs attributions are not handled quite the same way
-        # where the former adds up to, e.g., 6, vs 100 for the latter
-        payment.amount -= fees_paid_out
-        new_itemized_payments.append(
-            ItemizedPayment(
-                payment.email,
-                fees_paid_out,
-                payment.amount,  # already has fees deducted
-                payment.attributable,
-                payment.file,
-            )
+    )
+
+    if payment.attributable:
+        valuation = handle_investment(
+            itemized_payment, contributors, price, valuation
         )
-        # next, process attributions - using the amount owed to the project
-        # (which is the amount leftover after paying instruments/fees)
-        if payment.amount > ACCOUNTING_ZERO:
-            debts, transactions, advances = distribute_payment(
-                payment, Distribution(attributions)
-            )
-            new_transactions += transactions
-            new_debts += debts
-            new_advances += advances
-        if payment.attributable:
-            valuation = handle_investment(
-                payment, new_itemized_payments, attributions, price, valuation
-            )
 
     return (
-        new_debts,
-        new_transactions,
+        debts,
+        transactions,
         valuation,
-        new_itemized_payments,
-        new_advances,
+        itemized_payment,
+        advances,
     )
 
 
@@ -244,13 +201,27 @@ def process_payments_and_record_updates():
 
     assert_attributions_normalized(attributions)
 
+    processed_payment_files = {t.payment_file for t in TransactionsRepo()}
+    unprocessed_payments = [
+        p for p in AllPaymentsRepo() if p.file not in processed_payment_files
+    ]
+    if len(unprocessed_payments) > 1:
+        # TODO: consider allowing this and ordering the payments
+        # chronologically, but for now it's left to the admin to order the
+        # payments this way (by committing them in the right order)
+        raise OldAbeError("Only one payment per commit allowed!")
+    if len(unprocessed_payments) == 0:
+        return
+
+    payment = unprocessed_payments[0]
+
     (
         debts,
         transactions,
         posterior_valuation,
-        new_itemized_payments,
+        itemized_payment,
         advances,
-    ) = process_payments(instruments, attributions)
+    ) = process_payment(payment, instruments, attributions)
 
     # we only write the changes to disk at the end
     # so that if any errors are encountered, no
@@ -259,5 +230,5 @@ def process_payments_and_record_updates():
     write_attributions(attributions)
     write_valuation(posterior_valuation)
     TransactionsRepo().extend(transactions)
-    ItemizedPaymentsRepo().extend(new_itemized_payments)
+    ItemizedPaymentsRepo().extend([itemized_payment])
     AdvancesRepo().extend(advances)

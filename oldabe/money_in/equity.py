@@ -52,20 +52,20 @@ def prepare_attributions_message(attributions: dict):
 
 
 def calculate_incoming_investment(
-    payment, price, new_itemized_payments, prior_itemized_payments
+    price, itemized_payment, prior_itemized_payments
 ):
     """
-    If the payment brings the aggregate amount paid by the payee
+    If the payment brings the aggregate amount paid by the payer
     above the price, then that excess is treated as investment.
     """
     total_attributable_payments = sum(
         p.project_amount
-        for p in [*prior_itemized_payments, *new_itemized_payments]
-        if p.attributable and p.email == payment.email
+        for p in [*prior_itemized_payments, itemized_payment]
+        if p.attributable and p.email == itemized_payment.email
     )
 
     incoming_investment = min(
-        total_attributable_payments - price, payment.amount
+        total_attributable_payments - price, itemized_payment.project_amount
     )
 
     return max(0, incoming_investment)
@@ -93,6 +93,14 @@ def calculate_incoming_attribution(
         return Attribution(email, Fraction(0))
 
 
+def renormalize(attributions, target_proportion):
+    """ Normalize attributions to total to target_proportion
+    instead of 1. """
+    for email in attributions:
+        # renormalize to reflect dilution
+        attributions[email] *= target_proportion
+
+
 def dilute_attributions(incoming_attribution, attributions):
     """
     Incorporate a fresh attributive share by diluting existing attributions,
@@ -106,9 +114,7 @@ def dilute_attributions(incoming_attribution, attributions):
     of the incoming attribution.
     """
     target_proportion = 1 - incoming_attribution.share
-    for email in attributions:
-        # renormalize to reflect dilution
-        attributions[email] *= target_proportion
+    renormalize(attributions, target_proportion)
 
     # add incoming share to existing investor or record new investor
     existing_attribution = attributions.get(incoming_attribution.email, None)
@@ -118,7 +124,7 @@ def dilute_attributions(incoming_attribution, attributions):
 
 
 def handle_investment(
-    payment, new_itemized_payments, attributions, price, prior_valuation
+    itemized_payment, attributions, price, prior_valuation
 ):
     """
     For "attributable" payments (the default), we determine
@@ -127,15 +133,17 @@ def handle_investment(
     attributed a share commensurate with their investment, diluting the
     attributions.
     """
+    # TODO: investigate uses of payment.amount which no longer reflects
+    # the deduction of fees to instruments
     prior_itemized_payments = ItemizedPaymentsRepo()
     incoming_investment = calculate_incoming_investment(
-        payment, price, new_itemized_payments, prior_itemized_payments
+        price, itemized_payment, prior_itemized_payments
     )
     # inflate valuation by the amount of the fresh investment
     posterior_valuation = prior_valuation + incoming_investment
 
     incoming_attribution = calculate_incoming_attribution(
-        payment.email, incoming_investment, posterior_valuation
+        itemized_payment.email, incoming_investment, posterior_valuation
     )
     if incoming_attribution and incoming_attribution.share > 0:
         dilute_attributions(incoming_attribution, attributions)

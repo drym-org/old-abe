@@ -1,6 +1,6 @@
 from decimal import Decimal
 from collections import defaultdict
-from operator import sub
+from operator import sub, add
 
 
 # TODO: needs tests
@@ -29,3 +29,6 @@ class Tally(defaultdict[str, Decimal]):
 
     def __sub__(self, other):
         return self.combine(sub, other)
+
+    def __add__(self, other):
+        return self.combine(add, other)

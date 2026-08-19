@@ -52,7 +52,6 @@ class Distribution(dict["str | None", Fraction]):
             return {}
         total = sum(amounts.values())
         difference = total - amount
-        print(f"Total is {total} and amount is {amount}")
         # Remove excess "dust" from the largest shareholder, by convention,
         # as it affects them the least, proportionally
         if difference != 0:

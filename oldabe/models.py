@@ -75,7 +75,7 @@ class Payment:
 class ItemizedPayment:
     email: str
     fee_amount: Decimal  # instruments
-    project_amount: Decimal  # attributions
+    project_amount: Decimal  # contributors
     attributable: bool
     payment_file: str  # acts like a foreign key to original payment object
 
