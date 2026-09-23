@@ -133,8 +133,6 @@ def handle_investment(
     attributed a share commensurate with their investment, diluting the
     attributions.
     """
-    # TODO: investigate uses of payment.amount which no longer reflects
-    # the deduction of fees to instruments
     prior_itemized_payments = ItemizedPaymentsRepo()
     incoming_investment = calculate_incoming_investment(
         price, itemized_payment, prior_itemized_payments
